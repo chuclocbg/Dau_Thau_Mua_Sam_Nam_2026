@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+app/node_modules/
+
+# Build output
+app/dist/
+app/.vite/
+
+# TypeScript build info
+*.tsbuildinfo
+app/node_modules/.tmp/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+app/coverage/
+
+# Build output (root-level pre-built app)
+dist/
+
+# Claude Code local configuration and memory (machine-specific)
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
