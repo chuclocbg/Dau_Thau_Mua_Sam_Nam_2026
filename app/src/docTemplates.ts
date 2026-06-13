@@ -82,13 +82,16 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
 } {
   const total = pkg.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   
+  const vbhn74 = 'Văn bản hợp nhất số 74/VBHN-VPQH ngày 25/3/2026 (hợp nhất Luật Đấu thầu số 22/2023/QH15 sửa đổi bởi các Luật số 57/2024/QH15, 90/2025/QH15, 116/2025/QH15, 133/2025/QH15, 142/2025/QH15)';
+
   if (total <= 50000000) {
     return {
       code: 'DIRECT_50',
       name: 'Quyết định mua sắm trực tiếp (Không qua quy trình thầu)',
       basis: [
-        'Khoản 4 Điều 80 Nghị định số 214/2025/NĐ-CP của Chính phủ',
+        vbhn74,
         'Điểm m Khoản 1 Điều 23 Luật Đấu thầu số 22/2023/QH15',
+        'Khoản 4 Điều 80 Nghị định số 214/2025/NĐ-CP của Chính phủ',
         'Thông tư số 13/2026/TT-BCT của Bộ Công Thương về phân cấp quản lý ngân sách, tài sản công'
       ]
     };
@@ -97,6 +100,7 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
       code: 'DIRECT_SELECTION_SIMPLIFIED',
       name: 'Chỉ định thầu rút gọn',
       basis: [
+        vbhn74,
         'Điểm m Khoản 1 Điều 23 Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15)',
         'Khoản 2 và Khoản 3 Điều 80 Nghị định số 214/2025/NĐ-CP của Chính phủ',
         'Thông tư số 13/2026/TT-BCT của Bộ Công Thương về phân cấp quản lý ngân sách, tài sản công'
@@ -107,6 +111,7 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
       code: 'COMPETITIVE_SHOPPING',
       name: 'Chào hàng cạnh tranh',
       basis: [
+        vbhn74,
         'Điều 24 Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15)',
         'Điều 81 Nghị định số 214/2025/NĐ-CP của Chính phủ',
         'Thông tư số 79/2025/TT-BTC hướng dẫn đăng tải thông tin và mẫu hồ sơ đấu thầu qua mạng'
@@ -117,6 +122,7 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
       code: 'OPEN_BIDDING',
       name: 'Đấu thầu rộng rãi qua mạng (E-LCNT)',
       basis: [
+        vbhn74,
         'Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15)',
         'Nghị định số 214/2025/NĐ-CP của Chính phủ hướng dẫn thi hành Luật Đấu thầu',
         'Thông tư số 79/2025/TT-BTC và Thông tư số 80/2025/TT-BTC của Bộ Tài chính'
@@ -1226,7 +1232,7 @@ export const documentTemplates: DocumentConfig[] = [
               </tr>
               <tr>
                 <td><b>Loại hợp đồng</b></td>
-                <td>Hợp đồng trọn gói</td>
+                <td>${pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'}</td>
               </tr>
               <tr>
                 <td><b>Thời gian thực hiện</b></td>
@@ -1254,7 +1260,7 @@ export const documentTemplates: DocumentConfig[] = [
         ["Hình thức LCNT", pm.name],
         ["Phương thức LCNT", "Một giai đoạn một túi hồ sơ"],
         ["Thời gian bắt đầu thực hiện", getQuarter(pkg.dateKhlcnt)],
-        ["Loại hợp đồng", "Hợp đồng trọn gói"],
+        ["Loại hợp đồng", pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'],
         ["Thời gian thực hiện hợp đồng", `${pkg.contractDurationDays} ngày`]
       ].map(([k, v]) => new TableRow({
         children: [
@@ -1330,7 +1336,7 @@ export const documentTemplates: DocumentConfig[] = [
           <p>- Hình thức lựa chọn nhà thầu: ${pm.name}.</p>
           <p>- Phương thức: Một giai đoạn một túi hồ sơ.</p>
           <p>- Thời gian bắt đầu: ${getQuarter(pkg.dateKhlcnt)}.</p>
-          <p>- Loại hợp đồng: Hợp đồng trọn gói.</p>
+          <p>- Loại hợp đồng: ${pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'}.</p>
           <p><b>Điều 2.</b> Quyết định này có hiệu lực kể từ ngày ký. Các đơn vị liên quan chịu trách nhiệm thi hành.</p>
         </div>
         <div class="doc-signatures" style="margin-top: 20px;">
@@ -1716,7 +1722,7 @@ export const documentTemplates: DocumentConfig[] = [
           <p>Phòng Quản trị đời sống đề xuất Hiệu trưởng phê duyệt kết quả lựa chọn nhà thầu gói thầu với nội dung sau:</p>
           <p>- Tên nhà thầu trúng thầu: <b>${winner.name}</b>.</p>
           <p>- Giá đề nghị trúng thầu: <b>${formatVND(winner.total)}</b>.</p>
-          <p>- Loại hợp đồng: Hợp đồng trọn gói.</p>
+          <p>- Loại hợp đồng: ${pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'}.</p>
           <p>- Thời gian thực hiện: ${pkg.contractDurationDays} ngày.</p>
         </div>
         <div class="doc-signatures" style="margin-top: 20px;">
@@ -1791,7 +1797,7 @@ export const documentTemplates: DocumentConfig[] = [
           <p><b>Điều 1.</b> Phê duyệt kết quả lựa chọn nhà thầu gói thầu: <b>"${pkg.packageName}"</b> với thông tin sau:</p>
           <p>- Đơn vị trúng thầu: <b>${winner.name}</b>.</p>
           <p>- Giá trúng thầu: <b>${formatVND(winner.total)}</b> (Bằng chữ: ${numberToWords(winner.total)}).</p>
-          <p>- Loại hợp đồng: Hợp đồng trọn gói.</p>
+          <p>- Loại hợp đồng: ${pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'}.</p>
           <p>- Thời gian thực hiện: ${pkg.contractDurationDays} ngày.</p>
           <p><b>Điều 2.</b> Phòng Quản trị đời sống tiến hành ký kết hợp đồng và giám sát thực hiện theo đúng quy định pháp luật.</p>
         </div>
@@ -1878,9 +1884,15 @@ export const documentTemplates: DocumentConfig[] = [
           <p>- Đại diện: <b>${pkg.supplier1Representative}</b> - Chức vụ: ${pkg.supplier1Position}.</p>
           <p>- Địa chỉ: ${pkg.supplier1Address}.</p>
           <p>Hai bên thống nhất ký kết hợp đồng với các điều khoản sau:</p>
-          <p><b>Điều 1. Nội dung hàng hóa:</b> Bên B cung cấp đúng danh mục thiết bị đã cam kết.</p>
-          <p><b>Điều 2. Giá trị hợp đồng:</b> <b>${formatVND(total)}</b> (Bằng chữ: ${numberToWords(total)}).</p>
-          <p><b>Điều 3. Thời gian thực hiện:</b> ${pkg.contractDurationDays} ngày.</p>
+          <p><b>Điều 1. Nội dung hàng hóa/dịch vụ:</b> Bên B cung cấp đúng danh mục, số lượng, chủng loại, chất lượng theo HSYC và hồ sơ chào hàng đã được phê duyệt.</p>
+          <p><b>Điều 2. Loại hợp đồng và giá trị:</b> Hợp đồng ${pkg.contractType === 'unit_price' ? 'theo đơn giá' : 'trọn gói'}. Tổng giá trị: <b>${formatVND(total)}</b> (Bằng chữ: ${numberToWords(total)}).</p>
+          <p><b>Điều 3. Thuế GTGT:</b> Giá trị nêu tại Điều 2 <b>chưa bao gồm</b> thuế GTGT. Bên B xuất hóa đơn GTGT theo quy định; Bên A thanh toán thêm thuế GTGT 10% trên giá trị hợp đồng.</p>
+          <p><b>Điều 4. Thời gian thực hiện:</b> ${pkg.contractDurationDays} ngày kể từ ngày ký hợp đồng.</p>
+          <p><b>Điều 5. Phạt vi phạm:</b> Trường hợp Bên B giao hàng/hoàn thành dịch vụ chậm so với tiến độ hợp đồng, Bên B phải nộp phạt <b>0,05% giá trị phần chậm cho mỗi ngày chậm</b>, tổng mức phạt không vượt quá <b>8%</b> giá trị hợp đồng (căn cứ Điều 23 Nghị định 214/2025/NĐ-CP).</p>
+          ${(pkg.warrantyMonths ?? 0) > 0
+            ? `<p><b>Điều 6. Bảo hành:</b> Bên B cam kết bảo hành <b>${pkg.warrantyMonths} tháng</b> kể từ ngày nghiệm thu. Trong thời gian bảo hành, Bên B chịu trách nhiệm sửa chữa, thay thế miễn phí các lỗi do nhà sản xuất hoặc thi công.</p>`
+            : `<p><b>Điều 6. Bảo hành:</b> Hàng hóa tiêu hao — không áp dụng điều khoản bảo hành theo thời gian. Bên B chịu trách nhiệm về chất lượng tại thời điểm giao nhận.</p>`
+          }
         </div>
         <div class="doc-signatures" style="margin-top: 20px;">
           <div style="text-align: center;">
@@ -1916,10 +1928,23 @@ export const documentTemplates: DocumentConfig[] = [
             docxParagraph("BÊN B: " + pkg.supplier1Name, { bold: true }),
             docxParagraph(`- Đại diện: ${pkg.supplier1Representative} - Chức vụ: ${pkg.supplier1Position}.`, { indent: 200 }),
             docxParagraph(`- Địa chỉ: ${pkg.supplier1Address}.`, { indent: 200 }),
-            docxParagraph("Điều 1. Nội dung công việc:", { bold: true }),
-            docxParagraph(`Bên B cam kết cung cấp lắp đặt toàn bộ thiết bị theo đúng yêu cầu chất lượng của gói thầu.`, { indent: 500 }),
-            docxParagraph("Điều 2. Giá trị hợp đồng:", { bold: true }),
-            docxParagraph(`Tổng giá trị hợp đồng trọn gói: ${formatVND(total)} (Bằng chữ: ${numberToWords(total)}).`, { indent: 500 }),
+            docxParagraph("Điều 1. Nội dung hàng hóa/dịch vụ:", { bold: true }),
+            docxParagraph("Bên B cung cấp đúng danh mục, số lượng, chủng loại, chất lượng theo HSYC và hồ sơ chào hàng đã được phê duyệt.", { indent: 500 }),
+            docxParagraph(`Điều 2. Loại hợp đồng và giá trị:`, { bold: true }),
+            docxParagraph(`Hợp đồng ${pkg.contractType === 'unit_price' ? 'theo đơn giá' : 'trọn gói'}. Tổng giá trị: ${formatVND(total)} (Bằng chữ: ${numberToWords(total)}).`, { indent: 500 }),
+            docxParagraph("Điều 3. Thuế GTGT:", { bold: true }),
+            docxParagraph("Giá trị nêu tại Điều 2 chưa bao gồm thuế GTGT. Bên B xuất hóa đơn GTGT theo quy định; Bên A thanh toán thêm thuế GTGT 10% trên giá trị hợp đồng.", { indent: 500 }),
+            docxParagraph("Điều 4. Thời gian thực hiện:", { bold: true }),
+            docxParagraph(`${pkg.contractDurationDays} ngày kể từ ngày ký hợp đồng.`, { indent: 500 }),
+            docxParagraph("Điều 5. Phạt vi phạm:", { bold: true }),
+            docxParagraph("Giao hàng/dịch vụ chậm tiến độ: phạt 0,05% giá trị phần chậm mỗi ngày, tổng mức phạt không vượt quá 8% giá trị hợp đồng (Điều 23 NĐ 214/2025/NĐ-CP).", { indent: 500 }),
+            docxParagraph("Điều 6. Bảo hành:", { bold: true }),
+            docxParagraph(
+              (pkg.warrantyMonths ?? 0) > 0
+                ? `Bên B cam kết bảo hành ${pkg.warrantyMonths} tháng kể từ ngày nghiệm thu. Trong thời gian bảo hành, Bên B chịu trách nhiệm sửa chữa, thay thế miễn phí các lỗi do nhà sản xuất hoặc thi công.`
+                : "Hàng hóa tiêu hao — không áp dụng điều khoản bảo hành theo thời gian. Bên B chịu trách nhiệm về chất lượng tại thời điểm giao nhận.",
+              { indent: 500 }
+            ),
             new Paragraph({ text: "\n", spacing: { after: 100 } }),
             docxSignatureTable(`ĐẠI DIỆN BÊN B\n(${pkg.supplier1Position})`, pkg.supplier1Representative, "ĐẠI DIỆN BÊN A\n(Hiệu trưởng)", pkg.rectorName)
           ]

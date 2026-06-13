@@ -603,7 +603,7 @@ Theo NĐ 30/2020/NĐ-CP về công tác văn thư, văn bản hành chính phả
 
 ---
 
-### P2-10 — VBHN 74/VBHN-VPQH và các luật sửa đổi chưa tích hợp
+### P2-10 — [DONE] VBHN 74/VBHN-VPQH và các luật sửa đổi chưa tích hợp
 
 **Root cause:**  
 SKILL.md (mục II) xác nhận văn bản hợp nhất chính thức là "VBHN 74/VBHN-VPQH ngày 25/3/2026" nhưng:
@@ -629,7 +629,7 @@ basis: [
 
 ---
 
-### P2-11 — Hợp đồng thiếu 3 điều khoản cơ bản
+### P2-11 — [DONE] Hợp đồng thiếu 3 điều khoản cơ bản
 
 **Root cause:**  
 Doc 18 (Hợp đồng kinh tế) được template hóa ở mức tối thiểu, thiếu các điều khoản bắt buộc theo Điều 62 Luật ĐT 2023:
@@ -656,7 +656,7 @@ Bổ sung 3 điều khoản vào Doc 18, tối thiểu dạng boilerplate có th
 
 ---
 
-### P2-12 — Kiểu hợp đồng "trọn gói" áp dụng sai cho gói dịch vụ biến động
+### P2-12 — [DONE] Kiểu hợp đồng "trọn gói" áp dụng sai cho gói dịch vụ biến động
 
 **Root cause:**  
 Mọi gói thầu đều dùng "Hợp đồng trọn gói". Gói 2 (bảo trì điều hòa) bao gồm nạp gas theo kg và thay linh kiện theo thực tế kiểm tra — khối lượng không xác định được trước khi thực hiện.

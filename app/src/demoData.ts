@@ -56,6 +56,8 @@ export interface ProcurementPackage {
   dateAssetIncrease: string;// Ngày ghi tăng tài sản
   
   contractDurationDays: number;
+  contractType?: 'lump_sum' | 'unit_price'; // Điều 62 Luật ĐT 2023 — mặc định trọn gói
+  warrantyMonths?: number;                   // Tháng bảo hành kể từ ngày nghiệm thu
   items: ProcurementItem[];
 }
 
@@ -104,6 +106,8 @@ export const demoPackages: ProcurementPackage[] = [
     dateLiquidation: '2026-05-29',
     dateAssetIncrease: '2026-06-01',
     contractDurationDays: 15,
+    contractType: 'lump_sum',
+    warrantyMonths: 24,
     items: [
       {
         id: 'item-1-1',
@@ -184,6 +188,8 @@ export const demoPackages: ProcurementPackage[] = [
     dateLiquidation: '2026-06-12',
     dateAssetIncrease: '2026-06-12',
     contractDurationDays: 7,
+    contractType: 'unit_price',
+    warrantyMonths: 12,
     items: [
       {
         id: 'item-2-1',
@@ -275,6 +281,8 @@ export const demoPackages: ProcurementPackage[] = [
     dateLiquidation: '2026-05-15',
     dateAssetIncrease: '2026-05-18',
     contractDurationDays: 30,
+    contractType: 'lump_sum',
+    warrantyMonths: 12,
     items: [
       {
         id: 'item-3-1',
@@ -377,6 +385,8 @@ export const demoPackages: ProcurementPackage[] = [
     dateLiquidation: '2026-06-30',
     dateAssetIncrease: '2026-07-01',
     contractDurationDays: 2,
+    contractType: 'lump_sum',
+    warrantyMonths: 0,
     items: [
       {
         id: 'item-4-1',
