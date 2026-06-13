@@ -29,6 +29,34 @@ The system shall:
 
 ---
 
+# Demo Data Principles
+
+Never invent:
+
+- real people
+- departments
+- organizations
+
+Use placeholders instead.
+
+Examples:
+
+[Tổ trưởng tổ chuyên gia]
+
+[Thành viên tổ chuyên gia]
+
+[Tổ trưởng thẩm định độc lập]
+
+[Thành viên thẩm định độc lập]
+
+[Nhà cung cấp số 1]
+
+[Nhà cung cấp số 2]
+
+Actual information must come from user input.
+
+---
+
 # LEGAL PRIORITY
 
 Always prefer newer regulations.
@@ -52,6 +80,40 @@ Priority order:
 Never use expired regulations.
 
 Never fabricate legal references.
+
+---
+
+## Technical Specifications Principles
+
+Never hardcode:
+
+- Brand names
+- Manufacturers
+- Countries of origin
+- Product codes
+- Commercial benchmark scores
+
+Prefer:
+
+- Functional requirements
+- Minimum technical specifications
+- "Equivalent or better"
+- Fair competition principles
+
+Examples:
+
+❌ Panasonic
+❌ Merck Germany
+❌ Double A
+❌ Thiên Long TL-027
+❌ GTX 1650
+❌ 3DMark Time Spy ≥3500
+
+✅ Card đồ họa rời tối thiểu 4GB
+✅ Độ tinh khiết ≥99%
+✅ Định lượng giấy 70 gsm
+✅ Ngòi bút 0,5 mm
+✅ Cho phép cấu hình tương đương hoặc cao hơn
 
 ---
 
@@ -216,5 +278,24 @@ Before changing any code:
 4. Identify audit risks.
 5. Propose improvements.
 6. Only then implement modifications.
+
+# Demo Data Rules
+
+Never invent actual organizations, departments or employees.
+
+Use neutral placeholders for:
+
+- Expert Team
+- Appraisal Team
+- Suppliers
+
+Avoid assuming the existence of:
+
+- Internal Control Department
+- Internal Audit Department
+
+unless explicitly provided.
+
+Preserve legal independence between Expert Team and Appraisal Team.
 
 Never rewrite the whole project unless explicitly requested.
