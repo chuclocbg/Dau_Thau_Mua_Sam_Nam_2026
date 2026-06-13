@@ -138,6 +138,13 @@ export const getWinnerSupplier = (pkg: ProcurementPackage): { name: string; tota
   return { name: pkg.supplier3Name, total: s3, rank: 3 };
 };
 
+const getQuarter = (dateStr: string): string => {
+  const month = new Date(dateStr).getMonth() + 1;
+  const q = Math.ceil(month / 3);
+  const year = dateStr.slice(0, 4);
+  return `Quý ${ ['I', 'II', 'III', 'IV'][q - 1] }/${year}`;
+};
+
 // ----------------------------------------------------
 // DOCX BUILDER HELPERS
 // ----------------------------------------------------
@@ -942,7 +949,7 @@ export const documentTemplates: DocumentConfig[] = [
                 <td style="text-align: center;">${item.unit}</td>
                 <td style="text-align: center;">${item.quantity}</td>
                 <td>Phục vụ đào tạo thực hành của trường</td>
-                <td>Việt Nam/Châu Á</td>
+                <td>Theo thực tế giao hàng</td>
               </tr>
             `).join('')}
           </tbody>
@@ -973,7 +980,7 @@ export const documentTemplates: DocumentConfig[] = [
             new TableCell({ children: [new Paragraph({ text: item.name })] }),
             new TableCell({ children: [new Paragraph({ text: item.unit, alignment: AlignmentType.CENTER })] }),
             new TableCell({ children: [new Paragraph({ text: item.quantity.toString(), alignment: AlignmentType.CENTER })] }),
-            new TableCell({ children: [new Paragraph({ text: "Chính hãng", alignment: AlignmentType.CENTER })] }),
+            new TableCell({ children: [new Paragraph({ text: "Theo thực tế giao hàng", alignment: AlignmentType.CENTER })] }),
           ]
         }))
       ];
@@ -1215,7 +1222,7 @@ export const documentTemplates: DocumentConfig[] = [
               </tr>
               <tr>
                 <td><b>Thời gian bắt đầu</b></td>
-                <td>Quý II/2026</td>
+                <td>${getQuarter(pkg.dateKhlcnt)}</td>
               </tr>
               <tr>
                 <td><b>Loại hợp đồng</b></td>
@@ -1246,7 +1253,7 @@ export const documentTemplates: DocumentConfig[] = [
         ["Nguồn vốn", pkg.fundingSourceName],
         ["Hình thức LCNT", pm.name],
         ["Phương thức LCNT", "Một giai đoạn một túi hồ sơ"],
-        ["Thời gian bắt đầu thực hiện", "Quý II/2026"],
+        ["Thời gian bắt đầu thực hiện", getQuarter(pkg.dateKhlcnt)],
         ["Loại hợp đồng", "Hợp đồng trọn gói"],
         ["Thời gian thực hiện hợp đồng", `${pkg.contractDurationDays} ngày`]
       ].map(([k, v]) => new TableRow({
@@ -1322,7 +1329,7 @@ export const documentTemplates: DocumentConfig[] = [
           <p><b>Điều 1.</b> Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu: <b>"${pkg.packageName}"</b> với tổng giá trị gói thầu là <b>${formatVND(total)}</b>.</p>
           <p>- Hình thức lựa chọn nhà thầu: ${pm.name}.</p>
           <p>- Phương thức: Một giai đoạn một túi hồ sơ.</p>
-          <p>- Thời gian bắt đầu: Quý II/2026.</p>
+          <p>- Thời gian bắt đầu: ${getQuarter(pkg.dateKhlcnt)}.</p>
           <p>- Loại hợp đồng: Hợp đồng trọn gói.</p>
           <p><b>Điều 2.</b> Quyết định này có hiệu lực kể từ ngày ký. Các đơn vị liên quan chịu trách nhiệm thi hành.</p>
         </div>

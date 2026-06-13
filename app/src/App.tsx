@@ -5,9 +5,10 @@ import {
   CheckCircle, Layers, Calendar, DollarSign, FileCheck, Info
 } from 'lucide-react';
 import { demoPackages, ProcurementPackage, ProcurementItem } from './demoData';
-import { 
-  documentTemplates, getProcurementMethod, formatVND, downloadDocx 
+import {
+  documentTemplates, getProcurementMethod, formatVND, downloadDocx
 } from './docTemplates';
+import { validateDateGaps, validatePackageBeforeExport } from './utils';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -94,8 +95,9 @@ export default function App() {
   const totalAmount = selectedPackage.items.reduce((sum, item) => sum + item.quantity * (item.supplier1Price || item.unitPrice), 0);
   const method = getProcurementMethod({ ...selectedPackage, items: selectedPackage.items });
 
-  // Date order validation helper
+  // Date sequence order errors (red)
   const dateValidationErrors: string[] = [];
+  const dateValidationWarnings: string[] = validateDateGaps(selectedPackage);
   const validateDateOrder = () => {
     const dates = [
       { name: 'Ngày đề xuất', val: selectedPackage.dateProposal },
@@ -116,7 +118,6 @@ export default function App() {
       { name: 'Ngày thanh lý', val: selectedPackage.dateLiquidation },
       { name: 'Ngày ghi tăng tài sản', val: selectedPackage.dateAssetIncrease }
     ];
-
     for (let i = 0; i < dates.length - 1; i++) {
       if (dates[i].val && dates[i+1].val) {
         if (new Date(dates[i].val) > new Date(dates[i+1].val)) {
@@ -138,6 +139,25 @@ export default function App() {
 
   // Download ZIP of all 24 documents
   const handleDownloadAllZip = async () => {
+    const errors = validatePackageBeforeExport(selectedPackage);
+    const exportWarnings: string[] = [];
+    if (!selectedPackage.dateDelivery) exportWarnings.push('Chưa điền ngày bàn giao hàng hóa — Doc 19 sẽ để trống.');
+    if (!selectedPackage.dateAcceptance) exportWarnings.push('Chưa điền ngày nghiệm thu — Doc 20 sẽ để trống.');
+    if (dateValidationErrors.length > 0) exportWarnings.push(`Có ${dateValidationErrors.length} mâu thuẫn trình tự ngày tháng chưa được khắc phục.`);
+    if (dateValidationWarnings.length > 0) exportWarnings.push(`Có ${dateValidationWarnings.length} cảnh báo khoảng cách thời gian tối thiểu.`);
+    const warnings = exportWarnings;
+    if (errors.length > 0) {
+      alert('Không thể xuất hồ sơ — vui lòng khắc phục các lỗi sau:\n\n' + errors.map(e => '• ' + e).join('\n'));
+      return;
+    }
+    if (warnings.length > 0) {
+      const proceed = window.confirm(
+        'Cảnh báo trước khi xuất hồ sơ:\n\n' +
+        warnings.map(w => '• ' + w).join('\n') +
+        '\n\nVẫn tiếp tục xuất file?'
+      );
+      if (!proceed) return;
+    }
     setIsExportingZip(true);
     try {
       const zip = new JSZip();
@@ -393,8 +413,24 @@ export default function App() {
                     <input type="date" className="form-input" value={selectedPackage.dateContractSign} onChange={(e) => handleDateChange('dateContractSign', e.target.value)} />
                   </div>
                   <div className="form-group">
+                    <label>Ngày bàn giao hàng hóa:</label>
+                    <input type="date" className="form-input" value={selectedPackage.dateDelivery} onChange={(e) => handleDateChange('dateDelivery', e.target.value)} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
                     <label>Ngày nghiệm thu bàn giao:</label>
                     <input type="date" className="form-input" value={selectedPackage.dateAcceptance} onChange={(e) => handleDateChange('dateAcceptance', e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label>Ngày thanh lý hợp đồng:</label>
+                    <input type="date" className="form-input" value={selectedPackage.dateLiquidation} onChange={(e) => handleDateChange('dateLiquidation', e.target.value)} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Ngày ghi tăng tài sản (kế toán):</label>
+                    <input type="date" className="form-input" value={selectedPackage.dateAssetIncrease} onChange={(e) => handleDateChange('dateAssetIncrease', e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -481,7 +517,12 @@ export default function App() {
                   {selectedPackage.fundingSource === 'state_budget' ? (
                     <li>Tổng giá trị dưới 45 tỷ đồng: Thuộc thẩm quyền phê duyệt của <b>Hiệu trưởng</b> theo Thông tư 13/2026/TT-BCT phân cấp Bộ Công Thương.</li>
                   ) : (
-                    <li>Nguồn thu hợp pháp/Quỹ của đơn vị tự chủ nhóm 2: <b>Hiệu trưởng tự quyết định và phê duyệt</b> không giới hạn hạn mức.</li>
+                    <>
+                      {method.code === 'DIRECT_50' && <li>≤50 triệu đồng: <b>Hiệu trưởng</b> tự quyết định, không cần lập KHLCNT.</li>}
+                      {method.code === 'DIRECT_SELECTION_SIMPLIFIED' && <li>50 triệu – 500 triệu đồng: <b>Hiệu trưởng</b> phê duyệt; cần lập KHLCNT nội bộ.</li>}
+                      {method.code === 'COMPETITIVE_SHOPPING' && <li>500 triệu – 5 tỷ đồng: <b>Hiệu trưởng</b> phê duyệt; KHLCNT trình Bộ Công Thương theo TT 13/2026/TT-BCT.</li>}
+                      {method.code === 'OPEN_BIDDING' && <li>Trên 5 tỷ đồng: KHLCNT <b>phải trình Bộ Công Thương phê duyệt</b> trước khi tổ chức đấu thầu.</li>}
+                    </>
                   )}
                 </ul>
               </div>
@@ -489,21 +530,34 @@ export default function App() {
               <div className="analysis-card">
                 <h4><Calendar size={14} /> Trình tự thời gian</h4>
                 <ul className="analysis-list">
-                  {dateValidationErrors.length === 0 ? (
+                  {dateValidationErrors.length === 0 && dateValidationWarnings.length === 0 ? (
                     <li style={{ color: 'var(--color-success)' }}>Tất cả các mốc ngày tháng đã sắp xếp đúng trình tự pháp lý lựa chọn nhà thầu.</li>
                   ) : (
-                    <li style={{ color: 'var(--color-danger)' }}>Có {dateValidationErrors.length} điểm mâu thuẫn thời gian cần kiểm tra lại!</li>
+                    <>
+                      {dateValidationErrors.length > 0 && <li style={{ color: 'var(--color-danger)' }}>Có {dateValidationErrors.length} điểm mâu thuẫn trình tự cần kiểm tra lại!</li>}
+                      {dateValidationWarnings.length > 0 && <li style={{ color: 'var(--color-warning, #f59e0b)' }}>Có {dateValidationWarnings.length} cảnh báo khoảng cách thời gian tối thiểu.</li>}
+                    </>
                   )}
                 </ul>
               </div>
             </div>
 
-            {/* Date validation visual card */}
+            {/* Date order errors (red) */}
             {dateValidationErrors.length > 0 && (
               <div className="risk-warning-card">
                 <h5><AlertTriangle size={14} /> Mâu thuẫn trình tự ngày tháng</h5>
                 <div style={{ maxHeight: '100px', overflowY: 'auto', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                   {dateValidationErrors.map((err, i) => <div key={i}>{err}</div>)}
+                </div>
+              </div>
+            )}
+
+            {/* Date gap warnings (orange) */}
+            {dateValidationWarnings.length > 0 && (
+              <div className="risk-warning-card" style={{ borderColor: 'var(--color-warning, #f59e0b)', background: 'rgba(245,158,11,0.08)' }}>
+                <h5 style={{ color: 'var(--color-warning, #f59e0b)' }}><AlertTriangle size={14} /> Cảnh báo khoảng cách thời gian tối thiểu</h5>
+                <div style={{ maxHeight: '100px', overflowY: 'auto', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem', color: 'var(--color-warning, #f59e0b)' }}>
+                  {dateValidationWarnings.map((w, i) => <div key={i}>{w}</div>)}
                 </div>
               </div>
             )}
