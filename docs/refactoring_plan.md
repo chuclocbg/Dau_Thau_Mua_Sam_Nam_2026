@@ -1062,7 +1062,7 @@ Người dùng nhập yêu cầu bằng ngôn ngữ tự nhiên (tiếng Việt 
 
 ---
 
-### P5-02 — AI Specification Generator (Trợ lý viết yêu cầu kỹ thuật)
+### P5-02 — [DONE] AI Specification Generator (Trợ lý viết yêu cầu kỹ thuật)
 
 **Mô tả:**  
 Sinh yêu cầu kỹ thuật chuẩn đấu thầu từ tên/danh mục thiết bị:
