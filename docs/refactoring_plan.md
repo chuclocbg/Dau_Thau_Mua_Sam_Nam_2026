@@ -765,7 +765,7 @@ const handleInfoChange = <K extends keyof ProcurementPackage>(
 
 ---
 
-### P3-03 — Deep copy bằng `JSON.parse(JSON.stringify(pkg))` không an toàn
+### P3-03 — [DONE] Deep copy bằng `JSON.parse(JSON.stringify(pkg))` không an toàn
 
 **Root cause:** `App.tsx:26` dùng JSON roundtrip để clone object. Kỹ thuật này không clone được: `undefined`, `Date`, `Function`, `RegExp`, circular reference.
 

@@ -25,7 +25,7 @@ export default function App() {
   const handleSelectDemo = (pkgId: string) => {
     const pkg = demoPackages.find(p => p.id === pkgId);
     if (pkg) {
-      setSelectedPackage(JSON.parse(JSON.stringify(pkg))); // Deep copy
+      setSelectedPackage(structuredClone(pkg));
       setActiveDocIndex(0);
     }
   };
