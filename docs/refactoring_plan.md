@@ -796,7 +796,7 @@ Thêm trường `packageType: 'goods_fixed_asset' | 'goods_consumable' | 'servic
 
 ---
 
-### P3-05 — Gói dịch vụ và gói hàng hóa xử lý pháp lý như nhau
+### P3-05 — [DONE] Gói dịch vụ và gói hàng hóa xử lý pháp lý như nhau
 
 **Root cause:** Gói 2 (bảo trì dịch vụ) đi qua cùng workflow với Gói 1, 3, 4 (mua hàng hóa). Luật ĐT 2023 có ngưỡng và quy trình khác nhau cho "gói thầu dịch vụ phi tư vấn" so với "gói thầu mua sắm hàng hóa".
 

@@ -78,18 +78,28 @@ export const formatDateVietnamese = (dateStr: string) => {
 export function getProcurementMethod(pkg: ProcurementPackage): {
   code: 'DIRECT_50' | 'DIRECT_SELECTION_SIMPLIFIED' | 'COMPETITIVE_SHOPPING' | 'OPEN_BIDDING';
   name: string;
+  packageTypeLabel: string;  // "hàng hóa" | "dịch vụ phi tư vấn" | "hàng hóa và dịch vụ"
   basis: string[];
 } {
   const total = pkg.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  
+  const isService = pkg.packageType === 'service';
+  const isMixed   = pkg.packageType === 'mixed';
+  const packageTypeLabel = isService ? 'dịch vụ phi tư vấn'
+    : isMixed ? 'hàng hóa và dịch vụ phi tư vấn'
+    : 'hàng hóa';
+
   const vbhn74 = 'Văn bản hợp nhất số 74/VBHN-VPQH ngày 25/3/2026 (hợp nhất Luật Đấu thầu số 22/2023/QH15 sửa đổi bởi các Luật số 57/2024/QH15, 90/2025/QH15, 116/2025/QH15, 133/2025/QH15, 142/2025/QH15)';
+  // Khoản 12 Điều 4 Luật ĐT 2023 defines "gói thầu dịch vụ phi tư vấn"
+  const serviceDefBasis = 'Khoản 12 Điều 4 Luật Đấu thầu số 22/2023/QH15 (định nghĩa gói thầu dịch vụ phi tư vấn)';
 
   if (total <= 50000000) {
     return {
       code: 'DIRECT_50',
       name: 'Quyết định mua sắm trực tiếp (Không qua quy trình thầu)',
+      packageTypeLabel,
       basis: [
         vbhn74,
+        ...(isService || isMixed ? [serviceDefBasis] : []),
         'Điểm m Khoản 1 Điều 23 Luật Đấu thầu số 22/2023/QH15',
         'Khoản 4 Điều 80 Nghị định số 214/2025/NĐ-CP của Chính phủ',
         'Thông tư số 13/2026/TT-BCT của Bộ Công Thương về phân cấp quản lý ngân sách, tài sản công'
@@ -99,8 +109,10 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
     return {
       code: 'DIRECT_SELECTION_SIMPLIFIED',
       name: 'Chỉ định thầu rút gọn',
+      packageTypeLabel,
       basis: [
         vbhn74,
+        ...(isService || isMixed ? [serviceDefBasis] : []),
         'Điểm m Khoản 1 Điều 23 Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15)',
         'Khoản 2 và Khoản 3 Điều 80 Nghị định số 214/2025/NĐ-CP của Chính phủ',
         'Thông tư số 13/2026/TT-BCT của Bộ Công Thương về phân cấp quản lý ngân sách, tài sản công'
@@ -109,9 +121,11 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
   } else if (total <= 5000000000) {
     return {
       code: 'COMPETITIVE_SHOPPING',
-      name: 'Chào hàng cạnh tranh',
+      name: isService ? 'Chào hàng cạnh tranh (dịch vụ phi tư vấn)' : 'Chào hàng cạnh tranh',
+      packageTypeLabel,
       basis: [
         vbhn74,
+        ...(isService || isMixed ? [serviceDefBasis] : []),
         'Điều 24 Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15)',
         'Điều 81 Nghị định số 214/2025/NĐ-CP của Chính phủ',
         'Thông tư số 79/2025/TT-BTC hướng dẫn đăng tải thông tin và mẫu hồ sơ đấu thầu qua mạng'
@@ -120,9 +134,11 @@ export function getProcurementMethod(pkg: ProcurementPackage): {
   } else {
     return {
       code: 'OPEN_BIDDING',
-      name: 'Đấu thầu rộng rãi qua mạng (E-LCNT)',
+      name: isService ? 'Đấu thầu rộng rãi qua mạng — dịch vụ phi tư vấn (E-LCNT)' : 'Đấu thầu rộng rãi qua mạng (E-LCNT)',
+      packageTypeLabel,
       basis: [
         vbhn74,
+        ...(isService || isMixed ? [serviceDefBasis] : []),
         'Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15)',
         'Nghị định số 214/2025/NĐ-CP của Chính phủ hướng dẫn thi hành Luật Đấu thầu',
         'Thông tư số 79/2025/TT-BTC và Thông tư số 80/2025/TT-BTC của Bộ Tài chính'
@@ -1191,7 +1207,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-title" style="margin-top: 15px;">
           TỜ TRÌNH<br>
-          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu mua sắm</span>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}</span>
         </div>
         <div class="doc-content">
           <p>Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp</p>
@@ -1280,7 +1296,7 @@ export const documentTemplates: DocumentConfig[] = [
               spacing: { before: 200, after: 200 },
               children: [
                 new TextRun({ text: "TỜ TRÌNH\n", bold: true, size: 28, font: "Times New Roman" }),
-                new TextRun({ text: "V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu mua sắm", bold: true, size: 24, font: "Times New Roman" })
+                new TextRun({ text: `V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}`, bold: true, size: 24, font: "Times New Roman" })
               ]
             }),
             docxParagraph("Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp", { bold: true, align: AlignmentType.CENTER }),
@@ -1324,7 +1340,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-title" style="margin-top: 15px;">
           QUYẾT ĐỊNH<br>
-          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu mua sắm</span>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}</span>
         </div>
         <div class="doc-content">
           <p><b>HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP</b></p>
@@ -1366,7 +1382,7 @@ export const documentTemplates: DocumentConfig[] = [
               spacing: { before: 200, after: 200 },
               children: [
                 new TextRun({ text: "QUYẾT ĐỊNH\n", bold: true, size: 28, font: "Times New Roman" }),
-                new TextRun({ text: "V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu mua sắm", bold: true, size: 24, font: "Times New Roman" })
+                new TextRun({ text: `V/v Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}`, bold: true, size: 24, font: "Times New Roman" })
               ]
             }),
             docxParagraph("HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP", { bold: true, align: AlignmentType.CENTER }),
@@ -1701,6 +1717,7 @@ export const documentTemplates: DocumentConfig[] = [
     getAuditRisk: (pkg) => "Không lập tờ trình kết quả hoặc tờ trình không ghi cụ thể thông tin giá trúng thầu dự kiến và hình thức hợp đồng.",
     getHtml: (pkg, methodCode) => {
       const winner = getWinnerSupplier(pkg);
+      const pm = getProcurementMethod(pkg);
       return `
         <div class="doc-header">
           <div class="doc-header-left">
@@ -1714,7 +1731,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-title" style="margin-top: 15px;">
           TỜ TRÌNH<br>
-          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu mua sắm</span>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}</span>
         </div>
         <div class="doc-content">
           <p>Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp</p>
@@ -1736,6 +1753,7 @@ export const documentTemplates: DocumentConfig[] = [
     },
     getDocx: (pkg, methodCode) => {
       const winner = getWinnerSupplier(pkg);
+      const pm = getProcurementMethod(pkg);
       return new Document({
         sections: [{
           properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
@@ -1747,7 +1765,7 @@ export const documentTemplates: DocumentConfig[] = [
               spacing: { before: 200, after: 200 },
               children: [
                 new TextRun({ text: "TỜ TRÌNH\n", bold: true, size: 28, font: "Times New Roman" }),
-                new TextRun({ text: "V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu mua sắm", bold: true, size: 24, font: "Times New Roman" })
+                new TextRun({ text: `V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}`, bold: true, size: 24, font: "Times New Roman" })
               ]
             }),
             docxParagraph("Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp", { bold: true, align: AlignmentType.CENTER }),
@@ -1772,6 +1790,7 @@ export const documentTemplates: DocumentConfig[] = [
     getAuditRisk: (pkg) => "Phê duyệt kết quả trúng thầu không trùng khớp với báo giá đề nghị của nhà thầu hoặc sai lệch thông tin nhà thầu.",
     getHtml: (pkg, methodCode) => {
       const winner = getWinnerSupplier(pkg);
+      const pm = getProcurementMethod(pkg);
       return `
         <div class="doc-header">
           <div class="doc-header-left">
@@ -1787,7 +1806,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-title" style="margin-top: 15px;">
           QUYẾT ĐỊNH<br>
-          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu mua sắm</span>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}</span>
         </div>
         <div class="doc-content">
           <p><b>HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP</b></p>
@@ -1816,6 +1835,7 @@ export const documentTemplates: DocumentConfig[] = [
     },
     getDocx: (pkg, methodCode) => {
       const winner = getWinnerSupplier(pkg);
+      const pm = getProcurementMethod(pkg);
       return new Document({
         sections: [{
           properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
@@ -1827,7 +1847,7 @@ export const documentTemplates: DocumentConfig[] = [
               spacing: { before: 200, after: 200 },
               children: [
                 new TextRun({ text: "QUYẾT ĐỊNH\n", bold: true, size: 28, font: "Times New Roman" }),
-                new TextRun({ text: "V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu mua sắm", bold: true, size: 24, font: "Times New Roman" })
+                new TextRun({ text: `V/v Phê duyệt kết quả lựa chọn nhà thầu gói thầu ${pm.packageTypeLabel}`, bold: true, size: 24, font: "Times New Roman" })
               ]
             }),
             docxParagraph("HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP", { bold: true, align: AlignmentType.CENTER }),
