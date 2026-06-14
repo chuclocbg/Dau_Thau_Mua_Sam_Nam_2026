@@ -809,7 +809,7 @@ Thêm trường `packageType: 'goods_fixed_asset' | 'goods_consumable' | 'servic
 
 ---
 
-### P3-06 — `Prompts/`, `examples/`, `tests/`, `docs/roadmap.md` đều là Vite boilerplate
+### P3-06 — [DONE] `Prompts/`, `examples/`, `tests/`, `docs/roadmap.md` đều là Vite boilerplate
 
 **Root cause:** Các thư mục này được tạo khung nhưng chưa có nội dung thực. Tất cả đều chứa nội dung mặc định từ template Vite.
 

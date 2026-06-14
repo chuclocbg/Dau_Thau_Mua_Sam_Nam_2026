@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# Ví dụ: Mua Sắm Bàn Ghế Văn Phòng
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Loại gói thầu
 
-Currently, two official plugins are available:
+- **packageType:** `goods_fixed_asset` (bàn ghế có đơn giá/bộ ≥ 10 triệu VND) hoặc
+  `goods_consumable` (nếu đơn giá < 10 triệu VND/bộ — hạch toán vào chi phí, không ghi tăng tài sản)
+- **contractType:** `lump_sum`
+- **warrantyMonths:** 12 (tiêu chuẩn cho đồ gỗ/nội thất văn phòng)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> **Phân loại quan trọng:** TT 45/2018/TT-BTC quy định tài sản cố định ≥ 10 triệu VND/đơn vị và thời gian sử dụng ≥ 1 năm. Bàn ghế rẻ tiền (<10M/bộ) KHÔNG ghi tăng tài sản cố định mà hạch toán vào chi phí ngay.
 
-## React Compiler
+## Thông tin đầu vào mẫu
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+Tên gói thầu: Mua sắm bàn ghế làm việc trang bị [tên phòng/ban]
+Nguồn vốn: [Quỹ phát triển HDSN / NSNN]
+Đơn vị đề xuất: [Phòng Quản trị đời sống]
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Yêu cầu kỹ thuật mẫu
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Mặt hàng | Thông số tối thiểu | Đơn vị | Số lượng |
+|---|---|---|---|
+| Bàn làm việc nhân viên | Kích thước tối thiểu 120x60x75 cm, mặt bàn MFC hoặc gỗ công nghiệp chịu ẩm, khung thép sơn tĩnh điện, tải trọng ≥80 kg | Bộ | [điền] |
+| Ghế làm việc có bánh xe | Lưng tựa điều chỉnh độ cao, nệm bọc vải hoặc da PU, chân nylon 5 chấu, tải trọng ≥120 kg | Cái | [điền] |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+> Hàng mới 100%, bảo hành tối thiểu 12 tháng. Cho phép chào hàng sản phẩm tương đương hoặc cao hơn về chất lượng.
+
+## Checklist kiểm toán
+
+- [ ] Không ghi "gỗ tự nhiên loại A" hay tên thương hiệu cụ thể trong tiêu chí
+- [ ] Xác định đúng: đơn giá/bộ ≥ 10M VND → goods_fixed_asset; < 10M VND → goods_consumable
+- [ ] Doc 22 (Ghi tăng tài sản) chỉ áp dụng nếu packageType = goods_fixed_asset
+- [ ] Nếu goods_consumable: không lập Doc 22, hạch toán vào chi phí
+- [ ] Bảo hành ghi rõ trong hợp đồng (Doc 18), không dùng từ "theo thông lệ"
+
+## Rủi ro kiểm toán thường gặp
+
+[HIGH] Mua bàn ghế đơn giá 9,8 triệu/bộ (cố tình ở dưới 10M) nhưng chất lượng và mục đích tương đương tài sản cố định → kiểm toán có thể xem là "cố tình né ngưỡng tài sản cố định" và yêu cầu ghi tăng tài sản.
+
+[MEDIUM] Ghi tăng tài sản cho bàn ghế giá 3 triệu/chiếc → sai nguyên tắc kế toán TT 45/2018, có thể bị yêu cầu điều chỉnh sổ sách.

@@ -1,73 +1,43 @@
-# React + TypeScript + Vite
+# Ví dụ: Mua Sắm Máy Tính Để Bàn Phòng Thực Hành
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Loại gói thầu
 
-Currently, two official plugins are available:
+- **packageType:** `goods_fixed_asset` (tài sản cố định — đơn giá/máy ≥ 10 triệu VND)
+- **contractType:** `lump_sum` (giá cố định, số lượng xác định rõ)
+- **warrantyMonths:** 24 (bắt buộc tối thiểu 24 tháng đối với thiết bị tin học)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Thông tin đầu vào mẫu
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+Tên gói thầu: Mua sắm máy tính để bàn phục vụ phòng thực hành [tên khoa/phòng]
+Nguồn vốn: Quỹ phát triển hoạt động sự nghiệp
+Đơn vị đề xuất: [Phòng Quản trị đời sống]
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Yêu cầu kỹ thuật mẫu (không khóa thương hiệu)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Mặt hàng | Thông số tối thiểu | Đơn vị | Số lượng dự kiến |
+|---|---|---|---|
+| Máy tính để bàn đồng bộ | CPU đa nhân thế hệ mới, RAM tối thiểu 16GB DDR4, SSD tối thiểu 512GB, màn hình 23-24 inch Full HD | Bộ | [điền] |
+| Switch Gigabit managed | 24 cổng, băng thông ≥48Gbps, hỗ trợ VLAN và QoS, hàng mới 100% | Cái | [điền] |
+| Bộ lưu điện UPS | Công suất ≥1000VA/600W, thời gian lưu điện ≥15 phút ở tải 50%, hàng mới 100% | Cái | [điền] |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+> Tất cả hàng hóa mới 100%. Cho phép chào hàng cấu hình tương đương hoặc cao hơn.
+
+## Checklist kiểm toán cho gói goods_fixed_asset
+
+- [ ] Tiêu chí kỹ thuật không ghi tên thương hiệu/nhà sản xuất/xuất xứ
+- [ ] Đơn giá từ ít nhất 3 báo giá thị trường thực tế (Biên bản khảo sát giá — Doc 5)
+- [ ] Tổng giá trị xác định đúng phương thức LCNT
+- [ ] Doc 22 (Phiếu ghi tăng tài sản) được lập sau nghiệm thu
+- [ ] Tài sản ghi tăng vào phần mềm MISA trong vòng 30 ngày sau nghiệm thu
+- [ ] Bảo hành tối thiểu 24 tháng ghi rõ trong hợp đồng (Doc 18)
+- [ ] Trình tự ngày tháng: Đề xuất → Khảo sát → So sánh → KHLCNT → HSYC → Đóng thầu → Đánh giá → Thẩm định → QĐ phê duyệt → Ký HĐ
+
+## Rủi ro kiểm toán thường gặp
+
+[HIGH] Ghi tiêu chí "CPU Intel Core i7 thế hệ 13" → khóa thương hiệu, vi phạm Điều 44 khoản 7 Luật ĐT.
+
+[HIGH] Không ghi tăng tài sản sau nghiệm thu → vi phạm Luật Quản lý, Sử dụng Tài sản Công và NĐ 186/2025.
+
+[MEDIUM] Bảo hành ghi "12 tháng" cho thiết bị máy tính → thấp hơn thông lệ thị trường, kiểm toán có thể đặt câu hỏi về tiêu chuẩn chất lượng.
