@@ -1,5 +1,5 @@
 /**
- * P6-04B: RiskAgent — pure risk-analysis functions.
+ * P6-04C: RiskAgent — complete implementation.
  *
  * State machine:
  *   idle → assessing-risk → detecting-systemic → computing-matrix
@@ -175,6 +175,15 @@ function mapFindingCategory(category: string): RiskMatrixEntry['category'] {
     case 'asset-recording':  return 'financial';
     default:                 return 'legal';
   }
+}
+
+/** Derives the five-level overall verdict from the scored risk matrix. */
+function determineOverallRisk(riskMatrix: RiskMatrixEntry[]): OverallRisk {
+  if (riskMatrix.some(e => e.severity === 'CRITICAL')) return 'CRITICAL';
+  if (riskMatrix.some(e => e.severity === 'HIGH'))     return 'HIGH';
+  if (riskMatrix.some(e => e.severity === 'MEDIUM'))   return 'MEDIUM';
+  if (riskMatrix.some(e => e.severity === 'LOW'))      return 'LOW';
+  return 'CLEAN';
 }
 
 // ─── P6-04B: Pure functions ───────────────────────────────────────────────────
@@ -433,24 +442,165 @@ export class RiskAgent implements IAgent {
     ];
   }
 
-  // ── P6-04C: emit(), transition(), buildErrorResponse(), buildResponse(),
-  //            process() — added in P6-04C.
+  // ── emit + transition ──────────────────────────────────────────────────────
 
-  async process(_msg: AgentMessage): Promise<AgentMessage> {
-    const traceId = _msg.traceId || generateTraceId();
+  private emit(partial: Omit<AgentMessage, 'traceId' | 'from' | 'timestamp'>): void {
+    const msg: AgentMessage = {
+      traceId:   this.currentTraceId!,
+      from:      'risk',
+      timestamp: Date.now(),
+      ...partial,
+    };
+    this.registry.log(msg);
+    if (msg.to === 'broadcast') {
+      this.registry.notifySubscribers(msg.type, msg);
+    }
+  }
+
+  private transition(next: RiskState, detail?: string): void {
+    const event: RiskStateEvent = {
+      previousState: this.state,
+      nextState:     next,
+      timestamp:     Date.now(),
+      detail,
+    };
+    this.emit({ to: 'risk', type: 'event', payload: event });
+    this.state = next;
+  }
+
+  // ── buildErrorResponse + buildResponse ─────────────────────────────────────
+
+  private buildErrorResponse(
+    code:    string,
+    message: string,
+    inState: RiskState,
+    to:      AgentId | 'user' = 'user',
+  ): AgentMessage {
+    const traceId = this.currentTraceId ?? generateTraceId(); // save BEFORE reset
     this.state          = 'idle';
     this.currentTraceId = null;
     return {
       traceId,
       from:      'risk',
-      to:        _msg.from as AgentId | 'user',
+      to,
       type:      'error',
-      payload:   {
-        code:    'NOT_IMPLEMENTED',
-        message: 'P6-04C: process() not yet implemented',
-        state:   'idle' satisfies RiskState,
-      },
+      payload:   { code, message, state: inState },
       timestamp: Date.now(),
     };
+  }
+
+  private buildResponse(to: AgentId | 'user', output: RiskOutput): AgentMessage {
+    return {
+      traceId:    this.currentTraceId!,
+      from:       'risk',
+      to,
+      type:       'response',
+      payload:    output,
+      timestamp:  Date.now(),
+      legalBasis: output.legalBasis,
+    };
+  }
+
+  // ── collectLegalBasis ──────────────────────────────────────────────────────
+
+  /**
+   * Merges legal citations from four sources (Set dedup):
+   *   1. RISK_LEGAL_BASIS constant
+   *   2. dossierReview.legalBasis — P6-03 citations
+   *   3. plannerOutput.legalBasis — P6-01 citations
+   *   4. Individual finding.legalBasis from riskMatrix entries
+   */
+  private collectLegalBasis(
+    riskMatrix:    RiskMatrixEntry[],
+    dossierReview: DossierReviewOutput,
+    plannerOutput?: PlannerOutput,
+  ): string[] {
+    const citations = new Set<string>(RISK_LEGAL_BASIS);
+    for (const basis of dossierReview.legalBasis) {
+      citations.add(basis);
+    }
+    for (const basis of plannerOutput?.legalBasis ?? []) {
+      citations.add(basis);
+    }
+    for (const entry of riskMatrix) {
+      citations.add(entry.finding.legalBasis);
+    }
+    return [...citations];
+  }
+
+  // ── process ────────────────────────────────────────────────────────────────
+
+  async process(msg: AgentMessage): Promise<AgentMessage> {
+    const traceId    = msg.traceId;
+    const callerFrom = msg.from;
+    this.currentTraceId = traceId;
+    this.registry.log(msg);
+
+    const input = msg.payload as RiskInput;
+
+    if (!input?.pkg || !input?.dossierReview) {
+      return this.buildErrorResponse(
+        'RISK_EMPTY_INPUT',
+        'RiskInput.pkg và RiskInput.dossierReview không được rỗng',
+        'idle',
+        callerFrom,
+      );
+    }
+
+    try {
+      // ── ASSESSING_RISK — build risk matrix from findings + cross-checks + split warnings
+      this.transition('assessing-risk', `Đánh giá rủi ro gói thầu: ${input.pkg.packageName}`);
+      const riskMatrix = buildRiskMatrix(input.dossierReview, input.plannerOutput);
+
+      // ── DETECTING_SYSTEMIC — scan current + historical packages for patterns
+      this.transition('detecting-systemic');
+      const allPackages   = [input.pkg, ...(input.historicalPackages ?? [])];
+      const systemicRisks = detectSystemicRisks(allPackages);
+
+      const criticalSystemic = systemicRisks.filter(r => r.severity === 'CRITICAL');
+      if (criticalSystemic.length > 0) {
+        this.emit({
+          to:      'broadcast',
+          type:    'event',
+          payload: {
+            packageName:   input.pkg.packageName,
+            systemicRisks: criticalSystemic,
+          },
+        });
+      }
+
+      // ── COMPUTING_MATRIX — determine overall risk, exposure, and mitigation plan
+      this.transition('computing-matrix');
+      const overallRisk    = determineOverallRisk(riskMatrix);
+      const auditExposure  = calculateAuditExposure(riskMatrix, overallRisk);
+      const mitigationPlan = buildMitigationPlan(riskMatrix, systemicRisks);
+
+      // ── COMPOSING_RESPONSE
+      this.transition('composing-response');
+      const legalBasis = this.collectLegalBasis(riskMatrix, input.dossierReview, input.plannerOutput);
+
+      const output: RiskOutput = {
+        overallRisk,
+        riskMatrix,
+        systemicRisks,
+        auditExposure,
+        mitigationPlan,
+        legalBasis,
+      };
+
+      const response = this.buildResponse(callerFrom, output);
+      this.registry.log(response);
+      this.state          = 'idle';
+      this.currentTraceId = null;
+      return response;
+
+    } catch (err) {
+      return this.buildErrorResponse(
+        'RISK_INTERNAL_ERROR',
+        String(err),
+        this.state,
+        callerFrom,
+      );
+    }
   }
 }
