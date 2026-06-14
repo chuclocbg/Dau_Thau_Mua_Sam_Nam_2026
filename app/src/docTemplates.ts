@@ -2503,6 +2503,308 @@ export const documentTemplates: DocumentConfig[] = [
         }]
       });
     }
+  },
+
+  // Document 26: Phiếu yêu cầu báo giá (RFQ)
+  {
+    id: 26,
+    name: "Phiếu yêu cầu báo giá (RFQ)",
+    getCategory: (m) => m === 'DIRECT_50' ? 'not_applicable' : 'required',
+    getCategoryLabel: (m) => m === 'DIRECT_50' ? 'Không áp dụng' : 'Bắt buộc',
+    getSigner: (pkg) => `${pkg.expertTeamLeader}`,
+    getSignDate: (pkg) => pkg.dateDocIssue,
+    getAuditRisk: (pkg) => "Không có bằng chứng đã gửi Phiếu yêu cầu báo giá cho nhà cung cấp — thiếu căn cứ chứng minh quy trình cạnh tranh đã được khởi động hợp lệ (NĐ 214/2025 Điều 80).",
+    getHtml: (pkg, methodCode) => {
+      const total = pkg.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+      return `
+        <div class="doc-header">
+          <div class="doc-header-left">
+            BỘ CÔNG THƯƠNG<br>
+            <b>TRƯỜNG CĐ KỸ THUẬT CÔNG NGHIỆP</b><br>
+            Số: .../YCBG-${pkg.departmentCode}
+          </div>
+          <div class="doc-header-right">
+            <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
+            <b>Độc lập - Tự do - Hạnh phúc</b><br>
+            <i>Bắc Giang, ngày ${formatDateVietnamese(pkg.dateDocIssue)}</i>
+          </div>
+        </div>
+        <div class="doc-title" style="margin-top: 15px;">
+          PHIẾU YÊU CẦU BÁO GIÁ<br>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Gói thầu: ${pkg.packageName})</span>
+        </div>
+        <div class="doc-content">
+          <p>Kính gửi: <b>[Tên nhà cung cấp nhận phiếu]</b></p>
+          <p>Trường Cao đẳng Kỹ thuật Công nghiệp đề nghị Quý đơn vị cung cấp báo giá cho danh mục hàng hóa/dịch vụ sau:</p>
+          <p><b>1. Thông tin gói thầu:</b></p>
+          <p>- Tên gói: ${pkg.packageName}</p>
+          <p>- Mã gói: ${pkg.packageCode}</p>
+          <p>- Dự toán tối đa: ${formatVND(total)}</p>
+          <p><b>2. Danh mục yêu cầu:</b></p>
+          <table class="doc-table">
+            <thead><tr><th>STT</th><th>Tên hàng hóa/dịch vụ</th><th>ĐVT</th><th>Số lượng</th><th>Tiêu chuẩn kỹ thuật</th><th>Đơn giá chào</th></tr></thead>
+            <tbody>
+              ${pkg.items.map((item, idx) => `
+              <tr>
+                <td style="text-align:center;">${idx + 1}</td>
+                <td>${item.name}</td>
+                <td style="text-align:center;">${item.unit}</td>
+                <td style="text-align:center;">${item.quantity}</td>
+                <td>${item.specs}</td>
+                <td></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <p><b>3. Yêu cầu báo giá:</b></p>
+          <p>- Báo giá gửi về trước <b>${formatDateVietnamese(pkg.dateBidClose)}</b> (ngày đóng thầu).</p>
+          <p>- Báo giá phải ghi rõ: đơn giá, số lượng, tổng giá, thời gian hiệu lực, thời gian giao hàng.</p>
+          <p>- Giá báo chưa bao gồm thuế GTGT. Đề nghị xuất hóa đơn GTGT khi thanh toán.</p>
+          <p>- Căn cứ pháp lý: Điều 80 Nghị định số 214/2025/NĐ-CP.</p>
+        </div>
+        <div class="doc-signatures" style="margin-top: 20px;">
+          <div style="text-align: center;"><b>NƠI NHẬN BÁO GIÁ</b></div>
+          <div style="text-align: center;">
+            <b>TỔ TRƯỞNG TỔ CHUYÊN GIA</b><br><br><br>
+            <b>${pkg.expertTeamLeader.split(' (')[0]}</b>
+          </div>
+        </div>
+      `;
+    },
+    getDocx: (pkg, methodCode) => {
+      const total = pkg.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+      const headerRow = new TableRow({
+        tableHeader: true,
+        children: [
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "STT", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Tên hàng hóa/dịch vụ", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "ĐVT", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Số lượng", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Tiêu chuẩn kỹ thuật", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Đơn giá chào", bold: true })] })] }),
+        ]
+      });
+      const itemRows = pkg.items.map((item, idx) => new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: (idx + 1).toString(), alignment: AlignmentType.CENTER })] }),
+          new TableCell({ children: [new Paragraph({ text: item.name })] }),
+          new TableCell({ children: [new Paragraph({ text: item.unit, alignment: AlignmentType.CENTER })] }),
+          new TableCell({ children: [new Paragraph({ text: item.quantity.toString(), alignment: AlignmentType.CENTER })] }),
+          new TableCell({ children: [new Paragraph({ text: item.specs })] }),
+          new TableCell({ children: [new Paragraph({ text: "" })] }),
+        ]
+      }));
+      return new Document({
+        sections: [{
+          properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
+          children: [
+            docxHeaderTable(pkg, `.../YCBG-${pkg.departmentCode}`, pkg.dateDocIssue),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "PHIẾU YÊU CẦU BÁO GIÁ", bold: true, size: 26, font: "Times New Roman" })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: `(Gói thầu: ${pkg.packageName})`, italics: true, size: 22, font: "Times New Roman" })] }),
+            docxParagraph("Kính gửi: [Tên nhà cung cấp nhận phiếu]", { indent: 500 }),
+            docxParagraph(`Trường Cao đẳng Kỹ thuật Công nghiệp đề nghị Quý đơn vị cung cấp báo giá cho gói thầu "${pkg.packageName}" (Mã: ${pkg.packageCode}). Dự toán tối đa: ${formatVND(total)}.`, { indent: 500 }),
+            docxParagraph("Danh mục hàng hóa/dịch vụ yêu cầu:", { bold: true }),
+            new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...itemRows] }),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            docxParagraph(`Đề nghị gửi báo giá trước ngày ${formatDateVietnamese(pkg.dateBidClose)}. Báo giá chưa bao gồm VAT. Căn cứ: Điều 80 NĐ 214/2025/NĐ-CP.`, { indent: 500 }),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            docxSignatureTable("", "", "TỔ TRƯỞNG TỔ CHUYÊN GIA", pkg.expertTeamLeader.split(' (')[0])
+          ]
+        }]
+      });
+    }
+  },
+
+  // Document 27: Thông báo mời chào hàng
+  {
+    id: 27,
+    name: "Thông báo mời chào hàng",
+    getCategory: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'required' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'recommended' : 'not_applicable'),
+    getCategoryLabel: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'Bắt buộc' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'Khuyến nghị' : 'Không áp dụng'),
+    getSigner: (pkg) => `${pkg.expertTeamLeader}`,
+    getSignDate: (pkg) => pkg.dateDocIssue,
+    getAuditRisk: (pkg) => "Không phát hành Thông báo mời chào hàng — thiếu bằng chứng khởi động quy trình cạnh tranh hợp lệ. Vi phạm Điều 28 Luật Đấu thầu số 22/2023/QH15.",
+    getHtml: (pkg, methodCode) => {
+      const total = pkg.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+      return `
+        <div class="doc-header">
+          <div class="doc-header-left">
+            BỘ CÔNG THƯƠNG<br>
+            <b>TRƯỜNG CĐ KỸ THUẬT CÔNG NGHIỆP</b><br>
+            Số: .../TB-CĐKTCN
+          </div>
+          <div class="doc-header-right">
+            <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
+            <b>Độc lập - Tự do - Hạnh phúc</b><br>
+            <i>Bắc Giang, ngày ${formatDateVietnamese(pkg.dateDocIssue)}</i>
+          </div>
+        </div>
+        <div class="doc-title" style="margin-top: 15px;">
+          THÔNG BÁO MỜI CHÀO HÀNG<br>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Gói thầu: ${pkg.packageName})</span>
+        </div>
+        <div class="doc-content">
+          <p><b>Tên bên mời thầu:</b> Trường Cao đẳng Kỹ thuật Công nghiệp</p>
+          <p><b>Tên gói thầu:</b> ${pkg.packageName}</p>
+          <p><b>Mã gói thầu:</b> ${pkg.packageCode}</p>
+          <p><b>Hình thức lựa chọn nhà thầu:</b> Chào hàng cạnh tranh</p>
+          <p><b>Giá gói thầu:</b> ${formatVND(total)}</p>
+          <p><b>Nguồn vốn:</b> ${pkg.fundingSourceName}</p>
+          <p><b>Thời gian phát hành hồ sơ yêu cầu:</b> từ ngày ${formatDateVietnamese(pkg.dateDocIssue)}</p>
+          <p><b>Thời điểm đóng thầu:</b> ${formatDateVietnamese(pkg.dateBidClose)} (trước 17h00)</p>
+          <p>Nhà thầu quan tâm có thể liên hệ Phòng ${pkg.departmentName}, Trường Cao đẳng Kỹ thuật Công nghiệp để nhận Hồ sơ yêu cầu chào hàng.</p>
+          <p><i>Căn cứ pháp lý: Điều 28 Luật Đấu thầu số 22/2023/QH15; Điều 81 Nghị định số 214/2025/NĐ-CP.</i></p>
+        </div>
+        <div class="doc-signatures" style="margin-top: 20px;">
+          <div></div>
+          <div style="text-align: center;">
+            <b>ĐẠI DIỆN CHỦ ĐẦU TƯ</b><br>
+            <i>(Hiệu trưởng ký, đóng dấu)</i><br><br><br>
+            <b>${pkg.rectorName}</b>
+          </div>
+        </div>
+      `;
+    },
+    getDocx: (pkg, methodCode) => {
+      const total = pkg.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+      return new Document({
+        sections: [{
+          properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
+          children: [
+            docxHeaderTable(pkg, `.../TB-CĐKTCN`, pkg.dateDocIssue),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "THÔNG BÁO MỜI CHÀO HÀNG", bold: true, size: 26, font: "Times New Roman" })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: `(Gói thầu: ${pkg.packageName})`, italics: true, size: 22, font: "Times New Roman" })] }),
+            docxParagraph("Tên bên mời thầu: Trường Cao đẳng Kỹ thuật Công nghiệp", { indent: 500 }),
+            docxParagraph(`Tên gói thầu: ${pkg.packageName}`, { indent: 500 }),
+            docxParagraph(`Mã gói thầu: ${pkg.packageCode}`, { indent: 500 }),
+            docxParagraph("Hình thức lựa chọn nhà thầu: Chào hàng cạnh tranh", { indent: 500 }),
+            docxParagraph(`Giá gói thầu: ${formatVND(total)}`, { indent: 500 }),
+            docxParagraph(`Nguồn vốn: ${pkg.fundingSourceName}`, { indent: 500 }),
+            docxParagraph(`Thời gian phát hành HSYC: từ ngày ${formatDateVietnamese(pkg.dateDocIssue)}`, { indent: 500 }),
+            docxParagraph(`Thời điểm đóng thầu: ${formatDateVietnamese(pkg.dateBidClose)} (trước 17h00)`, { indent: 500 }),
+            docxParagraph(`Nhà thầu quan tâm liên hệ Phòng ${pkg.departmentName} để nhận Hồ sơ yêu cầu chào hàng.`, { indent: 500 }),
+            docxParagraph("Căn cứ: Điều 28 Luật Đấu thầu số 22/2023/QH15; Điều 81 NĐ 214/2025/NĐ-CP.", { italic: true, indent: 500 }),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            docxSignatureTable("", "", "ĐẠI DIỆN CHỦ ĐẦU TƯ\n(Hiệu trưởng)", pkg.rectorName)
+          ]
+        }]
+      });
+    }
+  },
+
+  // Document 28: Biên bản mở thầu/chào hàng
+  {
+    id: 28,
+    name: "Biên bản mở thầu (chào hàng cạnh tranh)",
+    getCategory: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'required' : 'not_applicable',
+    getCategoryLabel: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'Bắt buộc' : 'Không áp dụng',
+    getSigner: (pkg) => `Tổ chuyên gia`,
+    getSignDate: (pkg) => pkg.dateBidClose,
+    getAuditRisk: (pkg) => "Không có Biên bản mở thầu — không thể chứng minh thời điểm đóng thầu và số hồ sơ nhận được. Thiếu căn cứ pháp lý cho kết quả đánh giá (Điều 30 Luật Đấu thầu số 22/2023/QH15).",
+    getHtml: (pkg, methodCode) => {
+      const suppliers = [
+        { name: pkg.supplier1Name, address: pkg.supplier1Address },
+        { name: pkg.supplier2Name, address: pkg.supplier2Address },
+        { name: pkg.supplier3Name, address: pkg.supplier3Address },
+      ].filter(s => s.name);
+      return `
+        <div class="doc-header">
+          <div class="doc-header-left">
+            BỘ CÔNG THƯƠNG<br>
+            <b>TRƯỜNG CĐ KỸ THUẬT CÔNG NGHIỆP</b>
+          </div>
+          <div class="doc-header-right">
+            <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
+            <b>Độc lập - Tự do - Hạnh phúc</b><br>
+            <i>Bắc Giang, ngày ${formatDateVietnamese(pkg.dateBidClose)}</i>
+          </div>
+        </div>
+        <div class="doc-title" style="margin-top: 15px;">
+          BIÊN BẢN MỞ THẦU<br>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Gói thầu: ${pkg.packageName})</span>
+        </div>
+        <div class="doc-content">
+          <p><b>Thời điểm mở thầu:</b> 17h00 ngày ${formatDateVietnamese(pkg.dateBidClose)}</p>
+          <p><b>Địa điểm:</b> Phòng họp Trường Cao đẳng Kỹ thuật Công nghiệp</p>
+          <p><b>Thành phần tham dự:</b></p>
+          <p>- Đại diện bên mời thầu: ${pkg.expertTeamLeader.split(' (')[0]}</p>
+          <p>- Đại diện các nhà thầu (nếu có)</p>
+          <p><b>Kết quả nhận hồ sơ:</b> Đã nhận <b>${suppliers.length} hồ sơ chào hàng</b> hợp lệ từ:</p>
+          <table class="doc-table">
+            <thead><tr><th>STT</th><th>Tên nhà thầu</th><th>Địa chỉ</th><th>Thời gian nộp</th><th>Tình trạng niêm phong</th></tr></thead>
+            <tbody>
+              ${suppliers.map((s, i) => `
+              <tr>
+                <td style="text-align:center;">${i + 1}</td>
+                <td>${s.name}</td>
+                <td>${s.address}</td>
+                <td>[...h...phút, ngày ${formatDateVietnamese(pkg.dateBidClose)}]</td>
+                <td>Nguyên vẹn</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <p>Biên bản này lập thành 02 bản, lưu hồ sơ thầu. Các bên đã đọc, thống nhất nội dung và ký xác nhận.</p>
+          <p><i>Căn cứ pháp lý: Điều 30 Luật Đấu thầu số 22/2023/QH15; NĐ 214/2025/NĐ-CP.</i></p>
+        </div>
+        <div class="doc-signatures" style="margin-top: 20px;">
+          <div style="text-align: center;">
+            <b>ĐẠI DIỆN NHÀ THẦU 1</b><br><br><br>
+            <b>[Ký tên, đóng dấu]</b>
+          </div>
+          <div style="text-align: center;">
+            <b>TỔ TRƯỞNG TỔ CHUYÊN GIA</b><br><br><br>
+            <b>${pkg.expertTeamLeader.split(' (')[0]}</b>
+          </div>
+        </div>
+      `;
+    },
+    getDocx: (pkg, methodCode) => {
+      const suppliers = [
+        { name: pkg.supplier1Name, address: pkg.supplier1Address },
+        { name: pkg.supplier2Name, address: pkg.supplier2Address },
+        { name: pkg.supplier3Name, address: pkg.supplier3Address },
+      ].filter(s => s.name);
+      const headerRow = new TableRow({
+        tableHeader: true,
+        children: [
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "STT", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Tên nhà thầu", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Địa chỉ", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Thời gian nộp", bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Tình trạng niêm phong", bold: true })] })] }),
+        ]
+      });
+      const supplierRows = suppliers.map((s, i) => new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: (i + 1).toString(), alignment: AlignmentType.CENTER })] }),
+          new TableCell({ children: [new Paragraph({ text: s.name })] }),
+          new TableCell({ children: [new Paragraph({ text: s.address })] }),
+          new TableCell({ children: [new Paragraph({ text: `[...h...phút, ${formatDateVietnamese(pkg.dateBidClose)}]` })] }),
+          new TableCell({ children: [new Paragraph({ text: "Nguyên vẹn", alignment: AlignmentType.CENTER })] }),
+        ]
+      }));
+      return new Document({
+        sections: [{
+          properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
+          children: [
+            docxHeaderTable(pkg, ``, pkg.dateBidClose),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "BIÊN BẢN MỞ THẦU", bold: true, size: 26, font: "Times New Roman" })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: `(Gói thầu: ${pkg.packageName})`, italics: true, size: 22, font: "Times New Roman" })] }),
+            docxParagraph(`Thời điểm mở thầu: 17h00 ngày ${formatDateVietnamese(pkg.dateBidClose)}`, { indent: 500 }),
+            docxParagraph("Địa điểm: Phòng họp Trường Cao đẳng Kỹ thuật Công nghiệp", { indent: 500 }),
+            docxParagraph(`Tổ trưởng điều hành: ${pkg.expertTeamLeader.split(' (')[0]}`, { indent: 500 }),
+            docxParagraph(`Kết quả: Đã nhận ${suppliers.length} hồ sơ chào hàng hợp lệ:`, { bold: true }),
+            new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...supplierRows] }),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            docxParagraph("Biên bản lập thành 02 bản, lưu hồ sơ thầu. Căn cứ: Điều 30 Luật ĐT 22/2023/QH15.", { italic: true, indent: 500 }),
+            new Paragraph({ text: "\n", spacing: { after: 100 } }),
+            docxSignatureTable("ĐẠI DIỆN NHÀ THẦU 1\n[Ký tên, đóng dấu]", "", "TỔ TRƯỞNG TỔ CHUYÊN GIA", pkg.expertTeamLeader.split(' (')[0])
+          ]
+        }]
+      });
+    }
   }
 ];
 

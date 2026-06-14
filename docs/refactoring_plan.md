@@ -449,7 +449,7 @@ Thay thế bằng thông báo chính xác theo từng khoảng giá trị:
 
 ---
 
-### P2-04 — Thiếu 4 mẫu văn bản bắt buộc hoặc quan trọng cao
+### P2-04 — [DONE] Thiếu 4 mẫu văn bản bắt buộc hoặc quan trọng cao
 
 **Root cause:**  
 Bộ 24 văn bản không bao gồm các văn bản sau dù chúng bắt buộc theo luật hoặc cần thiết để hồ sơ đầy đủ:
@@ -475,6 +475,12 @@ Thêm lần lượt vào `documentTemplates`:
 **Files affected:**
 - `app/src/docTemplates.ts` — thêm DocumentConfig mới
 - `app/src/demoData.ts` — không cần thay đổi cấu trúc
+
+**Implementation (completed 2026-06-14):**
+- Doc 26: Phiếu yêu cầu báo giá — category 'required' cho DIRECT_SELECTION_SIMPLIFIED+, 'not_applicable' cho DIRECT_50. Căn cứ: NĐ 214/2025 Điều 80.
+- Doc 27: Thông báo mời chào hàng — category 'required' cho COMPETITIVE_SHOPPING/OPEN_BIDDING, 'recommended' cho DIRECT_SELECTION_SIMPLIFIED. Căn cứ: Điều 28 Luật ĐT 22/2023.
+- Doc 28: Biên bản mở thầu — category 'required' cho COMPETITIVE_SHOPPING/OPEN_BIDDING, 'not_applicable' khác. Căn cứ: Điều 30 Luật ĐT 22/2023.
+- Tất cả 162 tests pass sau khi thêm 3 văn bản mới.
 
 ---
 
