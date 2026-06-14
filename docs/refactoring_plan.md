@@ -1077,7 +1077,7 @@ Sinh yêu cầu kỹ thuật chuẩn đấu thầu từ tên/danh mục thiết 
 
 ---
 
-### P5-03 — AI Legal Reviewer (Rà soát pháp lý tự động)
+### P5-03 — [DONE] AI Legal Reviewer (Rà soát pháp lý tự động)
 
 **Mô tả:**  
 Phát hiện tự động các rủi ro kiểm toán:
