@@ -1,5 +1,5 @@
 /**
- * P6-03A: LegalReviewerAgent — schema and file skeleton.
+ * P6-03B: LegalReviewerAgent — pure functions added.
  *
  * State machine:
  *   idle → reviewing-package → cross-checking → computing-score
@@ -10,12 +10,10 @@
  * compliance scoring (0–100), and audit readiness assessment.
  *
  * Pure functions (P6-03B):
- *   reviewDossier()           — full dossier scan (wraps P5-03 reviewPackage)
- *   crossCheck()              — detect date / value inconsistencies across docs
- *   explainFinding()          — natural language explanation with full citations
- *   suggestFix()              — concrete remediation steps per finding
- *   computeComplianceScore()  — 0–100 score derived from findings
- *   determineAuditReadiness() — 'ready' | 'conditional' | 'not-ready'
+ *   detectCrossDocumentIssues() — date / value inconsistencies across 28 docs
+ *   calculateComplianceScore()  — 0–100 score derived from findings + issues
+ *   summarizeFindings()         — actionable recommendations from output
+ *   reviewPackage()             — dossier-level orchestrator (wraps P5-03)
  *
  * Agent methods (P6-03C):
  *   emit()               — registry event emitter
@@ -27,20 +25,22 @@
 
 // ─── Type-only imports ────────────────────────────────────────────────────────
 
-import type { AgentId, AgentMessage, IAgent }              from './types';
-import type { AgentRegistry }                               from './AgentRegistry';
-import type { ProcurementPackage }                          from '../demoData';
-import type { Severity, LegalFinding, LegalReviewResult }  from '../ai/legalReviewer';
+import type { AgentId, AgentMessage, IAgent }             from './types';
+import type { AgentRegistry }                              from './AgentRegistry';
+import type { ProcurementPackage }                         from '../demoData';
+import type { Severity, LegalFinding, LegalReviewResult } from '../ai/legalReviewer';
 
 // ─── Runtime imports ──────────────────────────────────────────────────────────
 
-import { reviewPackage }   from '../ai/legalReviewer';
-import { generateTraceId } from './detectPackageSplitting';
+// P5-03 reviewPackage aliased to avoid collision with the dossier-level export below.
+import { reviewPackage as p5ReviewPackage } from '../ai/legalReviewer';
+import { generateTraceId }                  from './detectPackageSplitting';
 
-// ─── Re-export P5-03 public API as unified entry point ───────────────────────
+// ─── Re-export P5-03 types as unified entry point ────────────────────────────
 
 export type { Severity, LegalFinding, LegalReviewResult };
-export { reviewPackage };
+// Note: P5-03 reviewPackage(pkg) is available internally as p5ReviewPackage.
+// This module exports reviewPackage(DossierReviewInput) at the dossier level.
 
 // ─── CrossCheckIssue ─────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export interface DossierReviewInput {
 export interface DossierReviewOutput {
   /** LegalFindings from P5-03 reviewPackage, sorted CRITICAL → HIGH → MEDIUM → LOW. */
   findings:         LegalFinding[];
-  /** Date / value inconsistencies across the 28 documents, detected by crossCheck(). */
+  /** Date / value inconsistencies across the 28 documents. */
   crossCheckIssues: CrossCheckIssue[];
   /** 0–100: 100 = perfect compliance, 0 = severe violations. */
   complianceScore:  number;
@@ -112,14 +112,286 @@ export const REVIEWER_LEGAL_BASIS: readonly string[] = [
   'Khoản 1 Điều 10 Luật Đấu thầu 22/2023/QH15 — nguyên tắc cạnh tranh, công bằng, minh bạch',
 ];
 
-// ─── P6-03B: Pure functions (added in P6-03B) ────────────────────────────────
+// ─── Internal helpers (unexported) ───────────────────────────────────────────
 
-// reviewDossier()           — dossier-level scan wrapping reviewPackage + crossCheck
-// crossCheck()              — detect date/value inconsistencies across 28 documents
-// explainFinding()          — natural language explanation per LegalFinding
-// suggestFix()              — concrete remediation steps per LegalFinding
-// computeComplianceScore()  — 0–100 compliance score from findings + crossCheckIssues
-// determineAuditReadiness() — 'ready' | 'conditional' | 'not-ready'
+/** Parses a date string (ISO YYYY-MM-DD) to milliseconds. Returns null when empty or invalid. */
+function parseDateMs(dateStr: string): number | null {
+  if (!dateStr?.trim()) return null;
+  const ms = new Date(dateStr).getTime();
+  return isNaN(ms) ? null : ms;
+}
+
+/**
+ * Returns a CrossCheckIssue if dateA is strictly after dateB (i.e. the
+ * procurement sequence is inverted).  Returns null when either date is absent
+ * or the order is correct.
+ */
+function checkOrder(
+  dateA: string, doc1Id: number, labelA: string,
+  dateB: string, doc2Id: number, labelB: string,
+  severity: Severity,
+): CrossCheckIssue | null {
+  const msA = parseDateMs(dateA);
+  const msB = parseDateMs(dateB);
+  if (msA === null || msB === null) return null;
+  if (msA > msB) {
+    return {
+      severity,
+      doc1Id,
+      doc2Id,
+      field:       `${labelA} → ${labelB}`,
+      description: `${labelA} (${dateA}) phải trước ${labelB} (${dateB}). Hiện tại bị đảo ngược — vi phạm trật tự thủ tục.`,
+    };
+  }
+  return null;
+}
+
+/** Derives auditReadiness from findings, cross-check issues, and compliance score. */
+function determineAuditReadiness(
+  findings:         LegalFinding[],
+  crossCheckIssues: CrossCheckIssue[],
+  score:            number,
+): 'ready' | 'conditional' | 'not-ready' {
+  const hasCritical =
+    findings.some(f => f.severity === 'CRITICAL') ||
+    crossCheckIssues.some(c => c.severity === 'CRITICAL');
+  const hasHigh =
+    findings.some(f => f.severity === 'HIGH') ||
+    crossCheckIssues.some(c => c.severity === 'HIGH');
+
+  if (hasCritical || score < 50) return 'not-ready';
+  if (hasHigh     || score < 75) return 'conditional';
+  return 'ready';
+}
+
+/** Collects unique legal citations from P5-03 findings plus the constant basis. */
+function collectDossierLegalBasis(findings: LegalFinding[]): string[] {
+  const citations = new Set<string>(REVIEWER_LEGAL_BASIS);
+  for (const f of findings) {
+    citations.add(f.legalBasis);
+  }
+  return [...citations];
+}
+
+// ─── P6-03B: Pure functions ───────────────────────────────────────────────────
+
+/**
+ * Detects date ordering violations across the 28 procurement documents.
+ *
+ * Document ID → date field mapping (from documentTemplates):
+ *   Doc 10 dateKhlcnt        → Doc 11 dateKhlcntApprove
+ *   Doc 11 dateKhlcntApprove → Doc 13 dateExpertEstablish
+ *   Doc 13 dateExpertEstablish → Doc 12 dateDocIssue
+ *   Doc 12 dateDocIssue      → Doc 28 dateBidClose
+ *   Doc 28 dateBidClose      → Doc 14 dateEvaluate
+ *   Doc 14 dateEvaluate      → Doc 15 dateAppraise
+ *   Doc 15 dateAppraise      → Doc 17 dateResultApprove
+ *   Doc 17 dateResultApprove → Doc 18 dateContractSign
+ *   Doc 18 dateContractSign  → Doc 19 dateDelivery
+ *   Doc 19 dateDelivery      → Doc 20 dateAcceptance
+ *   Doc 20 dateAcceptance    → Doc 21 dateLiquidation
+ */
+export function detectCrossDocumentIssues(pkg: ProcurementPackage): CrossCheckIssue[] {
+  const issues: CrossCheckIssue[] = [];
+
+  // Procurement planning sequence
+  const khlcntApproveOrder = checkOrder(
+    pkg.dateKhlcnt,        10, 'Ngày KHLCNT (Doc 10)',
+    pkg.dateKhlcntApprove, 11, 'Ngày phê duyệt KHLCNT (Doc 11)',
+    'CRITICAL',
+  );
+  if (khlcntApproveOrder) issues.push(khlcntApproveOrder);
+
+  // Expert team must be established after KHLCNT approval
+  const expertAfterApprove = checkOrder(
+    pkg.dateKhlcntApprove,    11, 'Ngày phê duyệt KHLCNT (Doc 11)',
+    pkg.dateExpertEstablish,  13, 'Ngày thành lập Tổ chuyên gia (Doc 13)',
+    'HIGH',
+  );
+  if (expertAfterApprove) issues.push(expertAfterApprove);
+
+  // Document issuance must be after expert team established
+  const docAfterExpert = checkOrder(
+    pkg.dateExpertEstablish, 13, 'Ngày thành lập Tổ chuyên gia (Doc 13)',
+    pkg.dateDocIssue,        12, 'Ngày phát hành HSMT/HSYC (Doc 12)',
+    'CRITICAL',
+  );
+  if (docAfterExpert) issues.push(docAfterExpert);
+
+  // Bid close must be after document issuance
+  const bidCloseAfterDocIssue = checkOrder(
+    pkg.dateDocIssue, 12, 'Ngày phát hành HSMT/HSYC (Doc 12)',
+    pkg.dateBidClose, 28, 'Ngày đóng thầu (Doc 28)',
+    'CRITICAL',
+  );
+  if (bidCloseAfterDocIssue) issues.push(bidCloseAfterDocIssue);
+
+  // Evaluation must be after bid close
+  const evalAfterBidClose = checkOrder(
+    pkg.dateBidClose,  28, 'Ngày đóng thầu (Doc 28)',
+    pkg.dateEvaluate,  14, 'Ngày báo cáo đánh giá (Doc 14)',
+    'CRITICAL',
+  );
+  if (evalAfterBidClose) issues.push(evalAfterBidClose);
+
+  // Appraisal must be after evaluation
+  const appraiseAfterEval = checkOrder(
+    pkg.dateEvaluate, 14, 'Ngày báo cáo đánh giá (Doc 14)',
+    pkg.dateAppraise, 15, 'Ngày báo cáo thẩm định (Doc 15)',
+    'HIGH',
+  );
+  if (appraiseAfterEval) issues.push(appraiseAfterEval);
+
+  // Result approval must be after appraisal
+  const resultAfterAppraise = checkOrder(
+    pkg.dateAppraise,      15, 'Ngày báo cáo thẩm định (Doc 15)',
+    pkg.dateResultApprove, 17, 'Ngày phê duyệt kết quả (Doc 17)',
+    'CRITICAL',
+  );
+  if (resultAfterAppraise) issues.push(resultAfterAppraise);
+
+  // Contract must be signed after result approval
+  const contractAfterResult = checkOrder(
+    pkg.dateResultApprove, 17, 'Ngày phê duyệt kết quả (Doc 17)',
+    pkg.dateContractSign,  18, 'Ngày ký hợp đồng (Doc 18)',
+    'CRITICAL',
+  );
+  if (contractAfterResult) issues.push(contractAfterResult);
+
+  // Delivery must be after contract signing
+  const deliveryAfterContract = checkOrder(
+    pkg.dateContractSign, 18, 'Ngày ký hợp đồng (Doc 18)',
+    pkg.dateDelivery,     19, 'Ngày bàn giao (Doc 19)',
+    'HIGH',
+  );
+  if (deliveryAfterContract) issues.push(deliveryAfterContract);
+
+  // Acceptance must be after delivery
+  const acceptanceAfterDelivery = checkOrder(
+    pkg.dateDelivery,    19, 'Ngày bàn giao (Doc 19)',
+    pkg.dateAcceptance,  20, 'Ngày nghiệm thu (Doc 20)',
+    'CRITICAL',
+  );
+  if (acceptanceAfterDelivery) issues.push(acceptanceAfterDelivery);
+
+  // Liquidation must be after acceptance
+  const liquidationAfterAcceptance = checkOrder(
+    pkg.dateAcceptance,  20, 'Ngày nghiệm thu (Doc 20)',
+    pkg.dateLiquidation, 21, 'Ngày thanh lý hợp đồng (Doc 21)',
+    'HIGH',
+  );
+  if (liquidationAfterAcceptance) issues.push(liquidationAfterAcceptance);
+
+  return issues;
+}
+
+/**
+ * Computes a 0–100 compliance score.
+ *
+ * Deduction per finding severity:  CRITICAL −25, HIGH −15, MEDIUM −8, LOW −3.
+ * Deduction per CrossCheckIssue:   CRITICAL −20, HIGH −10, MEDIUM −5, LOW −2.
+ * Floor is 0.
+ */
+export function calculateComplianceScore(
+  findings:         LegalFinding[],
+  crossCheckIssues: CrossCheckIssue[],
+): number {
+  const findingDeductions: Record<Severity, number> = {
+    CRITICAL: 25,
+    HIGH:     15,
+    MEDIUM:   8,
+    LOW:      3,
+  };
+  const crossDeductions: Record<Severity, number> = {
+    CRITICAL: 20,
+    HIGH:     10,
+    MEDIUM:   5,
+    LOW:      2,
+  };
+
+  let score = 100;
+  for (const f of findings)         score -= findingDeductions[f.severity];
+  for (const c of crossCheckIssues) score -= crossDeductions[c.severity];
+  return Math.max(0, score);
+}
+
+/**
+ * Builds an actionable recommendations list from a completed DossierReviewOutput.
+ *
+ * Sources (in order):
+ *   1. Deduplicated P5-03 finding.recommendation strings (tagged by severity).
+ *   2. Cross-document issue descriptions (tagged by severity).
+ *   3. One overall audit readiness summary line.
+ */
+export function summarizeFindings(output: DossierReviewOutput): string[] {
+  const recs: string[] = [];
+  const seen = new Set<string>();
+
+  for (const finding of output.findings) {
+    if (!seen.has(finding.recommendation)) {
+      seen.add(finding.recommendation);
+      recs.push(`[${finding.severity}] ${finding.recommendation}`);
+    }
+  }
+
+  for (const issue of output.crossCheckIssues) {
+    recs.push(`[${issue.severity}] Sửa trật tự tài liệu: ${issue.description}`);
+  }
+
+  if (output.auditReadiness === 'not-ready') {
+    recs.push(
+      `Điểm tuân thủ: ${output.complianceScore}/100 — ` +
+      'Hồ sơ CHƯA SẴN SÀNG kiểm toán. ' +
+      'Khắc phục toàn bộ phát hiện [CRITICAL] và [HIGH] trước khi nộp.',
+    );
+  } else if (output.auditReadiness === 'conditional') {
+    recs.push(
+      `Điểm tuân thủ: ${output.complianceScore}/100 — ` +
+      'Hồ sơ ĐẠT CÓ ĐIỀU KIỆN. ' +
+      'Xử lý các phát hiện [HIGH] trước khi trình phê duyệt.',
+    );
+  } else {
+    recs.push(
+      `Điểm tuân thủ: ${output.complianceScore}/100 — Hồ sơ sẵn sàng kiểm toán.`,
+    );
+  }
+
+  return recs;
+}
+
+/**
+ * Dossier-level legal review.
+ *
+ * Orchestrates:
+ *   1. P5-03 package-level scan (reviewPackage).
+ *   2. Cross-document date consistency check (detectCrossDocumentIssues).
+ *   3. Compliance scoring (calculateComplianceScore).
+ *   4. Audit readiness assessment.
+ *   5. Recommendation generation (summarizeFindings).
+ *
+ * The `documentIds` field in DossierReviewInput is accepted for forward-
+ * compatibility (P6-03C will use it for selective review); P6-03B ignores it
+ * and always performs a full scan so that tests remain deterministic.
+ */
+export function reviewPackage(input: DossierReviewInput): DossierReviewOutput {
+  const p5Result        = p5ReviewPackage(input.pkg);
+  const crossCheckIssues = detectCrossDocumentIssues(input.pkg);
+  const complianceScore  = calculateComplianceScore(p5Result.findings, crossCheckIssues);
+  const auditReadiness   = determineAuditReadiness(p5Result.findings, crossCheckIssues, complianceScore);
+  const legalBasis       = collectDossierLegalBasis(p5Result.findings);
+
+  const output: DossierReviewOutput = {
+    findings:         p5Result.findings,
+    crossCheckIssues,
+    complianceScore,
+    auditReadiness,
+    recommendations:  [],
+    legalBasis,
+  };
+
+  output.recommendations = summarizeFindings(output);
+  return output;
+}
 
 // ─── LegalReviewerAgent ───────────────────────────────────────────────────────
 
