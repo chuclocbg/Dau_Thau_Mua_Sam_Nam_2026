@@ -831,7 +831,7 @@ Theo thứ tự ưu tiên:
 
 ---
 
-### P3-07 — Doc 3 (Thuyết minh kỹ thuật) dùng nội dung boilerplate
+### P3-07 — [DONE] Doc 3 (Thuyết minh kỹ thuật) dùng nội dung boilerplate
 
 **Root cause:** Doc 3 `getHtml()` và `getDocx()` tạo ra văn bản mô tả mục đích mua sắm với nội dung chung chung, không phân biệt theo loại hàng hóa hay dịch vụ trong gói.
 

@@ -579,6 +579,30 @@ export const documentTemplates: DocumentConfig[] = [
     getSignDate: (pkg) => pkg.dateProposal,
     getAuditRisk: (pkg) => "Thuyết minh sơ sài, mang tính đối phó, không chỉ ra được lý do thực tế của việc mua sắm dẫn đến kết luận đầu tư lãng phí của Kiểm toán Nhà nước.",
     getHtml: (pkg, methodCode) => {
+      const isService = pkg.packageType === 'service';
+      const isConsumable = pkg.packageType === 'goods_consumable';
+      const sectionI = isService
+        ? `<p><b>I. Thực trạng dịch vụ bảo trì, vận hành hiện tại:</b></p>
+           <p>Hiện nay, hệ thống trang thiết bị tại đơn vị chưa được bảo trì định kỳ đúng chu kỳ kỹ thuật, dẫn đến tình trạng hư hỏng đột xuất gây gián đoạn hoạt động dạy và học. Đơn vị không có đủ nhân lực và trang thiết bị chuyên dụng để tự bảo trì nội bộ.</p>`
+        : isConsumable
+        ? `<p><b>I. Thực trạng vật tư, hóa chất, văn phòng phẩm hiện tại:</b></p>
+           <p>Nguồn vật tư, hóa chất và văn phòng phẩm phục vụ công tác giảng dạy, nghiên cứu và điều hành tại đơn vị đã cạn kiệt hoặc không còn đảm bảo chất lượng yêu cầu. Việc thiếu hụt vật tư ảnh hưởng trực tiếp đến tiến độ và chất lượng công việc.</p>`
+        : `<p><b>I. Thực trạng trang thiết bị của đơn vị hiện tại:</b></p>
+           <p>Hiện nay, trang thiết bị tại các phòng thực hành, phòng làm việc của đơn vị đã xuống cấp nghiêm trọng hoặc không còn phù hợp với công nghệ đào tạo thực tế hiện hành. Số lượng thiết bị hiện có không đáp ứng đủ quy mô học sinh, sinh viên tuyển sinh thực tế hàng năm.</p>`;
+      const sectionII = isService
+        ? `<p><b>II. Sự cần thiết thuê dịch vụ phi tư vấn:</b></p>
+           <p>1. Đảm bảo tuổi thọ và hiệu quả vận hành của tài sản công đã được đầu tư. Bảo trì định kỳ kéo dài thời gian sử dụng tài sản theo tiêu chuẩn kỹ thuật của nhà sản xuất.</p>
+           <p>2. Thuê đơn vị bảo trì chuyên nghiệp có nhân lực và thiết bị chuyên dụng, đảm bảo an toàn kỹ thuật và không vi phạm điều kiện bảo hành.</p>
+           <p>3. Chi phí thuê dịch vụ bảo trì thấp hơn chi phí sửa chữa đột xuất do hỏng hóc tích lũy không được bảo trì kịp thời.</p>`
+        : isConsumable
+        ? `<p><b>II. Sự cần thiết mua sắm vật tư tiêu hao:</b></p>
+           <p>1. Đảm bảo liên tục các hoạt động thực hành, thí nghiệm và hành chính trong học kỳ.</p>
+           <p>2. Duy trì tiêu chuẩn chất lượng tối thiểu theo yêu cầu chuyên môn (chứng chỉ phân tích, độ tinh khiết theo tiêu chuẩn AR hoặc tương đương).</p>
+           <p>3. Việc thiếu vật tư tiêu hao ảnh hưởng trực tiếp đến tiến độ đào tạo và nghiên cứu của đơn vị.</p>`
+        : `<p><b>II. Sự cần thiết đầu tư mua sắm:</b></p>
+           <p>1. Đáp ứng yêu cầu chuyển đổi số trong giáo dục nghề nghiệp của Bộ Công Thương và chiến lược phát triển trường.</p>
+           <p>2. Nâng cao chất lượng thực hành, gắn kết thực tế doanh nghiệp để sinh viên ra trường làm chủ được công nghệ mới.</p>
+           <p>3. Thay thế các thiết bị cũ, hỏng hóc, chi phí sửa chữa bảo trì hàng năm quá lớn, không còn hiệu quả kinh tế.</p>`;
       return `
         <div class="doc-header">
           <div class="doc-header-left">
@@ -591,22 +615,16 @@ export const documentTemplates: DocumentConfig[] = [
           </div>
         </div>
         <div class="doc-title" style="margin-top: 15px;">
-          BẢN THUYẾT MINH SỰ CẦN THIẾT VÀ HIỆU QUẢ CỦA GÓI THẦU MUA SẮM<br>
+          BẢN THUYẾT MINH SỰ CẦN THIẾT VÀ HIỆU QUẢ<br>
           <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Gói thầu: ${pkg.packageName})</span>
         </div>
         <div class="doc-content">
-          <p><b>I. Thực trạng trang thiết bị của đơn vị hiện tại:</b></p>
-          <p>Hiện nay, trang thiết bị tại các phòng thực hành, phòng làm việc của đơn vị đã xuống cấp nghiêm trọng hoặc không còn phù hợp với công nghệ đào tạo thực tế hiện hành. Số lượng thiết bị hiện có không đáp ứng đủ quy mô học sinh, sinh viên tuyển sinh thực tế hàng năm.</p>
-          
-          <p><b>II. Sự cần thiết đầu tư mua sắm:</b></p>
-          <p>1. Đáp ứng yêu cầu chuyển đổi số trong giáo dục nghề nghiệp của Bộ Công Thương và chiến lược phát triển trường.</p>
-          <p>2. Nâng cao chất lượng thực hành, gắn kết thực tế doanh nghiệp để sinh viên ra trường làm chủ được công nghệ mới.</p>
-          <p>3. Thay thế các thiết bị cũ, hỏng hóc, chi phí sửa chữa bảo trì hàng năm quá lớn, không còn hiệu quả kinh tế.</p>
-          
+          ${sectionI}
+          ${sectionII}
           <p><b>III. Hiệu quả kinh tế - xã hội mang lại:</b></p>
           <p>- Tăng tỷ lệ hài lòng của người học và doanh nghiệp liên kết đào tạo.</p>
-          <p>- Đảm bảo thiết bị chạy ổn định, giảm tối đa thời gian gián đoạn dạy và học.</p>
-          <p>- Tăng doanh thu dịch vụ đào tạo thông qua nâng cao năng lực tuyển sinh.</p>
+          <p>- Đảm bảo hoạt động dạy và học liên tục, giảm gián đoạn do thiếu hụt trang thiết bị, vật tư.</p>
+          <p>- Tối ưu hóa chi phí vận hành, kéo dài tuổi thọ tài sản công theo đúng quy định Luật Quản lý và Sử dụng Tài sản Công.</p>
         </div>
         <div class="doc-signatures" style="margin-top: 30px;">
           <div></div>
@@ -619,6 +637,30 @@ export const documentTemplates: DocumentConfig[] = [
       `;
     },
     getDocx: (pkg, methodCode) => {
+      const isService = pkg.packageType === 'service';
+      const isConsumable = pkg.packageType === 'goods_consumable';
+      const s1Title = isService ? 'I. Thực trạng dịch vụ bảo trì, vận hành hiện tại:'
+        : isConsumable ? 'I. Thực trạng vật tư, hóa chất, văn phòng phẩm hiện tại:'
+        : 'I. Thực trạng trang thiết bị của đơn vị hiện tại:';
+      const s1Body = isService
+        ? 'Hệ thống trang thiết bị chưa được bảo trì định kỳ đúng chu kỳ kỹ thuật, dẫn đến hư hỏng đột xuất gây gián đoạn hoạt động. Đơn vị không có đủ nhân lực và thiết bị chuyên dụng để tự bảo trì nội bộ.'
+        : isConsumable
+        ? 'Nguồn vật tư, hóa chất và văn phòng phẩm phục vụ giảng dạy, nghiên cứu và điều hành đã cạn kiệt hoặc không đảm bảo chất lượng yêu cầu, ảnh hưởng trực tiếp đến tiến độ công việc.'
+        : 'Các thiết bị dạy học và phục vụ công việc tại đơn vị đã cũ kỹ, cấu hình lạc hậu, thường xuyên hư hỏng, không đáp ứng đủ quy mô thực hành cho học sinh sinh viên.';
+      const s2Title = isService ? 'II. Sự cần thiết thuê dịch vụ phi tư vấn:'
+        : isConsumable ? 'II. Sự cần thiết mua sắm vật tư tiêu hao:'
+        : 'II. Sự cần thiết đầu tư mua sắm:';
+      const s2Points = isService
+        ? ['Bảo dưỡng định kỳ kéo dài tuổi thọ tài sản, đảm bảo vận hành đúng tiêu chuẩn kỹ thuật của nhà sản xuất.',
+           'Đơn vị bảo trì chuyên nghiệp đảm bảo an toàn kỹ thuật, không vi phạm điều kiện bảo hành.',
+           'Chi phí bảo trì định kỳ thấp hơn nhiều so với chi phí sửa chữa đột xuất do hỏng hóc tích lũy.']
+        : isConsumable
+        ? ['Đảm bảo liên tục các hoạt động thực hành, thí nghiệm và hành chính trong học kỳ.',
+           'Duy trì tiêu chuẩn chất lượng tối thiểu theo yêu cầu chuyên môn.',
+           'Thiếu hụt vật tư tiêu hao ảnh hưởng trực tiếp đến tiến độ đào tạo và nghiên cứu.']
+        : ['Đáp ứng yêu cầu chuyển đổi số trong giáo dục nghề nghiệp của Bộ Công Thương.',
+           'Nâng cao chất lượng thực hành, gắn kết thực tế doanh nghiệp.',
+           'Thay thế các thiết bị cũ, chi phí sửa chữa hàng năm quá lớn, không còn hiệu quả kinh tế.'];
       return new Document({
         sections: [{
           properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
@@ -629,18 +671,16 @@ export const documentTemplates: DocumentConfig[] = [
               alignment: AlignmentType.CENTER,
               spacing: { before: 200, after: 200 },
               children: [
-                new TextRun({ text: "BẢN THUYẾT MINH SỰ CẦN THIẾT VÀ HIỆU QUẢ CỦA GÓI THẦU MUA SẮM\n", bold: true, size: 26, font: "Times New Roman" }),
+                new TextRun({ text: "BẢN THUYẾT MINH SỰ CẦN THIẾT VÀ HIỆU QUẢ\n", bold: true, size: 26, font: "Times New Roman" }),
                 new TextRun({ text: `(Gói thầu: ${pkg.packageName})`, italics: true, size: 22, font: "Times New Roman" })
               ]
             }),
-            docxParagraph("I. Thực trạng trang thiết bị của đơn vị hiện tại:", { bold: true }),
-            docxParagraph("Hiện nay, các thiết bị dạy học và phục vụ công việc tại đơn vị đã cũ kỹ, cấu hình lạc hậu so với công nghệ thực tế tại doanh nghiệp, thường xuyên hư hỏng hoặc không đồng bộ, không đáp ứng đủ quy mô thực hành cho học sinh sinh viên dạy và học thực hành.", { indent: 500 }),
-            docxParagraph("II. Sự cần thiết đầu tư mua sắm:", { bold: true }),
-            docxParagraph("1. Đồng bộ cơ sở vật chất theo chương trình đào tạo chất lượng cao, phục vụ công tác đánh giá kiểm định trường nghề chất lượng cao.", { indent: 500 }),
-            docxParagraph("2. Đảm bảo an toàn lao động, an toàn thiết bị công nghệ thông tin và mạng nội bộ của nhà trường.", { indent: 500 }),
-            docxParagraph("3. Thay thế các thiết bị hỏng hoàn toàn đã lập biên bản thanh lý tài sản cũ.", { indent: 500 }),
+            docxParagraph(s1Title, { bold: true }),
+            docxParagraph(s1Body, { indent: 500 }),
+            docxParagraph(s2Title, { bold: true }),
+            ...s2Points.map((p, i) => docxParagraph(`${i + 1}. ${p}`, { indent: 500 })),
             docxParagraph("III. Hiệu quả kinh tế - xã hội mang lại:", { bold: true }),
-            docxParagraph("Đầu tư giúp nâng cao chất lượng dạy và học trực quan sinh động, tối ưu hóa công suất khai thác trang thiết bị phục vụ công việc chung. Hỗ trợ trường khẳng định thương hiệu đào tạo của Bộ Công Thương.", { indent: 500 }),
+            docxParagraph("Đầu tư giúp nâng cao chất lượng dạy và học, tối ưu hóa chi phí vận hành, kéo dài tuổi thọ tài sản công theo Luật Quản lý và Sử dụng Tài sản Công và NĐ 186/2025/NĐ-CP.", { indent: 500 }),
             new Paragraph({ text: "\n", spacing: { after: 100 } }),
             docxSignatureTable("", "", "TRƯỞNG PHÒNG/KHOA", pkg.expertTeamLeader.split(' (')[0])
           ]
