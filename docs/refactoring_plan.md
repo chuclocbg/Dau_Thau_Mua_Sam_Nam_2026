@@ -1109,18 +1109,25 @@ Cho phép hỏi đáp pháp luật đấu thầu bằng ngôn ngữ tự nhiên.
 
 ---
 
-### P5-05 — One-Click Procurement Workflow (Quy trình một chạm)
+### P5-05 — [DONE] One-Click Procurement Workflow (Quy trình một chạm)
 
 **Mô tả:**  
 Từ một yêu cầu ngắn bằng ngôn ngữ tự nhiên, tự động:
 1. Phân tích yêu cầu → tạo gói thầu đầy đủ (P5-01)
 2. Sinh yêu cầu kỹ thuật cho từng hạng mục (P5-02)
 3. Rà soát pháp lý, hiển thị cảnh báo (P5-03)
-4. Xuất toàn bộ bộ hồ sơ ZIP với 1 lần nhấn
+4. Tra cứu căn cứ pháp lý liên quan (P5-04)
+5. Chọn 10 hồ sơ cốt lõi + xuất ZIP
 
-**Cơ chế:** Orchestrator gọi lần lượt P5-01 → P5-02 → P5-03 → ZIP export.
+**Hồ sơ đầu ra:** KHLCNT (10); QĐ phê duyệt KHLCNT (11); HSYC (12); Thông báo mời chào hàng (27); Biên bản mở thầu (28); Báo cáo đánh giá (14); QĐ phê duyệt kết quả (17); Hợp đồng (18); Biên bản nghiệm thu (20); Thanh lý hợp đồng (21).
 
-**Files:** `app/src/ai/workflowOrchestrator.ts`, nút "Tạo hồ sơ hoàn chỉnh" trong AI panel, `app/src/__tests__/ai-workflow.test.ts`
+**Cơ chế:** Orchestrator gọi lần lượt P5-01 → P5-02 → P5-03 → P5-04 → document selection → ZIP export.
+
+**Files:**
+- `app/src/ai/workflowOrchestrator.ts` — 5-bước pipeline, export `WORKFLOW_DOCUMENT_IDS`, `WORKFLOW_DOCUMENT_NAMES`
+- `app/src/AiAssistantPanel.tsx` — React UI: input NL, hiển thị steps/findings/KB, nút "Áp dụng" + "Tải ZIP"
+- `app/src/App.tsx` — tích hợp toggle "Trợ lý AI" trong header
+- `app/src/__tests__/ai-workflow.test.ts` — 30 unit tests (5 steps, KB results, selectedDocumentIds)
 
 ---
 

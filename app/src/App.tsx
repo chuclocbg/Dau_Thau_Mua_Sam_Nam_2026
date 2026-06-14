@@ -10,6 +10,7 @@ import {
 } from './docTemplates';
 import { validateDateGaps, validatePackageBeforeExport } from './utils';
 import { DocErrorBoundary } from './DocErrorBoundary';
+import AiAssistantPanel from './AiAssistantPanel';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -21,6 +22,7 @@ export default function App() {
   const [activeDocIndex, setActiveDocIndex] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<'info' | 'dates' | 'items'>('info');
   const [isExportingZip, setIsExportingZip] = useState<boolean>(false);
+  const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -188,15 +190,33 @@ export default function App() {
             <span className="badge badge-warning">Bộ Công Thương</span>
           </div>
         </div>
-        <button 
-          className="btn btn-primary" 
-          onClick={handleDownloadAllZip}
-          disabled={isExportingZip}
-        >
-          <Download size={16} />
-          {isExportingZip ? 'Đang tạo file nén ZIP...' : 'Tải trọn bộ 24 hồ sơ (ZIP)'}
-        </button>
+        <div className="header-actions">
+          <button
+            className={`btn ${showAiPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowAiPanel(p => !p)}
+          >
+            {showAiPanel ? 'Ẩn trợ lý AI' : 'Trợ lý AI'}
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleDownloadAllZip}
+            disabled={isExportingZip}
+          >
+            <Download size={16} />
+            {isExportingZip ? 'Đang tạo file nén ZIP...' : 'Tải trọn bộ 24 hồ sơ (ZIP)'}
+          </button>
+        </div>
       </header>
+
+      {showAiPanel && (
+        <AiAssistantPanel
+          onApplyPackage={pkg => {
+            setSelectedPackage(structuredClone(pkg));
+            setActiveDocIndex(0);
+            setShowAiPanel(false);
+          }}
+        />
+      )}
 
       {/* Main Layout */}
       <main className="app-main">
