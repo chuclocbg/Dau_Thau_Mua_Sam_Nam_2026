@@ -1,31 +1,40 @@
 /**
- * P6-02B: SpecificationAgent — core pure functions + class skeleton.
+ * P6-02C: SpecificationAgent — complete implementation.
  *
- * State machine (to be implemented in P6-02C):
+ * State machine:
  *   idle → reviewing-input → generating-spec → checking-brands
- *        → [suggesting-alternatives?] → composing-response → idle
+ *        → composing-response → idle
  *
  * Builds on P5-02 (specGenerator.ts): adds reasoning fields,
  * multi-item batch processing, and LegalReviewerAgent feedback loop (P6-03).
  *
  * Pure functions (P6-02B):
- *   reviewSpec()               — brand detection (extends P5-02)
- *   suggestAlternatives()      — functional alternatives per brand
+ *   reviewSpec()                — brand detection (extends P5-02)
+ *   suggestAlternatives()       — functional alternatives per brand
  *   generateSpecWithReasoning() — SpecInput → SpecOutput with audit reasoning
- *   batchGenerate()            — batch processing of SpecInput[]
+ *   batchGenerate()             — batch processing of SpecInput[]
+ *
+ * Agent methods (P6-02C):
+ *   emit()              — registry event emitter
+ *   transition()        — state machine step + event log
+ *   buildErrorResponse() — error AgentMessage, always resets state to idle
+ *   buildResponse()     — success AgentMessage with legalBasis
+ *   collectLegalBasis() — merges SpecOutput citations + LegalFinding citations
+ *   process()           — main entry point, never throws uncaught exceptions
  */
 
 // ─── Type-only imports ────────────────────────────────────────────────────────
 
-import type { AgentMessage, IAgent } from './types';
-import type { AgentRegistry }        from './AgentRegistry';
-import type { LegalFinding }         from '../ai/legalReviewer';
-import type { ProcurementPackage }   from '../demoData';
-import type { SpecSuggestion }       from '../ai/specGenerator';
+import type { AgentId, AgentMessage, IAgent } from './types';
+import type { AgentRegistry }                  from './AgentRegistry';
+import type { LegalFinding }                   from '../ai/legalReviewer';
+import type { ProcurementPackage }             from '../demoData';
+import type { SpecSuggestion }                 from '../ai/specGenerator';
 
-// ─── Runtime imports — P5-02 ──────────────────────────────────────────────────
+// ─── Runtime imports ──────────────────────────────────────────────────────────
 
 import { generateItemSpec, detectBrandLocking } from '../ai/specGenerator';
+import { generateTraceId }                      from './detectPackageSplitting';
 
 // ─── Re-export P5-02 public API as unified entry point ───────────────────────
 
@@ -291,10 +300,137 @@ export class SpecificationAgent implements IAgent {
     ];
   }
 
-  // process() and private helpers will be implemented in P6-02C.
-  async process(_msg: AgentMessage): Promise<AgentMessage> {
-    throw new Error(
-      'SpecificationAgent.process() not yet implemented — complete P6-02C first',
-    );
+  // ── emit + transition ──────────────────────────────────────────────────────
+
+  private emit(partial: Omit<AgentMessage, 'traceId' | 'from' | 'timestamp'>): void {
+    const msg: AgentMessage = {
+      traceId:   this.currentTraceId!,
+      from:      'specification',
+      timestamp: Date.now(),
+      ...partial,
+    };
+    this.registry.log(msg);
+    if (msg.to === 'broadcast') {
+      this.registry.notifySubscribers(msg.type, msg);
+    }
+  }
+
+  private transition(next: SpecState, detail?: string): void {
+    const event: SpecStateEvent = {
+      previousState: this.state,
+      nextState:     next,
+      timestamp:     Date.now(),
+      detail,
+    };
+    this.emit({ to: 'specification', type: 'event', payload: event });
+    this.state = next;
+  }
+
+  // ── buildErrorResponse + buildResponse ─────────────────────────────────────
+
+  private buildErrorResponse(
+    code:    string,
+    message: string,
+    inState: SpecState,
+    to:      AgentId | 'user' = 'user',
+  ): AgentMessage {
+    const traceId = this.currentTraceId ?? generateTraceId(); // save BEFORE reset
+    this.state          = 'idle';
+    this.currentTraceId = null;
+    return {
+      traceId,
+      from:      'specification',
+      to,
+      type:      'error',
+      payload:   { code, message, state: inState },
+      timestamp: Date.now(),
+    };
+  }
+
+  private buildResponse(to: AgentId | 'user', output: SpecOutput): AgentMessage {
+    return {
+      traceId:    this.currentTraceId!,
+      from:       'specification',
+      to,
+      type:       'response',
+      payload:    output,
+      timestamp:  Date.now(),
+      legalBasis: output.legalBasis,
+    };
+  }
+
+  // ── collectLegalBasis ──────────────────────────────────────────────────────
+
+  private collectLegalBasis(
+    specOutput:    SpecOutput,
+    legalFindings: LegalFinding[],
+  ): string[] {
+    const citations = new Set<string>(specOutput.legalBasis);
+    for (const finding of legalFindings) {
+      citations.add(finding.legalBasis); // LegalFinding.legalBasis is string (single)
+    }
+    return [...citations];
+  }
+
+  // ── process ────────────────────────────────────────────────────────────────
+
+  async process(msg: AgentMessage): Promise<AgentMessage> {
+    const traceId    = msg.traceId;
+    const callerFrom = msg.from;
+    this.currentTraceId = traceId;
+    this.registry.log(msg);
+
+    const input = msg.payload as SpecInput;
+
+    if (!input?.itemName?.trim()) {
+      return this.buildErrorResponse(
+        'SPEC_EMPTY_INPUT',
+        'itemName không được rỗng',
+        'idle',
+        callerFrom,
+      );
+    }
+
+    try {
+      // ── REVIEWING_INPUT
+      this.transition('reviewing-input', `Kiểm tra yêu cầu: ${input.itemName}`);
+
+      // ── GENERATING_SPEC
+      this.transition('generating-spec');
+      const specOutput = generateSpecWithReasoning(input);
+
+      // ── CHECKING_BRANDS
+      this.transition('checking-brands');
+      if (specOutput.brandWarnings.length > 0) {
+        this.emit({
+          to:      'broadcast',
+          type:    'event',
+          payload: {
+            itemName:      input.itemName,
+            brandWarnings: specOutput.brandWarnings,
+            alternatives:  specOutput.alternatives,
+          },
+        });
+      }
+
+      // ── COMPOSING_RESPONSE
+      this.transition('composing-response');
+      const legalBasis    = this.collectLegalBasis(specOutput, input.legalFindings ?? []);
+      const finalOutput: SpecOutput = { ...specOutput, legalBasis };
+
+      const response = this.buildResponse(callerFrom, finalOutput);
+      this.registry.log(response);
+      this.state          = 'idle';
+      this.currentTraceId = null;
+      return response;
+
+    } catch (err) {
+      return this.buildErrorResponse(
+        'SPEC_INTERNAL_ERROR',
+        String(err),
+        this.state,
+        callerFrom,
+      );
+    }
   }
 }
