@@ -753,7 +753,7 @@ const handleInfoChange = <K extends keyof ProcurementPackage>(
 
 ---
 
-### P3-02 — `totalAmount` tính từ `supplier1Price` thay vì `unitPrice`
+### P3-02 — [DONE] `totalAmount` tính từ `supplier1Price` thay vì `unitPrice`
 
 **Root cause:** `App.tsx:93` tính tổng dựa trên `supplier1Price`. Khi người dùng nhập `unitPrice` trực tiếp (không qua supplier1Price), hai giá trị có thể lệch, dẫn đến tổng hiển thị khác với tổng trong văn bản.
 

@@ -91,8 +91,8 @@ export default function App() {
     }));
   };
 
-  // Calculate dynamic totals
-  const totalAmount = selectedPackage.items.reduce((sum, item) => sum + item.quantity * (item.supplier1Price || item.unitPrice), 0);
+  // Calculate dynamic totals — unitPrice is the approved budget baseline, not supplier quotes
+  const totalAmount = selectedPackage.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const method = getProcurementMethod({ ...selectedPackage, items: selectedPackage.items });
 
   // Date sequence order errors (red)
