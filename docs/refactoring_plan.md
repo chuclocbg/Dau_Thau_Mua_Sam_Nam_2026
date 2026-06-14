@@ -781,7 +781,7 @@ setSelectedPackage(structuredClone(pkg));
 
 ---
 
-### P3-04 — Không phân loại tài sản cố định, công cụ dụng cụ, vật tư tiêu hao
+### P3-04 — [DONE] Không phân loại tài sản cố định, công cụ dụng cụ, vật tư tiêu hao
 
 **Root cause:** Doc 22 (Phiếu ghi tăng tài sản) được đánh dấu "Khuyến nghị" cho mọi gói kể cả Gói 4 (văn phòng phẩm — giấy in, bút bi). Hàng tiêu hao không được ghi tăng tài sản mà hạch toán vào chi phí kỳ.
 

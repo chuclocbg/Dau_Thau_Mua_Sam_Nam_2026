@@ -130,7 +130,7 @@ export default function App() {
 
   // Filter documents by tab
   const filteredDocs = documentTemplates.filter(doc => {
-    const category = doc.getCategory(method.code);
+    const category = doc.getCategory(method.code, selectedPackage);
     if (activeTab === 'all') return true;
     return category === activeTab;
   });
@@ -614,15 +614,15 @@ export default function App() {
           <div className="scrollable" style={{ maxHeight: 'calc(100vh - 200px)' }}>
             <div className="doc-tab-list">
               {filteredDocs.map((doc) => {
-                const category = doc.getCategory(method.code);
+                const category = doc.getCategory(method.code, selectedPackage);
                 const isSelected = activeDoc.id === doc.id;
-                
+
                 let badgeClass = 'badge';
                 if (category === 'required') badgeClass += ' badge-success';
                 if (category === 'recommended') badgeClass += ' badge-warning';
                 if (category === 'not_applicable') badgeClass += ' badge-danger';
 
-                const displayCategoryLabel = doc.getCategoryLabel(method.code);
+                const displayCategoryLabel = doc.getCategoryLabel(method.code, selectedPackage);
 
                 return (
                   <div 

@@ -58,6 +58,8 @@ export interface ProcurementPackage {
   contractDurationDays: number;
   contractType?: 'lump_sum' | 'unit_price'; // Điều 62 Luật ĐT 2023 — mặc định trọn gói
   warrantyMonths?: number;                   // Tháng bảo hành kể từ ngày nghiệm thu
+  // TT 45/2018/TT-BTC: tài sản cố định ≥10 triệu VND/đơn vị; tiêu hao không ghi tăng tài sản
+  packageType?: 'goods_fixed_asset' | 'goods_consumable' | 'service' | 'mixed';
   items: ProcurementItem[];
 }
 
@@ -108,6 +110,7 @@ export const demoPackages: ProcurementPackage[] = [
     contractDurationDays: 15,
     contractType: 'lump_sum',
     warrantyMonths: 24,
+    packageType: 'goods_fixed_asset',
     items: [
       {
         id: 'item-1-1',
@@ -190,6 +193,7 @@ export const demoPackages: ProcurementPackage[] = [
     contractDurationDays: 7,
     contractType: 'unit_price',
     warrantyMonths: 12,
+    packageType: 'service',
     items: [
       {
         id: 'item-2-1',
@@ -283,6 +287,7 @@ export const demoPackages: ProcurementPackage[] = [
     contractDurationDays: 30,
     contractType: 'lump_sum',
     warrantyMonths: 12,
+    packageType: 'goods_consumable',
     items: [
       {
         id: 'item-3-1',
@@ -387,6 +392,7 @@ export const demoPackages: ProcurementPackage[] = [
     contractDurationDays: 2,
     contractType: 'lump_sum',
     warrantyMonths: 0,
+    packageType: 'goods_consumable',
     items: [
       {
         id: 'item-4-1',

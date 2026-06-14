@@ -367,8 +367,8 @@ const docxCompareTable = (pkg: ProcurementPackage) => {
 export interface DocumentConfig {
   id: number;
   name: string;
-  getCategory: (method: string) => 'required' | 'recommended' | 'not_applicable';
-  getCategoryLabel: (method: string) => string;
+  getCategory: (method: string, pkg?: ProcurementPackage) => 'required' | 'recommended' | 'not_applicable';
+  getCategoryLabel: (method: string, pkg?: ProcurementPackage) => string;
   getSigner: (pkg: ProcurementPackage) => string;
   getSignDate: (pkg: ProcurementPackage) => string;
   getAuditRisk: (pkg: ProcurementPackage) => string;
@@ -2169,8 +2169,19 @@ export const documentTemplates: DocumentConfig[] = [
   {
     id: 22,
     name: "Hồ sơ ghi tăng tài sản",
-    getCategory: () => 'recommended',
-    getCategoryLabel: () => 'Khuyến nghị',
+    // TT 45/2018/TT-BTC: chỉ ghi tăng tài sản cố định (≥10 triệu/đơn vị); tiêu hao và dịch vụ không áp dụng
+    getCategory: (m, pkg) => {
+      const t = pkg?.packageType;
+      if (t === 'goods_fixed_asset' || t === 'mixed') return 'required';
+      if (t === 'goods_consumable' || t === 'service') return 'not_applicable';
+      return 'recommended'; // fallback khi packageType chưa được thiết lập
+    },
+    getCategoryLabel: (m, pkg) => {
+      const t = pkg?.packageType;
+      if (t === 'goods_fixed_asset' || t === 'mixed') return 'Bắt buộc';
+      if (t === 'goods_consumable' || t === 'service') return 'Không áp dụng';
+      return 'Khuyến nghị';
+    },
     getSigner: (pkg) => `Hiệu trưởng / Kế toán trưởng`,
     getSignDate: (pkg) => pkg.dateAssetIncrease,
     getAuditRisk: (pkg) => "Không ghi chép tăng tài sản kịp thời vào phần mềm quản lý tài sản công MISA hoặc sổ sách kế toán của đơn vị.",
