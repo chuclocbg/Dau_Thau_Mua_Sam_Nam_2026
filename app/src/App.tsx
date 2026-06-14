@@ -31,7 +31,7 @@ export default function App() {
   };
 
   // Form field change handlers
-  const handleInfoChange = (field: keyof ProcurementPackage, value: any) => {
+  const handleInfoChange = <K extends keyof ProcurementPackage>(field: K, value: ProcurementPackage[K]) => {
     setSelectedPackage(prev => ({
       ...prev,
       [field]: value

@@ -733,7 +733,7 @@ Thu thập và bổ sung 5 file vào `Legal/`. Tra nguồn chính thức: vbpl.v
 
 ---
 
-### P3-01 — `handleInfoChange` dùng kiểu `any`
+### P3-01 — [DONE] `handleInfoChange` dùng kiểu `any`
 
 **Root cause:** `App.tsx:32` khai báo `value: any` cho hàm cập nhật form chung.
 
