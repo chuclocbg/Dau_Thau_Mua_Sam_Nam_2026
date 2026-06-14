@@ -579,6 +579,12 @@ export default function App() {
               </button>
             </div>
 
+            {/* Document number reminder — NĐ 30/2020/NĐ-CP: văn bản phải có số riêng */}
+            <div style={{ padding: '0.5rem 0.8rem', background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.4)', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', color: '#fcd34d', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <AlertTriangle size={13} />
+              <span><b>Lưu ý:</b> Điền số văn bản (thay ký hiệu <b>"..."</b>) trước khi ký và lưu hồ sơ. Văn bản hành chính không có số thứ tự không có giá trị pháp lý (NĐ 30/2020/NĐ-CP).</span>
+            </div>
+
             {/* Document specific audit risk warning card */}
             {activeDoc.getAuditRisk(selectedPackage) && (
               <div className="risk-warning-card" style={{ padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-sm)' }}>

@@ -576,7 +576,7 @@ Thêm 3 input `<type="date">` vào form section "Mốc thời gian" với label 
 
 ---
 
-### P2-09 — Số văn bản dùng ký tự "..." không hợp lệ pháp lý
+### P2-09 — [DONE] Số văn bản dùng ký tự "..." không hợp lệ pháp lý
 
 **Root cause:**  
 Hàm `docxHeaderTable()` và tương đương trong HTML tạo số văn bản dạng:
@@ -697,7 +697,7 @@ Hiển thị danh sách lỗi và yêu cầu xác nhận nếu có warning.
 
 ---
 
-### P2-14 — Thiếu 5 file văn bản pháp luật trong thư mục Legal/
+### P2-14 — [DONE] Thiếu 5 file văn bản pháp luật trong thư mục Legal/
 
 **Root cause:**  
 CLAUDE.md liệt kê 13 văn bản pháp luật theo thứ tự ưu tiên. Thư mục `Legal/` thiếu:
