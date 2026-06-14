@@ -47,21 +47,13 @@ export default function App() {
     }));
   };
 
-  // Items changes
-  const handleItemChange = (itemId: string, field: keyof ProcurementItem, value: any) => {
+  // Items changes — unitPrice (approved budget) and supplier prices are independent
+  const handleItemChange = <K extends keyof ProcurementItem>(itemId: string, field: K, value: ProcurementItem[K]) => {
     setSelectedPackage(prev => ({
       ...prev,
-      items: prev.items.map(item => {
-        if (item.id === itemId) {
-          const updated = { ...item, [field]: value };
-          // For Supplier 1 (preferred), set the unit price as the baseline
-          if (field === 'supplier1Price') {
-            updated.unitPrice = Number(value);
-          }
-          return updated;
-        }
-        return item;
-      })
+      items: prev.items.map(item =>
+        item.id === itemId ? { ...item, [field]: value } : item
+      )
     }));
   };
 
@@ -466,6 +458,12 @@ export default function App() {
                         <label>Đơn vị tính:</label>
                         <input type="text" className="form-input" value={item.unit} onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)} />
                       </div>
+                    </div>
+                    <div className="form-group">
+                      <label title="Đơn giá trong dự toán được phê duyệt — dùng tính tổng giá gói và xác định phương thức LCNT. Khác với báo giá thực tế của nhà cung cấp.">
+                        Đơn giá dự toán (VND) <span style={{ color: 'var(--color-accent)', fontSize: '0.72rem' }}>▸ Dự toán phê duyệt</span>
+                      </label>
+                      <input type="number" className="form-input" value={item.unitPrice} onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))} />
                     </div>
                     <div className="form-row">
                       <div className="form-group">

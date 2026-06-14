@@ -863,7 +863,7 @@ class DocErrorBoundary extends React.Component {
 
 ---
 
-### P3-09 — `handleItemChange` liên kết `unitPrice ← supplier1Price` không minh bạch
+### P3-09 — [DONE] `handleItemChange` liên kết `unitPrice ← supplier1Price` không minh bạch
 
 **Root cause:** `App.tsx:55–56` tự động cập nhật `unitPrice` khi `supplier1Price` thay đổi. Hành vi này không được thông báo cho người dùng và có thể ghi đè giá dự toán gốc họ đã nhập vào `unitPrice`.
 
