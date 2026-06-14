@@ -1095,7 +1095,7 @@ Phân loại: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] theo CLAUDE.md.
 
 ---
 
-### P5-04 — RAG Legal Knowledge Base (Tra cứu pháp luật)
+### P5-04 — [DONE] RAG Legal Knowledge Base (Tra cứu pháp luật)
 
 **Mô tả:**  
 Cho phép hỏi đáp pháp luật đấu thầu bằng ngôn ngữ tự nhiên. Ví dụ:
