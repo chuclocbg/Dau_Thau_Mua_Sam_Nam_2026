@@ -1,5 +1,5 @@
 /**
- * P6-04A: RiskAgent — schema and file skeleton.
+ * P6-04B: RiskAgent — pure risk-analysis functions.
  *
  * State machine:
  *   idle → assessing-risk → detecting-systemic → computing-matrix
@@ -14,11 +14,9 @@
  *
  * Pure functions (P6-04B):
  *   buildRiskMatrix()        — score each finding by likelihood × impact (1–5 × 1–5)
- *   detectSystemicRisk()     — identify recurring violation patterns across packages
- *   computeAuditExposure()   — estimate audit probability and financial impact
+ *   detectSystemicRisks()    — identify recurring violation patterns across packages
+ *   calculateAuditExposure() — estimate audit probability and financial impact
  *   buildMitigationPlan()    — ordered remediation steps sorted by riskScore
- *   determineOverallRisk()   — 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAN'
- *   assessRisk()             — master orchestrator producing full RiskOutput
  *
  * Agent methods (P6-04C):
  *   emit()               — registry event emitter
@@ -156,14 +154,260 @@ export const RISK_LEGAL_BASIS: readonly string[] = [
   'Khoản 1 Điều 10 Luật Đấu thầu 22/2023/QH15 — nguyên tắc cạnh tranh, công bằng, minh bạch',
 ];
 
-// ─── P6-04B: Pure functions (added in P6-04B) ────────────────────────────────
+// ─── P6-04B: Helpers (unexported) ────────────────────────────────────────────
 
-// buildRiskMatrix()        — map findings + crossCheckIssues → RiskMatrixEntry[]
-// detectSystemicRisk()     — scan historicalPackages for recurring patterns
-// computeAuditExposure()   — derive probability + potentialFindings + estimatedImpact
-// buildMitigationPlan()    — produce MitigationStep[] sorted by priority
-// determineOverallRisk()   — 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CLEAN'
-// assessRisk()             — RiskInput → RiskOutput master orchestrator
+const SCORE_BY_SEVERITY: Record<Severity, { likelihood: number; impact: number }> = {
+  CRITICAL: { likelihood: 5, impact: 5 },
+  HIGH:     { likelihood: 4, impact: 4 },
+  MEDIUM:   { likelihood: 3, impact: 3 },
+  LOW:      { likelihood: 2, impact: 2 },
+};
+
+function mapFindingCategory(category: string): RiskMatrixEntry['category'] {
+  switch (category) {
+    case 'brand-locking':
+    case 'method-mismatch':  return 'legal';
+    case 'contract-type':
+    case 'missing-clause':
+    case 'publication':      return 'procedural';
+    case 'date-gap':         return 'timeline';
+    case 'missing-data':
+    case 'asset-recording':  return 'financial';
+    default:                 return 'legal';
+  }
+}
+
+// ─── P6-04B: Pure functions ───────────────────────────────────────────────────
+
+/**
+ * Detects systemic violation patterns across a list of packages.
+ *
+ * Pattern 1 — Synchronized approvals: same packageType + same dateResultApprove
+ *   in ≥2 packages (CRITICAL for ≥3, HIGH for 2).  Identical approval dates
+ *   across independent packages indicate fabricated dates or coordinated bypass.
+ *
+ * Pattern 2 — Dominant supplier: same supplier1Name winning ≥3 packages
+ *   (MEDIUM).  Signals limited competition per Điều 10 Luật ĐT 22/2023.
+ */
+export function detectSystemicRisks(packages: ProcurementPackage[]): SystemicRisk[] {
+  const risks: SystemicRisk[] = [];
+  if (packages.length < 2) return risks;
+
+  // Pattern 1: same packageType + same dateResultApprove
+  const approvalGroups = new Map<string, ProcurementPackage[]>();
+  for (const pkg of packages) {
+    if (!pkg.packageType || !pkg.dateResultApprove) continue;
+    const key = `${pkg.packageType}|${pkg.dateResultApprove}`;
+    const grp = approvalGroups.get(key) ?? [];
+    grp.push(pkg);
+    approvalGroups.set(key, grp);
+  }
+  for (const [key, grp] of approvalGroups) {
+    if (grp.length < 2) continue;
+    const [, date] = key.split('|');
+    risks.push({
+      pattern:        `${grp.length} gói thầu cùng loại có ngày phê duyệt kết quả trùng nhau (${date})`,
+      severity:       grp.length >= 3 ? 'CRITICAL' : 'HIGH',
+      occurrences:    grp.length,
+      affectedIds:    grp.map(p => p.packageName),
+      recommendation: 'Kiểm tra tính độc lập giữa các quy trình phê duyệt. ' +
+        'Ngày phê duyệt trùng nhau giữa nhiều gói thầu cùng loại là dấu hiệu rủi ro ' +
+        'kiểm toán cao theo Điều 12 Luật Đấu thầu 22/2023/QH15.',
+    });
+  }
+
+  // Pattern 2: same supplier winning ≥3 packages (skip placeholder names)
+  const supplierGroups = new Map<string, ProcurementPackage[]>();
+  for (const pkg of packages) {
+    const supplier = pkg.supplier1Name?.trim();
+    if (!supplier || supplier.startsWith('[')) continue;
+    const grp = supplierGroups.get(supplier) ?? [];
+    grp.push(pkg);
+    supplierGroups.set(supplier, grp);
+  }
+  for (const [supplier, grp] of supplierGroups) {
+    if (grp.length < 3) continue;
+    risks.push({
+      pattern:        `Nhà cung cấp "${supplier}" trúng thầu ${grp.length} gói liên tiếp — nguy cơ hạn chế cạnh tranh`,
+      severity:       'MEDIUM',
+      occurrences:    grp.length,
+      affectedIds:    grp.map(p => p.packageName),
+      recommendation: 'Rà soát quá trình khảo sát giá và lựa chọn nhà cung cấp. ' +
+        'Đảm bảo có ít nhất 3 nhà cung cấp độc lập tham gia báo giá theo ' +
+        'Khoản 1 Điều 10 Luật Đấu thầu 22/2023/QH15.',
+    });
+  }
+
+  return risks;
+}
+
+/**
+ * Maps LegalFindings, CrossCheckIssues and PlannerOutput split warnings to a
+ * scored RiskMatrixEntry[].  CrossCheckIssues are converted to synthetic
+ * LegalFindings so the matrix has a uniform entry type.
+ * Returned array is sorted by riskScore descending.
+ */
+export function buildRiskMatrix(
+  dossierReview: DossierReviewOutput,
+  plannerOutput?: PlannerOutput,
+): RiskMatrixEntry[] {
+  const entries: RiskMatrixEntry[] = [];
+
+  // P5-03 / P6-03 legal findings
+  for (const finding of dossierReview.findings) {
+    const { likelihood, impact } = SCORE_BY_SEVERITY[finding.severity];
+    entries.push({
+      category:  mapFindingCategory(finding.category),
+      severity:  finding.severity,
+      finding,
+      likelihood,
+      impact,
+      riskScore: likelihood * impact,
+    });
+  }
+
+  // Cross-document timeline issues — wrapped as synthetic LegalFindings
+  for (const issue of dossierReview.crossCheckIssues) {
+    const { likelihood, impact } = SCORE_BY_SEVERITY[issue.severity];
+    const synthetic: LegalFinding = {
+      severity:       issue.severity,
+      code:           `CC-${issue.doc1Id}-${issue.doc2Id}`,
+      category:       'date-gap',
+      field:          issue.field,
+      message:        issue.description,
+      legalBasis:     'Điều 81 Nghị định 214/2025/NĐ-CP — trật tự thủ tục lựa chọn nhà thầu',
+      recommendation: 'Điều chỉnh ngày tháng trên các văn bản để đảm bảo trật tự thủ tục đúng quy định.',
+    };
+    entries.push({
+      category:  'timeline',
+      severity:  issue.severity,
+      finding:   synthetic,
+      likelihood,
+      impact,
+      riskScore: likelihood * impact,
+    });
+  }
+
+  // PlannerAgent split warnings (already LegalFinding[])
+  for (const finding of plannerOutput?.splitWarnings ?? []) {
+    const { likelihood, impact } = SCORE_BY_SEVERITY[finding.severity];
+    entries.push({
+      category:  'legal',
+      severity:  finding.severity,
+      finding,
+      likelihood,
+      impact,
+      riskScore: likelihood * impact,
+    });
+  }
+
+  return entries.sort((a, b) => b.riskScore - a.riskScore);
+}
+
+/**
+ * Estimates audit probability and financial impact from the risk matrix and
+ * the overall risk verdict produced by the agent (P6-04C).
+ *
+ * probability:
+ *   CRITICAL → 'high'  |  HIGH → 'medium'  |  else → 'low'
+ * potentialFindings:  CRITICAL + HIGH matrix messages.
+ * estimatedImpact:    Vietnamese narrative keyed on overallRisk.
+ */
+export function calculateAuditExposure(
+  riskMatrix:  RiskMatrixEntry[],
+  overallRisk: OverallRisk,
+): RiskOutput['auditExposure'] {
+  const probability: 'high' | 'medium' | 'low' =
+    overallRisk === 'CRITICAL' ? 'high' :
+    overallRisk === 'HIGH'     ? 'medium' : 'low';
+
+  const potentialFindings = riskMatrix
+    .filter(e => e.severity === 'CRITICAL' || e.severity === 'HIGH')
+    .map(e => `[${e.finding.code}] ${e.finding.message}`);
+
+  let estimatedImpact: string;
+  switch (overallRisk) {
+    case 'CRITICAL':
+      estimatedImpact =
+        'Nguy cơ thu hồi kinh phí, xử lý kỷ luật và đề nghị khởi tố theo quy định. ' +
+        'Ảnh hưởng nghiêm trọng đến uy tín đơn vị và kết quả kiểm toán năm.';
+      break;
+    case 'HIGH':
+      estimatedImpact =
+        'Yêu cầu bổ sung hồ sơ, tạm dừng thanh toán, kiến nghị chấn chỉnh. ' +
+        'Ảnh hưởng đến tiến độ giải ngân và đánh giá năng lực đơn vị.';
+      break;
+    case 'MEDIUM':
+      estimatedImpact =
+        'Kiến nghị khắc phục trong kỳ kiểm toán tiếp theo. ' +
+        'Không ảnh hưởng đến hiệu lực hợp đồng đã ký.';
+      break;
+    case 'LOW':
+      estimatedImpact = 'Lưu ý trong báo cáo kiểm toán. Không có hậu quả pháp lý trực tiếp.';
+      break;
+    default:
+      estimatedImpact = 'Không có rủi ro kiểm toán đáng kể. Hồ sơ đạt chuẩn.';
+  }
+
+  return { probability, potentialFindings, estimatedImpact };
+}
+
+/**
+ * Produces an ordered list of remediation steps from the risk matrix and any
+ * systemic risks.  Steps are de-duplicated by recommendation text; finding
+ * codes for duplicate actions are merged into the first occurrence.
+ * Responsible party always uses a neutral placeholder per CLAUDE.md.
+ */
+export function buildMitigationPlan(
+  riskMatrix:    RiskMatrixEntry[],
+  systemicRisks: SystemicRisk[],
+): MitigationStep[] {
+  // riskMatrix is already sorted by riskScore desc → first occurrence wins priority
+  const actionIndex = new Map<string, { entry: RiskMatrixEntry; codes: string[] }>();
+  for (const entry of riskMatrix) {
+    const action = entry.finding.recommendation;
+    const existing = actionIndex.get(action);
+    if (existing) {
+      existing.codes.push(entry.finding.code);
+    } else {
+      actionIndex.set(action, { entry, codes: [entry.finding.code] });
+    }
+  }
+
+  const steps: MitigationStep[] = [];
+  let priority = 1;
+
+  for (const [action, { entry, codes }] of actionIndex) {
+    const responsible =
+      entry.severity === 'CRITICAL' || entry.severity === 'HIGH'
+        ? '[Tổ trưởng tổ chuyên gia]'
+        : '[Thành viên tổ chuyên gia]';
+    steps.push({
+      priority:   priority++,
+      action,
+      responsible,
+      riskCodes:  [...new Set(codes)],
+    });
+  }
+
+  // Systemic risks not already covered by a riskMatrix recommendation
+  for (const risk of systemicRisks) {
+    if (!actionIndex.has(risk.recommendation)) {
+      const responsible =
+        risk.severity === 'CRITICAL' || risk.severity === 'HIGH'
+          ? '[Tổ trưởng thẩm định độc lập]'
+          : '[Thành viên tổ chuyên gia]';
+      steps.push({
+        priority:   priority++,
+        action:     risk.recommendation,
+        responsible,
+        riskCodes:  [`SYSTEMIC-${risk.severity}`],
+      });
+    }
+  }
+
+  return steps;
+}
 
 // ─── RiskAgent ───────────────────────────────────────────────────────────────
 
