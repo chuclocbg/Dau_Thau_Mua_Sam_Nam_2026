@@ -1125,7 +1125,7 @@ Từ một yêu cầu ngắn bằng ngôn ngữ tự nhiên, tự động:
 
 **Files:**
 - `app/src/ai/workflowOrchestrator.ts` — 5-bước pipeline, export `WORKFLOW_DOCUMENT_IDS`, `WORKFLOW_DOCUMENT_NAMES`
-- `app/src/AiAssistantPanel.tsx` — React UI: input NL, hiển thị steps/findings/KB, nút "Áp dụng" + "Tải ZIP"
+- `app/src/AiAssistantPanel.tsx` — React UI: input NL, hiển thị steps/findings/KB, nút "Áp dụng" + "Tải ZIP"; nhãn tiếng Việt cho packageType/contractType
 - `app/src/App.tsx` — tích hợp toggle "Trợ lý AI" trong header
 - `app/src/__tests__/ai-workflow.test.ts` — 30 unit tests (5 steps, KB results, selectedDocumentIds)
 

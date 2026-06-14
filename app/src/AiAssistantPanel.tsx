@@ -16,6 +16,19 @@ const SEVERITY_COLOR: Record<string, string> = {
   LOW:      '#27ae60',
 };
 
+const PACKAGE_TYPE_LABEL: Record<string, string> = {
+  goods_fixed_asset: 'Tài sản cố định',
+  goods_consumable:  'Hàng hóa tiêu hao',
+  service:           'Dịch vụ',
+  mixed:             'Hỗn hợp',
+};
+
+const CONTRACT_TYPE_LABEL: Record<string, string> = {
+  lump_sum:   'Trọn gói',
+  unit_price: 'Đơn giá cố định',
+  time_based: 'Theo thời gian',
+};
+
 export default function AiAssistantPanel({ onApplyPackage }: Props) {
   const [request, setRequest] = useState('');
   const [year, setYear]       = useState(new Date().getFullYear());
@@ -128,7 +141,7 @@ export default function AiAssistantPanel({ onApplyPackage }: Props) {
           <div className="ai-summary">
             <div><b>Gói thầu:</b> {result.pkg.packageName}</div>
             <div><b>Mã:</b> {result.pkg.packageCode} &nbsp;|&nbsp; <b>Năm:</b> {result.pkg.budgetYear}</div>
-            <div><b>Loại:</b> {result.pkg.packageType} &nbsp;|&nbsp; <b>Hợp đồng:</b> {result.pkg.contractType}</div>
+            <div><b>Loại:</b> {PACKAGE_TYPE_LABEL[result.pkg.packageType ?? ''] ?? result.pkg.packageType} &nbsp;|&nbsp; <b>Hợp đồng:</b> {CONTRACT_TYPE_LABEL[result.pkg.contractType ?? ''] ?? result.pkg.contractType}</div>
           </div>
 
           {/* Legal findings */}
