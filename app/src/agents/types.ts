@@ -19,7 +19,7 @@ export type AgentId =
 export interface AgentMessage {
   traceId:       string;              // UUID v4, không được rỗng
   from:          AgentId | 'user';
-  to:            AgentId | 'broadcast';
+  to:            AgentId | 'broadcast' | 'user';  // 'user' for responses back to the caller
   type:          'request' | 'response' | 'event' | 'error';
   payload:       unknown;
   timestamp:     number;              // Date.now()
