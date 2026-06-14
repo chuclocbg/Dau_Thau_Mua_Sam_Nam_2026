@@ -1,12 +1,9 @@
 /**
- * P6-01D: PlannerAgent — full class implementation.
+ * P6-01E: PlannerAgent — P5 integration (buildMinimalProcurementPackage + deep analysis).
  *
  * State machine:
  *   idle → parsing-goal → detecting-split → validating-authority
- *        → building-calendar → composing-response → idle
- *
- * P5 deep-analysis integration (buildMinimalProcurementPackage, runWorkflow)
- * is deferred to P6-01E.
+ *        → [deep-analysis?] → building-calendar → composing-response → idle
  */
 
 // ─── Type-only imports ────────────────────────────────────────────────────────
@@ -18,6 +15,7 @@ import type { LegalFinding }                                from '../ai/legalRev
 import type { WorkflowResult }                              from '../ai/workflowOrchestrator';
 import type { AuthorityCheck }                              from './validateAuthority';
 import type { Quarter, CalendarEntry, ProcurementCalendar } from './buildCalendar';
+import type { ProcurementPackage }                          from '../demoData';
 
 // ─── Runtime imports — P6-01C algorithms (used in class body) ─────────────────
 
@@ -25,9 +23,11 @@ import { generateTraceId, parseGoalIntoItems, detectPackageSplitting } from './d
 import { validateAuthority }                                            from './validateAuthority';
 import { assignQuarter, getProcurementLeadTime, buildCalendar }        from './buildCalendar';
 
-// ─── Runtime import — P5 function called in process() ─────────────────────────
+// ─── Runtime imports — P5 functions ───────────────────────────────────────────
 
 import { generatePackageSuggestion }                                    from '../ai/packageGenerator';
+import { reviewPackage }                                                from '../ai/legalReviewer';
+import { runWorkflow }                                                  from '../ai/workflowOrchestrator';
 
 // ─── Re-export types (P6-01C) as unified public API ──────────────────────────
 
@@ -98,6 +98,84 @@ export interface PlannerOutput {
   warnings:          string[];
   /** Only present when PlannerInput.deepAnalysis === true (wired in P6-01E). */
   workflowResults?:  WorkflowResult[];
+}
+
+// ─── PEOPLE_PLACEHOLDERS (E-02) ───────────────────────────────────────────────
+// All 17 fields use [bracket] format per CLAUDE.md demo data rules.
+// No real names, departments, suppliers, or tax codes.
+
+const PEOPLE_PLACEHOLDERS = {
+  rectorName:             '[Tên Hiệu trưởng]',
+  departmentName:         '[Tên đơn vị đề xuất]',
+  departmentCode:         '[Mã phòng]',
+  expertTeamLeader:       '[Tổ trưởng tổ chuyên gia]',
+  expertTeamMember1:      '[Thành viên tổ chuyên gia]',
+  expertTeamMember2:      '[Thành viên tổ chuyên gia]',
+  appraisalLeader:        '[Tổ trưởng thẩm định độc lập]',
+  appraisalMember:        '[Thành viên thẩm định độc lập]',
+  supplier1Name:          '[Nhà cung cấp số 1]',
+  supplier1Address:       '[Địa chỉ nhà cung cấp 1]',
+  supplier1TaxCode:       '[Mã số thuế]',
+  supplier1Representative:'[Người đại diện]',
+  supplier1Position:      '[Chức vụ]',
+  supplier2Name:          '[Nhà cung cấp số 2]',
+  supplier2Address:       '[Địa chỉ nhà cung cấp 2]',
+  supplier3Name:          '[Nhà cung cấp số 3]',
+  supplier3Address:       '[Địa chỉ nhà cung cấp 3]',
+} as const;
+
+// ─── buildMinimalProcurementPackage (E-03) ─────────────────────────────────────
+// Builds the smallest valid ProcurementPackage from an AISuggestion for use in
+// deep analysis (P5 reviewPackage / runWorkflow). All dates are blank; only 1
+// item is created. TypeScript enforces all required ProcurementPackage fields.
+
+export function buildMinimalProcurementPackage(
+  suggestion: AISuggestion,
+  budgetYear: number,
+): ProcurementPackage {
+  return {
+    id:              `planner-preview-${suggestion.packageCode}`,
+    packageName:     suggestion.packageName,
+    packageCode:     suggestion.packageCode,
+    fundingSource:   suggestion.fundingSource,
+    fundingSourceName: suggestion.fundingSourceName,
+    budgetYear,
+    ...PEOPLE_PLACEHOLDERS,
+    // All date fields blank — preview only, not a confirmed dossier
+    dateProposal:        '',
+    dateSurvey:          '',
+    dateQuotes:          '',
+    dateCompare:         '',
+    dateKhlcnt:          '',
+    dateKhlcntApprove:   '',
+    dateExpertEstablish: '',
+    dateDocIssue:        '',
+    dateBidClose:        '',
+    dateEvaluate:        '',
+    dateAppraise:        '',
+    dateResultProposal:  '',
+    dateResultApprove:   '',
+    dateContractSign:    '',
+    dateDelivery:        '',
+    dateAcceptance:      '',
+    dateLiquidation:     '',
+    dateAssetIncrease:   '',
+    contractDurationDays: suggestion.contractDurationDays,
+    contractType:        suggestion.contractType,
+    packageType:         suggestion.packageType,
+    warrantyMonths:      suggestion.packageType === 'goods_fixed_asset' ? 12 : 0,
+    items: [{
+      id:             `planner-item-${suggestion.packageCode}`,
+      name:           suggestion.packageName,
+      unit:           'Bộ',
+      quantity:       1,
+      unitPrice:      suggestion.estimatedTotal,
+      specs:          '',
+      supplier1Price: 0,
+      supplier2Price: 0,
+      supplier3Price: 0,
+    }],
+  };
 }
 
 // ─── PlannerAgent ─────────────────────────────────────────────────────────────
@@ -260,6 +338,14 @@ export class PlannerAgent implements IAgent {
       this.transition('validating-authority');
       const authorityChecks = packages.map(pkg => validateAuthority(pkg));
 
+      // ── DEEP ANALYSIS (E-04, optional)
+      let workflowResults: WorkflowResult[] | undefined;
+      if (input.deepAnalysis) {
+        workflowResults = packages.map(pkg =>
+          runWorkflow(pkg.packageName, input.budgetYear),
+        );
+      }
+
       // ── BUILDING_CALENDAR
       this.transition('building-calendar');
       const calendar = buildCalendar(packages, input.budgetYear);
@@ -283,6 +369,7 @@ export class PlannerAgent implements IAgent {
         legalBasis,
         confidence,
         warnings: [],
+        workflowResults,
       };
 
       const response = this.buildResponse(callerFrom, output);
