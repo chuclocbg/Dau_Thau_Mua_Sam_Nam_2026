@@ -1,12 +1,18 @@
 /**
- * P6-02A: SpecificationAgent — type declarations + class skeleton.
+ * P6-02B: SpecificationAgent — core pure functions + class skeleton.
  *
- * State machine (to be implemented in P6-02B):
+ * State machine (to be implemented in P6-02C):
  *   idle → reviewing-input → generating-spec → checking-brands
  *        → [suggesting-alternatives?] → composing-response → idle
  *
  * Builds on P5-02 (specGenerator.ts): adds reasoning fields,
  * multi-item batch processing, and LegalReviewerAgent feedback loop (P6-03).
+ *
+ * Pure functions (P6-02B):
+ *   reviewSpec()               — brand detection (extends P5-02)
+ *   suggestAlternatives()      — functional alternatives per brand
+ *   generateSpecWithReasoning() — SpecInput → SpecOutput with audit reasoning
+ *   batchGenerate()            — batch processing of SpecInput[]
  */
 
 // ─── Type-only imports ────────────────────────────────────────────────────────
@@ -96,6 +102,172 @@ export interface SpecStateEvent {
   detail?:       string;
 }
 
+// ─── Legal basis constants ────────────────────────────────────────────────────
+
+const SPEC_LEGAL_BASIS: readonly string[] = [
+  'Điều 44 khoản 7 Luật Đấu thầu 22/2023/QH15 — không khóa thương hiệu, không hạn chế xuất xứ',
+  'Khoản 1 Điều 10 Luật Đấu thầu 22/2023/QH15 — nguyên tắc cạnh tranh, công bằng, minh bạch',
+];
+
+// ─── P6-02B: Pure functions ───────────────────────────────────────────────────
+
+/**
+ * Detects brand names in a specification string and optional item name.
+ * Extends P5-02 detectBrandLocking by including the item name in the scan.
+ *
+ * @returns Array of detected brand name strings (empty = clean).
+ */
+export function reviewSpec(specs: string, itemName = ''): string[] {
+  return detectBrandLocking(`${itemName} ${specs}`.trim());
+}
+
+/**
+ * Returns functional alternatives for each detected brand name.
+ * Generic catch-all alternative always included first.
+ * Category-specific alternatives are added per brand.
+ */
+export function suggestAlternatives(specs: string, brandWarnings: string[]): string[] {
+  if (brandWarnings.length === 0) return [];
+
+  const alternatives: string[] = [
+    'Cho phép sản phẩm/thiết bị tương đương hoặc cao hơn của bất kỳ nhà sản xuất ' +
+    'nào đáp ứng tiêu chí kỹ thuật tối thiểu quy định trong HSMT.',
+  ];
+
+  for (const brand of brandWarnings) {
+    const lower = brand.toLowerCase();
+    if (/dell|hp|hewlett|asus|lenovo|acer|apple|mac/.test(lower)) {
+      alternatives.push(
+        `Thay "${brand}": CPU ≥[tốc độ tối thiểu] GHz, RAM ≥[X] GB, SSD ≥[X] GB — ` +
+        'ghi rõ thông số chức năng, không nêu tên thương hiệu.',
+      );
+    } else if (/panasonic|daikin|mitsubishi|carrier|gree|electrolux|fujitsu/.test(lower)) {
+      alternatives.push(
+        `Thay "${brand}": điều hòa inverter đạt nhãn năng lượng cấp 2 trở lên, ` +
+        'COP ≥3.0, môi chất lạnh R-32 hoặc R-410A.',
+      );
+    } else if (/merck|sigma|fisher|thermo/.test(lower)) {
+      alternatives.push(
+        `Thay "${brand}": hóa chất độ tinh khiết AR/ACS grade, có Certificate of Analysis ` +
+        'từng lô, nhà sản xuất đạt ISO 9001 hoặc tương đương.',
+      );
+    } else if (/canon|epson|brother|ricoh|xerox|sharp|toshiba|konica/.test(lower)) {
+      alternatives.push(
+        `Thay "${brand}": máy in tốc độ ≥[X] trang/phút, độ phân giải ≥600 dpi, ` +
+        'bảo hành ≥12 tháng, tương thích Windows 10/11.',
+      );
+    } else if (/cisco|huawei|d.link|tp.link|netgear|mikrotik|ubiquiti/.test(lower)) {
+      alternatives.push(
+        `Thay "${brand}": thiết bị mạng băng thông ≥[X] Gbps, hỗ trợ VLAN IEEE 802.1Q, ` +
+        'bảo hành ≥36 tháng.',
+      );
+    } else {
+      alternatives.push(
+        `Thay "${brand}": ghi rõ thông số kỹ thuật chức năng tối thiểu — ` +
+        'không nêu tên thương hiệu, xuất xứ, hoặc mã sản phẩm cụ thể.',
+      );
+    }
+  }
+
+  return alternatives;
+}
+
+/** Builds one reasoning entry per spec criterion line for audit traceability. */
+function buildReasoning(specs: string, input: SpecInput): string[] {
+  if (!specs.trim()) {
+    return [
+      'Chưa có yêu cầu kỹ thuật — cần soạn thủ công theo nguyên tắc: ' +
+      'chức năng, ngưỡng tối thiểu, tương đương hoặc tốt hơn.',
+    ];
+  }
+  const lines = specs.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return ['Yêu cầu kỹ thuật rỗng.'];
+
+  const tag = `[${input.packageType}] ${input.itemName}`;
+  return lines.map(line => {
+    const criterion = line.replace(/;$/, '').trim();
+    return (
+      `${tag} — "${criterion}": tiêu chí chức năng tối thiểu, ` +
+      'không khóa thương hiệu (Điều 44 khoản 7 Luật ĐT 22/2023).'
+    );
+  });
+}
+
+/**
+ * Generates a brand-neutral SpecOutput from a SpecInput.
+ *
+ * Wraps P5-02 generateItemSpec and adds:
+ *   - reasoning[] per criterion
+ *   - alternatives[] for every detected brand
+ *   - complianceStatus derived from brandWarnings + legalFindings
+ *   - legalBasis with SPEC_LEGAL_BASIS citations
+ */
+export function generateSpecWithReasoning(input: SpecInput): SpecOutput {
+  const base          = generateItemSpec(input.itemName, input.existingSpecs ?? '');
+  const brandWarnings = reviewSpec(base.specs, input.itemName);
+  const reasoning     = buildReasoning(base.specs, input);
+  const alternatives  = suggestAlternatives(base.specs, brandWarnings);
+
+  const hasCritical  = input.legalFindings?.some(f => f.severity === 'CRITICAL') ?? false;
+  const complianceStatus: SpecOutput['complianceStatus'] =
+    brandWarnings.length > 0
+      ? (hasCritical ? 'violation' : 'warning')
+      : 'compliant';
+
+  return {
+    specs:            base.specs,
+    reasoning,
+    brandWarnings,
+    alternatives,
+    complianceStatus,
+    legalBasis:       [...SPEC_LEGAL_BASIS],
+  };
+}
+
+/**
+ * Generates SpecOutput for every item in the batch.
+ * Applies sharedContext to existingSpecs of each item when provided.
+ * overallComplianceStatus reflects the worst status across all items.
+ */
+export function batchGenerate(input: BatchSpecInput): BatchSpecOutput {
+  const results: BatchSpecOutput['results']         = [];
+  let totalBrandWarnings                            = 0;
+  let overallComplianceStatus: SpecOutput['complianceStatus'] = 'compliant';
+  const allLegal = new Set<string>(SPEC_LEGAL_BASIS);
+
+  for (const item of input.items) {
+    const enriched: SpecInput = input.sharedContext
+      ? {
+          ...item,
+          existingSpecs: [item.existingSpecs, input.sharedContext]
+            .filter(Boolean)
+            .join('\n'),
+        }
+      : item;
+
+    const output = generateSpecWithReasoning(enriched);
+    results.push({ itemName: item.itemName, output });
+    totalBrandWarnings += output.brandWarnings.length;
+    for (const b of output.legalBasis) allLegal.add(b);
+
+    if (output.complianceStatus === 'violation') {
+      overallComplianceStatus = 'violation';
+    } else if (
+      output.complianceStatus === 'warning' &&
+      overallComplianceStatus !== 'violation'
+    ) {
+      overallComplianceStatus = 'warning';
+    }
+  }
+
+  return {
+    results,
+    totalBrandWarnings,
+    overallComplianceStatus,
+    legalBasis: [...allLegal],
+  };
+}
+
 // ─── SpecificationAgent ───────────────────────────────────────────────────────
 
 export class SpecificationAgent implements IAgent {
@@ -119,10 +291,10 @@ export class SpecificationAgent implements IAgent {
     ];
   }
 
-  // process() and private helpers will be implemented in P6-02B.
+  // process() and private helpers will be implemented in P6-02C.
   async process(_msg: AgentMessage): Promise<AgentMessage> {
     throw new Error(
-      'SpecificationAgent.process() not yet implemented — complete P6-02B first',
+      'SpecificationAgent.process() not yet implemented — complete P6-02C first',
     );
   }
 }
