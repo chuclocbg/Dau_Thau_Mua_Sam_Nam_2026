@@ -1,5 +1,5 @@
 /**
- * P6-03B: LegalReviewerAgent — pure functions added.
+ * P6-03C: LegalReviewerAgent — complete implementation.
  *
  * State machine:
  *   idle → reviewing-package → cross-checking → computing-score
@@ -417,24 +417,148 @@ export class LegalReviewerAgent implements IAgent {
     ];
   }
 
-  // ── P6-03C: emit(), transition(), buildErrorResponse(), buildResponse(),
-  //            process() — added in P6-03C.
+  // ── emit + transition ──────────────────────────────────────────────────────
 
-  async process(_msg: AgentMessage): Promise<AgentMessage> {
-    const traceId = _msg.traceId || generateTraceId();
+  private emit(partial: Omit<AgentMessage, 'traceId' | 'from' | 'timestamp'>): void {
+    const msg: AgentMessage = {
+      traceId:   this.currentTraceId!,
+      from:      'legal-reviewer',
+      timestamp: Date.now(),
+      ...partial,
+    };
+    this.registry.log(msg);
+    if (msg.to === 'broadcast') {
+      this.registry.notifySubscribers(msg.type, msg);
+    }
+  }
+
+  private transition(next: ReviewerState, detail?: string): void {
+    const event: ReviewerStateEvent = {
+      previousState: this.state,
+      nextState:     next,
+      timestamp:     Date.now(),
+      detail,
+    };
+    this.emit({ to: 'legal-reviewer', type: 'event', payload: event });
+    this.state = next;
+  }
+
+  // ── buildErrorResponse + buildResponse ─────────────────────────────────────
+
+  private buildErrorResponse(
+    code:    string,
+    message: string,
+    inState: ReviewerState,
+    to:      AgentId | 'user' = 'user',
+  ): AgentMessage {
+    const traceId = this.currentTraceId ?? generateTraceId(); // save BEFORE reset
     this.state          = 'idle';
     this.currentTraceId = null;
     return {
       traceId,
       from:      'legal-reviewer',
-      to:        _msg.from as AgentId | 'user',
+      to,
       type:      'error',
-      payload:   {
-        code:    'NOT_IMPLEMENTED',
-        message: 'P6-03C: process() not yet implemented',
-        state:   'idle' satisfies ReviewerState,
-      },
+      payload:   { code, message, state: inState },
       timestamp: Date.now(),
     };
+  }
+
+  private buildResponse(to: AgentId | 'user', output: DossierReviewOutput): AgentMessage {
+    return {
+      traceId:    this.currentTraceId!,
+      from:       'legal-reviewer',
+      to,
+      type:       'response',
+      payload:    output,
+      timestamp:  Date.now(),
+      legalBasis: output.legalBasis,
+    };
+  }
+
+  // ── collectLegalBasis ──────────────────────────────────────────────────────
+
+  /**
+   * Merges legal citations from three sources (Set dedup):
+   *   1. dossierOutput.legalBasis — already merged by reviewPackage() (P6-03B)
+   *   2. REVIEWER_LEGAL_BASIS constant — defensive re-inclusion
+   *   3. Individual finding.legalBasis strings — P5-03 citations per finding
+   */
+  private collectLegalBasis(dossierOutput: DossierReviewOutput): string[] {
+    const citations = new Set<string>(dossierOutput.legalBasis);
+    for (const basis of REVIEWER_LEGAL_BASIS) {
+      citations.add(basis);
+    }
+    for (const finding of dossierOutput.findings) {
+      citations.add(finding.legalBasis); // LegalFinding.legalBasis is string (single)
+    }
+    return [...citations];
+  }
+
+  // ── process ────────────────────────────────────────────────────────────────
+
+  async process(msg: AgentMessage): Promise<AgentMessage> {
+    const traceId    = msg.traceId;
+    const callerFrom = msg.from;
+    this.currentTraceId = traceId;
+    this.registry.log(msg);
+
+    const input = msg.payload as DossierReviewInput;
+
+    if (!input?.pkg) {
+      return this.buildErrorResponse(
+        'REVIEWER_EMPTY_INPUT',
+        'DossierReviewInput.pkg không được rỗng',
+        'idle',
+        callerFrom,
+      );
+    }
+
+    try {
+      // ── REVIEWING_PACKAGE — runs P5-03 review + cross-check + score + readiness
+      this.transition('reviewing-package', `Kiểm tra gói thầu: ${input.pkg.packageName}`);
+      const dossierOutput = reviewPackage(input);
+
+      // ── CROSS_CHECKING — broadcast CRITICAL findings to RiskAgent / SpecificationAgent
+      this.transition('cross-checking');
+      const hasCritical =
+        dossierOutput.findings.some(f => f.severity === 'CRITICAL') ||
+        dossierOutput.crossCheckIssues.some(c => c.severity === 'CRITICAL');
+
+      if (hasCritical) {
+        this.emit({
+          to:      'broadcast',
+          type:    'event',
+          payload: {
+            packageName:      input.pkg.packageName,
+            dossierReview:    dossierOutput,
+            criticalFindings: dossierOutput.findings.filter(f => f.severity === 'CRITICAL'),
+            hasBrandLocking:  dossierOutput.findings.some(f => f.category === 'brand-locking'),
+          },
+        });
+      }
+
+      // ── COMPUTING_SCORE — score already computed in reviewPackage(); transition for trace
+      this.transition('computing-score');
+
+      // ── COMPOSING_RESPONSE
+      this.transition('composing-response');
+      const legalBasis             = this.collectLegalBasis(dossierOutput);
+      const finalOutput: DossierReviewOutput = { ...dossierOutput, legalBasis };
+
+      const response = this.buildResponse(callerFrom, finalOutput);
+      this.registry.log(response);
+      this.state          = 'idle';
+      this.currentTraceId = null;
+      return response;
+
+    } catch (err) {
+      return this.buildErrorResponse(
+        'REVIEWER_INTERNAL_ERROR',
+        String(err),
+        this.state,
+        callerFrom,
+      );
+    }
   }
 }
