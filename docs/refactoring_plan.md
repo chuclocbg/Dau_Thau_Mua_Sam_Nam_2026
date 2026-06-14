@@ -845,7 +845,7 @@ Theo thứ tự ưu tiên:
 
 ---
 
-### P3-08 — Không có React Error Boundary
+### P3-08 — [DONE] Không có React Error Boundary
 
 **Root cause:** Ứng dụng React không có error boundary. Nếu bất kỳ `getHtml()` hoặc `getDocx()` nào throw exception (ví dụ: khi items rỗng), toàn bộ app crash trắng màn hình.
 

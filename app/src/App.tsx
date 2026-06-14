@@ -9,6 +9,7 @@ import {
   documentTemplates, getProcurementMethod, formatVND, downloadDocx
 } from './docTemplates';
 import { validateDateGaps, validatePackageBeforeExport } from './utils';
+import { DocErrorBoundary } from './DocErrorBoundary';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -593,7 +594,9 @@ export default function App() {
               </div>
             )}
 
-            <div className="paper-sheet scrollable" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeDoc.getHtml(selectedPackage, method.code)) }} />
+            <DocErrorBoundary fallbackLabel={`Không thể hiển thị "${activeDoc.name}". Kiểm tra console để biết chi tiết lỗi.`}>
+              <div className="paper-sheet scrollable" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(activeDoc.getHtml(selectedPackage, method.code)) }} />
+            </DocErrorBoundary>
           </div>
         </div>
 
