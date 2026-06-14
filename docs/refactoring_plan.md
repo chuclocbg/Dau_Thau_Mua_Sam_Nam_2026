@@ -1037,6 +1037,105 @@ export const INSTITUTION = {
 
 ---
 
+## Phase 5 — AI Agent (Trợ lý đấu thầu AI)
+
+> Biến hệ thống từ "công cụ tạo văn bản" thành "trợ lý AI đấu thầu" cho cơ sở đào tạo nghề công lập.  
+> **Nguyên tắc kỹ thuật:** Toàn bộ logic AI hoạt động phía client (rule-based NLP + static knowledge base), không gọi API ngoài, không cần backend. Đảm bảo: minh bạch kiểm toán, hoạt động offline, không hallucinate nội dung pháp lý.
+
+---
+
+### P5-01 — [DONE] AI Package Generator (Trợ lý tạo gói thầu)
+
+**Mô tả:**  
+Người dùng nhập yêu cầu bằng ngôn ngữ tự nhiên (tiếng Việt hoặc tiếng Anh). Hệ thống tự động đề xuất:
+- `packageName` — tên gói thầu chuẩn hành chính
+- `packageCode` — mã gói thầu gợi ý
+- `fundingSource` — nguồn vốn dự kiến
+- `packageType` — phân loại (goods_fixed_asset / goods_consumable / service / mixed)
+- `contractType` — loại hợp đồng (lump_sum / unit_price)
+- `contractDurationDays` — thời hạn thực hiện dự kiến
+- `procurementMethodHint` — phương thức LCNT ước tính
+
+**Cơ chế:** Rule-based NLP: keyword matching + quantity extraction + category mapping. Không gọi API ngoài.
+
+**Files:** `app/src/ai/packageGenerator.ts`, `app/src/ai/AiAssistantPanel.tsx`, `app/src/__tests__/ai-package-generator.test.ts`
+
+---
+
+### P5-02 — AI Specification Generator (Trợ lý viết yêu cầu kỹ thuật)
+
+**Mô tả:**  
+Sinh yêu cầu kỹ thuật chuẩn đấu thầu từ tên/danh mục thiết bị:
+- Tránh khóa thương hiệu (vi phạm Điều 44 khoản 7 Luật ĐT 22/2023)
+- Cho phép sản phẩm tương đương
+- Dùng tiêu chí chức năng và yêu cầu tối thiểu thay vì tên hàng cụ thể
+- Phát hiện và loại bỏ tên thương hiệu trong input của người dùng
+
+**Cơ chế:** Template-based generation với catalog danh mục → spec template.
+
+**Files:** `app/src/ai/specGenerator.ts`, tích hợp button "Gợi ý kỹ thuật" vào items section, `app/src/__tests__/ai-spec-generator.test.ts`
+
+---
+
+### P5-03 — AI Legal Reviewer (Rà soát pháp lý tự động)
+
+**Mô tả:**  
+Phát hiện tự động các rủi ro kiểm toán:
+- Khóa thương hiệu trong yêu cầu kỹ thuật
+- Loại hợp đồng sai (trọn gói cho gói dịch vụ biến động)
+- Ngày tháng mâu thuẫn hoặc không đủ khoảng cách tối thiểu
+- Thiếu điều khoản bắt buộc (bảo hành, phạt vi phạm, VAT)
+- Tổng giá trị vs. phương thức LCNT khai báo không khớp
+
+Phân loại: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] theo CLAUDE.md.
+
+**Cơ chế:** Rule-based scanner trên toàn bộ ProcurementPackage. Tái sử dụng `validateDateGaps()` từ utils.ts.
+
+**Files:** `app/src/ai/legalReviewer.ts`, hiển thị findings trong panel phân tích, `app/src/__tests__/ai-legal-reviewer.test.ts`
+
+---
+
+### P5-04 — RAG Legal Knowledge Base (Tra cứu pháp luật)
+
+**Mô tả:**  
+Cho phép hỏi đáp pháp luật đấu thầu bằng ngôn ngữ tự nhiên. Ví dụ:
+- "Loại hợp đồng nào cho bảo trì điều hòa?" → Điều 62 Luật ĐT 22/2023
+- "Thời gian tối thiểu HSYC → đóng thầu?" → Điều 81 NĐ 214/2025
+- "Ngưỡng chào hàng cạnh tranh là bao nhiêu?" → NĐ 214/2025 Điều 24
+
+**Cơ chế:** Static embedded JSON knowledge base (pre-processed từ Legal/*.md). Keyword search trên client.
+
+**Files:** `app/src/ai/legalKnowledgeBase.ts`, panel tra cứu mới trong App.tsx, `app/src/__tests__/ai-legal-kb.test.ts`
+
+---
+
+### P5-05 — One-Click Procurement Workflow (Quy trình một chạm)
+
+**Mô tả:**  
+Từ một yêu cầu ngắn bằng ngôn ngữ tự nhiên, tự động:
+1. Phân tích yêu cầu → tạo gói thầu đầy đủ (P5-01)
+2. Sinh yêu cầu kỹ thuật cho từng hạng mục (P5-02)
+3. Rà soát pháp lý, hiển thị cảnh báo (P5-03)
+4. Xuất toàn bộ bộ hồ sơ ZIP với 1 lần nhấn
+
+**Cơ chế:** Orchestrator gọi lần lượt P5-01 → P5-02 → P5-03 → ZIP export.
+
+**Files:** `app/src/ai/workflowOrchestrator.ts`, nút "Tạo hồ sơ hoàn chỉnh" trong AI panel, `app/src/__tests__/ai-workflow.test.ts`
+
+---
+
+### Bảng tóm tắt Phase 5
+
+| Mã | Mô tả ngắn | File chính | Độ phức tạp |
+|---|---|---|---|
+| P5-01 | AI Package Generator — NL → gợi ý gói thầu | `ai/packageGenerator.ts` | Trung bình |
+| P5-02 | AI Spec Generator — tên thiết bị → spec kỹ thuật | `ai/specGenerator.ts` | Trung bình |
+| P5-03 | AI Legal Reviewer — rà soát toàn bộ rủi ro | `ai/legalReviewer.ts` | Trung bình |
+| P5-04 | RAG Knowledge Base — hỏi đáp pháp luật | `ai/legalKnowledgeBase.ts` | Trung bình |
+| P5-05 | One-click Workflow — tự động hoàn chỉnh hồ sơ | `ai/workflowOrchestrator.ts` | Cao |
+
+---
+
 ## Thứ tự thực hiện khuyến nghị
 
 ```
@@ -1048,7 +1147,8 @@ Tuần 5:   P2-01, P2-13                                  (validation logic)
 Tuần 6:   P2-10, P2-11, P2-12                          (pháp lý + hợp đồng)
 Tuần 7:   P2-04, P2-09, P2-14                          (tài liệu mới + Legal/)
 Tuần 8:   P3-01 → P3-09                                 (code quality)
-Tiếp theo: P4-01 → P4-06                                (tech debt)
+Tuần 9:   P4-01 → P4-06                                 (tech debt)
+Tiếp theo: P5-01 → P5-05                                (AI Agent)
 ```
 
 > Không sửa business logic mà chưa cập nhật test case tương ứng.  
