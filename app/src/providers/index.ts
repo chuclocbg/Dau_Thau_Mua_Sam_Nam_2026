@@ -202,6 +202,16 @@ export {
 } from './WorkflowEngine';
 
 export {
+  ToolCallingAgent,
+  type ToolCall,
+  type ToolCallResult,
+  type ToolCallOptions,
+  type ToolCallingResult,
+  type ToolCallingError,
+  type ToolCallingErrorCode,
+} from './ToolCallingAgent';
+
+export {
   ConversationBuilder,
   type ConversationBuilderOptions,
   type ConversationBuildResult,
