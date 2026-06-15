@@ -30,7 +30,8 @@ import type { ModelInfo } from './OpenAIProvider';
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export interface GeminiProviderConfig {
-  apiKey:       string;
+  /** API key.  When omitted the constructor falls back to process.env.GEMINI_API_KEY. */
+  apiKey?:      string;
   model:        string;
   temperature?: number;   // 0.0–2.0, default 1.0
   maxTokens?:   number;   // default 1024
@@ -179,7 +180,7 @@ export class GeminiProvider {
   private readonly fetchFn:     (url: string, init: RequestInit) => Promise<Response>;
 
   constructor(config: GeminiProviderConfig) {
-    this.apiKey      = config.apiKey;
+    this.apiKey      = config.apiKey ?? process.env['GEMINI_API_KEY'] ?? '';
     this.model       = config.model;
     this.temperature = config.temperature ?? DEFAULT_TEMPERATURE;
     this.maxTokens   = config.maxTokens   ?? DEFAULT_MAX_TOKENS;

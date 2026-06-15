@@ -1,5 +1,5 @@
 /**
- * P6-10A / P6-10B / P6-10C / P6-10D: Providers barrel — public API for LLM provider adapters.
+ * P6-10A / P6-10B / P6-10C / P6-10D / P6-10F: Providers barrel — public API for LLM provider adapters.
  *
  * Import from this path rather than directly from individual provider modules
  * so that future adapters (AzureOpenAIProvider, etc.) can be added here
@@ -82,3 +82,9 @@ export {
   type RegistryError,
   type RegistryResult,
 } from './ProviderRegistry';
+
+export {
+  loadOpenAIConfigFromEnv,
+  loadClaudeConfigFromEnv,
+  loadGeminiConfigFromEnv,
+} from './env';

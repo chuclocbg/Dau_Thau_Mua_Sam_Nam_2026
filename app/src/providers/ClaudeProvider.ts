@@ -29,7 +29,8 @@ import type { ModelInfo } from './OpenAIProvider';
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export interface ClaudeProviderConfig {
-  apiKey:            string;
+  /** API key.  When omitted the constructor falls back to process.env.ANTHROPIC_API_KEY. */
+  apiKey?:           string;
   model:             string;
   temperature?:      number;   // 0.0–1.0, default 1.0
   maxTokens?:        number;   // default 1024
@@ -176,7 +177,7 @@ export class ClaudeProvider {
   private readonly fetchFn:           (url: string, init: RequestInit) => Promise<Response>;
 
   constructor(config: ClaudeProviderConfig) {
-    this.apiKey           = config.apiKey;
+    this.apiKey           = config.apiKey ?? process.env['ANTHROPIC_API_KEY'] ?? '';
     this.model            = config.model;
     this.temperature      = config.temperature      ?? DEFAULT_TEMPERATURE;
     this.maxTokens        = config.maxTokens        ?? DEFAULT_MAX_TOKENS;

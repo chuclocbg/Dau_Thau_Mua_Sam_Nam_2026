@@ -18,7 +18,8 @@
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export interface OpenAIProviderConfig {
-  apiKey:       string;
+  /** API key.  When omitted the constructor falls back to process.env.OPENAI_API_KEY. */
+  apiKey?:      string;
   model:        string;
   temperature?: number;    // 0.0–2.0, default 0.7
   maxTokens?:   number;    // default 1024
@@ -160,7 +161,7 @@ export class OpenAIProvider {
   private readonly fetchFn:     (url: string, init: RequestInit) => Promise<Response>;
 
   constructor(config: OpenAIProviderConfig) {
-    this.apiKey      = config.apiKey;
+    this.apiKey      = config.apiKey ?? process.env['OPENAI_API_KEY'] ?? '';
     this.model       = config.model;
     this.temperature = config.temperature ?? DEFAULT_TEMPERATURE;
     this.maxTokens   = config.maxTokens   ?? DEFAULT_MAX_TOKENS;
