@@ -191,6 +191,17 @@ export {
 } from './AgentRuntime';
 
 export {
+  WorkflowEngine,
+  type WorkflowStep,
+  type WorkflowDefinition,
+  type WorkflowExecution,
+  type WorkflowOptions,
+  type WorkflowResult,
+  type WorkflowError,
+  type WorkflowErrorCode,
+} from './WorkflowEngine';
+
+export {
   ConversationBuilder,
   type ConversationBuilderOptions,
   type ConversationBuildResult,
