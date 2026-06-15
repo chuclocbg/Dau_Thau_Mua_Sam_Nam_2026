@@ -1,5 +1,5 @@
 /**
- * P6-10A / P6-10B: Providers barrel — public API for LLM provider adapters.
+ * P6-10A / P6-10B / P6-10C: Providers barrel — public API for LLM provider adapters.
  *
  * Import from this path rather than directly from individual provider modules
  * so that future adapters (AzureOpenAIProvider, etc.) can be added here
@@ -45,3 +45,20 @@ export {
   type ClaudeProviderError,
   type ClaudeResult,
 } from './ClaudeProvider';
+
+export {
+  GeminiProvider,
+
+  // Config
+  type GeminiProviderConfig,
+
+  // Request / Response
+  type GeminiChatMessage,
+  type GeminiChatRequest,
+  type GeminiChatResponse,
+
+  // Error types
+  type GeminiErrorCode,
+  type GeminiProviderError,
+  type GeminiResult,
+} from './GeminiProvider';
