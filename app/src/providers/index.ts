@@ -155,6 +155,14 @@ export {
 } from './ToolRegistry';
 
 export {
+  AgentRuntime,
+  type AgentRuntimeOptions,
+  type AgentRuntimeResult,
+  type AgentRuntimeError,
+  type AgentRuntimeErrorCode,
+} from './AgentRuntime';
+
+export {
   ConversationBuilder,
   type ConversationBuilderOptions,
   type ConversationBuildResult,
