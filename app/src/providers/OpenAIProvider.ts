@@ -1,5 +1,5 @@
 /**
- * P6-10A: OpenAI provider adapter.
+ * P6-10A / P6-10H: OpenAI provider adapter.
  *
  * Wraps the OpenAI chat/completions API behind a typed, testable interface.
  *
@@ -14,6 +14,8 @@
  *     while still letting individual calls fine-tune parameters.
  *   - No imports from the agent layer — this is infrastructure, not domain.
  */
+
+import { type StreamChunk, readSseLines } from './StreamingTypes';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -122,6 +124,11 @@ const KNOWN_MODELS: Readonly<Record<string, ModelInfo>> = {
 };
 
 // ─── Internal OpenAI API shapes ───────────────────────────────────────────────
+
+interface OaiSseDelta  { content?: string; }
+interface OaiSseChoice { index: number; delta: OaiSseDelta; finish_reason: string | null; }
+interface OaiSseUsage  { prompt_tokens: number; completion_tokens: number; total_tokens: number; }
+interface OaiSseChunk  { model?: string; choices?: OaiSseChoice[]; usage?: OaiSseUsage; }
 
 interface ApiRequestBody {
   model:       string;
@@ -282,6 +289,108 @@ export class OpenAIProvider {
       },
     };
   }
+
+  /**
+   * Streams a chat/completions response as an async sequence of StreamChunk events.
+   *
+   * Sends the request with `stream: true` and `stream_options.include_usage: true`
+   * so that the final SSE chunk carries token-usage counts.
+   *
+   * Event sequence:
+   *   token* → message → done   (success)
+   *   error  → done             (any failure — never throws)
+   */
+  async *stream(request: OpenAIChatRequest): AsyncGenerator<StreamChunk> {
+    const configCheck = this.validateConfig();
+    if (!configCheck.ok) {
+      yield sErr(configCheck.error.code, configCheck.error.message);
+      yield { event: 'done' };
+      return;
+    }
+
+    const model       = request.model?.trim() || this.model;
+    const temperature = request.temperature   ?? this.temperature;
+    const maxTokens   = request.maxTokens     ?? this.maxTokens;
+
+    let response: Response;
+    try {
+      response = await this.fetchFn(
+        `${this.baseUrl}/chat/completions`,
+        {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages:       request.messages,
+            temperature,
+            max_tokens:     maxTokens,
+            stream:         true,
+            stream_options: { include_usage: true },
+          }),
+        },
+      );
+    } catch (cause) {
+      yield sErr('NETWORK_ERROR', 'Network request failed', cause);
+      yield { event: 'done' };
+      return;
+    }
+
+    if (response.status === 401) {
+      yield sErr('UNAUTHORIZED', 'Unauthorized — check your API key');
+      yield { event: 'done' };
+      return;
+    }
+    if (response.status === 429) {
+      yield sErr('RATE_LIMITED', 'Rate limit exceeded — retry after a delay');
+      yield { event: 'done' };
+      return;
+    }
+    if (!response.ok) {
+      yield sErr('API_ERROR', `OpenAI API error: HTTP ${response.status}`);
+      yield { event: 'done' };
+      return;
+    }
+
+    let content      = '';
+    let resModel     = model;
+    let finishReason = '';
+    let inputTokens  = 0;
+    let outputTokens = 0;
+    let totalTokens  = 0;
+
+    try {
+      for await (const line of readSseLines(response)) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') break;
+        let chunk: OaiSseChunk;
+        try { chunk = JSON.parse(raw) as OaiSseChunk; } catch { continue; }
+        if (chunk.model) resModel = chunk.model;
+        if (chunk.usage) {
+          inputTokens  = chunk.usage.prompt_tokens;
+          outputTokens = chunk.usage.completion_tokens;
+          totalTokens  = chunk.usage.total_tokens;
+        }
+        const choice = chunk.choices?.[0];
+        if (choice?.finish_reason) finishReason = choice.finish_reason;
+        const tokenText = choice?.delta?.content;
+        if (tokenText) {
+          content += tokenText;
+          yield { event: 'token', token: tokenText };
+        }
+      }
+    } catch (cause) {
+      yield sErr('PARSE_ERROR', 'Stream read error', cause);
+      yield { event: 'done' };
+      return;
+    }
+
+    yield { event: 'message', content, model: resModel, finishReason, usage: { inputTokens, outputTokens, totalTokens } };
+    yield { event: 'done' };
+  }
 }
 
 // ─── Internal helper ──────────────────────────────────────────────────────────
@@ -296,4 +405,10 @@ function err(
   if (status !== undefined) error.status = status;
   if (cause  !== undefined) error.cause  = cause;
   return { ok: false, error };
+}
+
+function sErr(code: string, message: string, cause?: unknown): StreamChunk {
+  const e: { code: string; message: string; cause?: unknown } = { code, message };
+  if (cause !== undefined) e.cause = cause;
+  return { event: 'error', error: e };
 }

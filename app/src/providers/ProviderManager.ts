@@ -1,5 +1,5 @@
 /**
- * P6-10G: ProviderManager — unified chat interface over ProviderRegistry.
+ * P6-10G / P6-10H: ProviderManager — unified chat and streaming interface over ProviderRegistry.
  *
  * Wraps a ProviderRegistry and provides a single chat() entry point that:
  *   1. Resolves the target provider (per-request override or registry default).
@@ -30,6 +30,7 @@ import {
   type ProviderEntry,
   type ProviderId,
 } from './ProviderRegistry';
+import { type StreamChunk, type StreamResponse } from './StreamingTypes';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -180,7 +181,108 @@ export class ProviderManager {
     return this.registry.list();
   }
 
-  // ─── private dispatch ───────────────────────────────────────────────────────
+  /**
+   * Streams a response from the resolved provider as an AsyncIterable<StreamChunk>.
+   *
+   * Provider resolution order and error semantics mirror chat().
+   * Error events are yielded as StreamChunk; 'done' is always the last chunk.
+   * Never throws — use `for await (const chunk of manager.stream(request))`.
+   */
+  stream(request: ProviderManagerRequest): StreamResponse {
+    return this.streamGen(request);
+  }
+
+  // ─── private stream helpers ─────────────────────────────────────────────────
+
+  private async *streamGen(
+    request: ProviderManagerRequest,
+  ): AsyncGenerator<StreamChunk> {
+    // ── resolve provider ──────────────────────────────────────────────────────
+    let entry: ProviderEntry;
+
+    if (request.providerId !== undefined) {
+      const r = this.registry.get(request.providerId);
+      if (!r.ok) {
+        yield smgrErr('NO_PROVIDER', `Provider '${request.providerId}' is not registered`);
+        yield { event: 'done' };
+        return;
+      }
+      entry = r.value;
+    } else {
+      const r = this.registry.getDefault();
+      if (!r.ok) {
+        const code = r.error.code === 'NO_DEFAULT' ? 'NO_DEFAULT_PROVIDER' : 'NO_PROVIDER';
+        yield smgrErr(code, r.error.message);
+        yield { event: 'done' };
+        return;
+      }
+      entry = r.value;
+    }
+
+    // ── validate request ──────────────────────────────────────────────────────
+    if (!Array.isArray(request.messages) || request.messages.length === 0) {
+      yield smgrErr('INVALID_REQUEST', 'messages must be a non-empty array');
+      yield { event: 'done' };
+      return;
+    }
+
+    // ── dispatch ──────────────────────────────────────────────────────────────
+    yield* this.dispatchStream(entry, request);
+  }
+
+  private async *dispatchStream(
+    entry:   ProviderEntry,
+    request: ProviderManagerRequest,
+  ): AsyncGenerator<StreamChunk> {
+    const { provider } = entry;
+
+    // ── OpenAI ────────────────────────────────────────────────────────────────
+    if (provider instanceof OpenAIProvider) {
+      const messages: OpenAIChatMessage[] = [];
+      if (request.system) messages.push({ role: 'system', content: request.system });
+      messages.push(...request.messages);
+      yield* provider.stream({
+        messages,
+        model:       request.model,
+        temperature: request.temperature,
+        maxTokens:   request.maxTokens,
+      });
+      return;
+    }
+
+    // ── Claude ────────────────────────────────────────────────────────────────
+    if (provider instanceof ClaudeProvider) {
+      yield* provider.stream({
+        messages:    request.messages,
+        system:      request.system,
+        model:       request.model,
+        temperature: request.temperature,
+        maxTokens:   request.maxTokens,
+      });
+      return;
+    }
+
+    // ── Gemini ────────────────────────────────────────────────────────────────
+    if (provider instanceof GeminiProvider) {
+      yield* provider.stream({
+        messages:    request.messages,
+        system:      request.system,
+        model:       request.model,
+        temperature: request.temperature,
+        maxTokens:   request.maxTokens,
+      });
+      return;
+    }
+
+    // ── Unknown provider ──────────────────────────────────────────────────────
+    yield smgrErr(
+      'PROVIDER_ERROR',
+      `Provider '${entry.id}' (type '${entry.type}') does not support stream()`,
+    );
+    yield { event: 'done' };
+  }
+
+  // ─── private chat dispatch ──────────────────────────────────────────────────
 
   private async dispatchChat(
     entry:   ProviderEntry,
@@ -298,4 +400,8 @@ function mgrErr<T>(
   const error: ProviderManagerError = { code, message };
   if (cause !== undefined) error.cause = cause;
   return { ok: false, error };
+}
+
+function smgrErr(code: string, message: string): StreamChunk {
+  return { event: 'error', error: { code, message } };
 }

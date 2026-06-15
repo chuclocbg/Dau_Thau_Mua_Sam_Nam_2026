@@ -1,5 +1,5 @@
 /**
- * P6-10C: Google Gemini provider adapter.
+ * P6-10C / P6-10H: Google Gemini provider adapter.
  *
  * Wraps the Gemini generateContent API behind the same testable,
  * dependency-injected pattern used by OpenAIProvider (P6-10A) and
@@ -26,6 +26,7 @@
  */
 
 import type { ModelInfo } from './OpenAIProvider';
+import { type StreamChunk, readSseLines } from './StreamingTypes';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -312,6 +313,113 @@ export class GeminiProvider {
       },
     };
   }
+
+  /**
+   * Streams a streamGenerateContent response as an async sequence of StreamChunk events.
+   *
+   * Uses the `?alt=sse` endpoint so each data line is an incremental
+   * ApiResponseBody.  Text parts are yielded as 'token' chunks; usage
+   * metadata from the final chunk populates the closing 'message' chunk.
+   *
+   * Event sequence:
+   *   token* → message → done   (success)
+   *   error  → done             (any failure — never throws)
+   */
+  async *stream(request: GeminiChatRequest): AsyncGenerator<StreamChunk> {
+    const configCheck = this.validateConfig();
+    if (!configCheck.ok) {
+      yield sErr(configCheck.error.code, configCheck.error.message);
+      yield { event: 'done' };
+      return;
+    }
+
+    const model       = request.model?.trim() || this.model;
+    const temperature = request.temperature   ?? this.temperature;
+    const maxTokens   = request.maxTokens     ?? this.maxTokens;
+
+    const contents: ApiContent[] = request.messages.map(msg => ({
+      role:  toGeminiRole(msg.role),
+      parts: [{ text: msg.content }],
+    }));
+
+    const body: ApiRequestBody = {
+      contents,
+      generationConfig: { temperature, maxOutputTokens: maxTokens },
+    };
+    if (request.system !== undefined) {
+      body.systemInstruction = { parts: [{ text: request.system }] };
+    }
+
+    const url = `${this.baseUrl}/models/${model}:streamGenerateContent?key=${this.apiKey}&alt=sse`;
+
+    let response: Response;
+    try {
+      response = await this.fetchFn(url, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+    } catch (cause) {
+      yield sErr('NETWORK_ERROR', 'Network request failed', cause);
+      yield { event: 'done' };
+      return;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      yield sErr('UNAUTHORIZED', `Unauthorized — check your Gemini API key (HTTP ${response.status})`);
+      yield { event: 'done' };
+      return;
+    }
+    if (response.status === 429) {
+      yield sErr('RATE_LIMITED', 'Rate limit exceeded — retry after a delay');
+      yield { event: 'done' };
+      return;
+    }
+    if (!response.ok) {
+      yield sErr('API_ERROR', `Gemini API error: HTTP ${response.status}`);
+      yield { event: 'done' };
+      return;
+    }
+
+    let content      = '';
+    let resModel:    string | undefined;
+    let finishReason = '';
+    let inputTokens  = 0;
+    let outputTokens = 0;
+    let totalTokens  = 0;
+
+    try {
+      for await (const line of readSseLines(response)) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        let chunk: ApiResponseBody;
+        try { chunk = JSON.parse(raw) as ApiResponseBody; } catch { continue; }
+        if (chunk.modelVersion) resModel = chunk.modelVersion;
+        if (chunk.usageMetadata) {
+          inputTokens  = chunk.usageMetadata.promptTokenCount;
+          outputTokens = chunk.usageMetadata.candidatesTokenCount;
+          totalTokens  = chunk.usageMetadata.totalTokenCount;
+        }
+        const candidate = chunk.candidates?.[0];
+        if (candidate?.finishReason) finishReason = candidate.finishReason;
+        const text = candidate?.content?.parts?.[0]?.text ?? '';
+        if (text) { content += text; yield { event: 'token', token: text }; }
+      }
+    } catch (cause) {
+      yield sErr('PARSE_ERROR', 'Stream read error', cause);
+      yield { event: 'done' };
+      return;
+    }
+
+    yield {
+      event:        'message',
+      content,
+      model:        resModel,
+      finishReason,
+      usage: { inputTokens, outputTokens, totalTokens },
+    };
+    yield { event: 'done' };
+  }
 }
 
 // ─── Internal helper ──────────────────────────────────────────────────────────
@@ -326,4 +434,10 @@ function err(
   if (status !== undefined) error.status = status;
   if (cause  !== undefined) error.cause  = cause;
   return { ok: false, error };
+}
+
+function sErr(code: string, message: string, cause?: unknown): StreamChunk {
+  const e: { code: string; message: string; cause?: unknown } = { code, message };
+  if (cause !== undefined) e.cause = cause;
+  return { event: 'error', error: e };
 }

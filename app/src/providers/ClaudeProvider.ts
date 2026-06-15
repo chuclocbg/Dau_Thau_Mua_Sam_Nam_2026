@@ -1,5 +1,5 @@
 /**
- * P6-10B: Anthropic Claude provider adapter.
+ * P6-10B / P6-10H: Anthropic Claude provider adapter.
  *
  * Wraps the Anthropic Messages API (POST /v1/messages) behind the same
  * testable, dependency-injected pattern as OpenAIProvider (P6-10A).
@@ -25,6 +25,7 @@
  */
 
 import type { ModelInfo } from './OpenAIProvider';
+import { type StreamChunk, readSseLines } from './StreamingTypes';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -130,6 +131,20 @@ const KNOWN_MODELS: Readonly<Record<string, ModelInfo>> = {
 };
 
 // ─── Internal Anthropic API shapes ────────────────────────────────────────────
+
+interface ClaudeSseEvent {
+  type:     string;
+  message?: {
+    model?: string;
+    usage?: { input_tokens?: number; output_tokens?: number; };
+  };
+  delta?: {
+    type?:        string;
+    text?:        string;
+    stop_reason?: string;
+  };
+  usage?: { output_tokens?: number; };
+}
 
 interface ApiContentBlock {
   type:  string;
@@ -303,6 +318,116 @@ export class ClaudeProvider {
       },
     };
   }
+
+  /**
+   * Streams a Messages API response as an async sequence of StreamChunk events.
+   *
+   * Parses Anthropic SSE event types:
+   *   message_start       → extracts input_tokens and model
+   *   content_block_delta → yields 'token' chunk for text_delta events
+   *   message_delta       → extracts output_tokens and stop_reason
+   *   All other types     → skipped
+   *
+   * Event sequence:
+   *   token* → message → done   (success)
+   *   error  → done             (any failure — never throws)
+   */
+  async *stream(request: ClaudeChatRequest): AsyncGenerator<StreamChunk> {
+    const configCheck = this.validateConfig();
+    if (!configCheck.ok) {
+      yield sErr(configCheck.error.code, configCheck.error.message);
+      yield { event: 'done' };
+      return;
+    }
+
+    const model       = request.model?.trim() || this.model;
+    const temperature = request.temperature   ?? this.temperature;
+    const maxTokens   = request.maxTokens     ?? this.maxTokens;
+
+    const body: ApiRequestBody = {
+      model, max_tokens: maxTokens, messages: request.messages, temperature,
+    };
+    if (request.system !== undefined) body.system = request.system;
+
+    let response: Response;
+    try {
+      response = await this.fetchFn(
+        `${this.baseUrl}/messages`,
+        {
+          method:  'POST',
+          headers: {
+            'Content-Type':      'application/json',
+            'x-api-key':         this.apiKey,
+            'anthropic-version': this.anthropicVersion,
+          },
+          body: JSON.stringify({ ...body, stream: true }),
+        },
+      );
+    } catch (cause) {
+      yield sErr('NETWORK_ERROR', 'Network request failed', cause);
+      yield { event: 'done' };
+      return;
+    }
+
+    if (response.status === 401) {
+      yield sErr('UNAUTHORIZED', 'Unauthorized — check your Anthropic API key');
+      yield { event: 'done' };
+      return;
+    }
+    if (response.status === 429) {
+      yield sErr('RATE_LIMITED', 'Rate limit exceeded — retry after a delay');
+      yield { event: 'done' };
+      return;
+    }
+    if (!response.ok) {
+      yield sErr('API_ERROR', `Anthropic API error: HTTP ${response.status}`);
+      yield { event: 'done' };
+      return;
+    }
+
+    let content      = '';
+    let resModel     = model;
+    let stopReason   = '';
+    let inputTokens  = 0;
+    let outputTokens = 0;
+
+    try {
+      for await (const line of readSseLines(response)) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        let evt: ClaudeSseEvent;
+        try { evt = JSON.parse(raw) as ClaudeSseEvent; } catch { continue; }
+
+        if (evt.type === 'message_start') {
+          if (evt.message?.model)                           resModel     = evt.message.model;
+          if (evt.message?.usage?.input_tokens != null)     inputTokens  = evt.message.usage.input_tokens;
+        } else if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+          const text = evt.delta.text ?? '';
+          if (text) { content += text; yield { event: 'token', token: text }; }
+        } else if (evt.type === 'message_delta') {
+          if (evt.delta?.stop_reason)                       stopReason   = evt.delta.stop_reason;
+          if (evt.usage?.output_tokens != null)             outputTokens = evt.usage.output_tokens;
+        }
+      }
+    } catch (cause) {
+      yield sErr('PARSE_ERROR', 'Stream read error', cause);
+      yield { event: 'done' };
+      return;
+    }
+
+    yield {
+      event:        'message',
+      content,
+      model:        resModel,
+      finishReason: stopReason,
+      usage: {
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+      },
+    };
+    yield { event: 'done' };
+  }
 }
 
 // ─── Internal helper ──────────────────────────────────────────────────────────
@@ -317,4 +442,10 @@ function err(
   if (status !== undefined) error.status = status;
   if (cause  !== undefined) error.cause  = cause;
   return { ok: false, error };
+}
+
+function sErr(code: string, message: string, cause?: unknown): StreamChunk {
+  const e: { code: string; message: string; cause?: unknown } = { code, message };
+  if (cause !== undefined) e.cause = cause;
+  return { event: 'error', error: e };
 }
