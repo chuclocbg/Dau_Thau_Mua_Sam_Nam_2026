@@ -155,6 +155,15 @@ export {
 } from './ToolRegistry';
 
 export {
+  MemoryStore,
+  type MemorySnapshot,
+  type MemoryStoreOptions,
+  type MemoryStoreResult,
+  type MemoryStoreError,
+  type MemoryStoreErrorCode,
+} from './MemoryStore';
+
+export {
   SessionManager,
   type SessionState,
   type SessionInfo,
