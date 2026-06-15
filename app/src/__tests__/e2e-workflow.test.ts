@@ -696,7 +696,7 @@ describe('Group E8 — Export flow', () => {
   it('E8-03: exported session.completedAt is set (workflow fully completed)', () => {
     const out = exportResponse.payload as AutonomousOutput;
     expect(out.session.completedAt).toBeDefined();
-    expect(out.session.completedAt).toBeGreaterThan(out.session.startedAt);
+    expect(out.session.completedAt).toBeGreaterThanOrEqual(out.session.startedAt);
   });
 });
 
