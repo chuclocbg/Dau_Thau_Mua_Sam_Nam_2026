@@ -88,3 +88,20 @@ export {
   loadClaudeConfigFromEnv,
   loadGeminiConfigFromEnv,
 } from './env';
+
+export {
+  ProviderManager,
+
+  // Config
+  type ProviderManagerConfig,
+
+  // Request / Response
+  type ProviderManagerMessage,
+  type ProviderManagerRequest,
+  type ProviderManagerResponse,
+
+  // Error types
+  type ProviderManagerErrorCode,
+  type ProviderManagerError,
+  type ProviderManagerResult,
+} from './ProviderManager';
