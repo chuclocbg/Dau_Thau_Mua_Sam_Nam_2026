@@ -136,6 +136,18 @@ export {
 } from './PromptTemplateManager';
 
 export {
+  ConversationBuilder,
+  type ConversationBuilderOptions,
+  type ConversationBuildResult,
+  type ConversationBuildError,
+  type ConversationBuildErrorCode,
+  type BuiltConversation,
+  type OpenAIFormattedConversation,
+  type ClaudeFormattedConversation,
+  type GeminiFormattedConversation,
+} from './ConversationBuilder';
+
+export {
   // Streaming types
   type StreamEventType,
   type StreamChunk,
