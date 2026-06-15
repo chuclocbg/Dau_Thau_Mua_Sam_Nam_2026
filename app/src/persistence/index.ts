@@ -63,3 +63,14 @@ export {
   MigratingExportStore,
   createMigratingPersistenceLayer,
 } from './migrating-stores';
+
+// ─── P6-08D: IndexedDB adapters ───────────────────────────────────────────────
+
+export {
+  type IndexedDbOptions,
+  openPersistenceDb,
+  IndexedDbSessionStore,
+  IndexedDbTraceStore,
+  IndexedDbExportStore,
+  createIndexedDbPersistenceLayer,
+} from './idb-stores';
