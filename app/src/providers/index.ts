@@ -120,6 +120,14 @@ export {
 } from './RetryPolicy';
 
 export {
+  ModelManager,
+  type ModelCapability,
+  type ModelMetadata,
+  type ModelSelectionOptions,
+  type ModelSelectionResult,
+} from './ModelManager';
+
+export {
   // Streaming types
   type StreamEventType,
   type StreamChunk,
