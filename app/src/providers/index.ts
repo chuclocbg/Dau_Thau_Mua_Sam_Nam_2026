@@ -155,6 +155,16 @@ export {
 } from './ToolRegistry';
 
 export {
+  SessionManager,
+  type SessionState,
+  type SessionInfo,
+  type SessionOptions,
+  type SessionResult,
+  type SessionError,
+  type SessionErrorCode,
+} from './SessionManager';
+
+export {
   Planner,
   type PlannerOptions,
   type PlanStep,
