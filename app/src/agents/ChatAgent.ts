@@ -1,5 +1,5 @@
 /**
- * P6-05B: ChatAgent — pure conversation functions.
+ * P6-05C: ChatAgent — agent class methods.
  *
  * State machine:
  *   idle → analyzing-request → invoking-agent → composing-response → idle
@@ -378,24 +378,123 @@ export class ChatAgent implements IAgent {
     ];
   }
 
-  // ── P6-05C: emit(), transition(), buildErrorResponse(), buildResponse(),
-  //            process() — added in P6-05C.
+  // ── emit + transition ──────────────────────────────────────────────────────
 
-  async process(_msg: AgentMessage): Promise<AgentMessage> {
-    const traceId = _msg.traceId || generateTraceId();
+  private emit(partial: Omit<AgentMessage, 'traceId' | 'from' | 'timestamp'>): void {
+    const msg: AgentMessage = {
+      traceId:   this.currentTraceId!,
+      from:      'chat',
+      timestamp: Date.now(),
+      ...partial,
+    };
+    this.registry.log(msg);
+    if (msg.to === 'broadcast') {
+      this.registry.notifySubscribers(msg.type, msg);
+    }
+  }
+
+  private transition(next: ChatState, detail?: string): void {
+    const event: ChatStateEvent = {
+      previousState: this.state,
+      nextState:     next,
+      timestamp:     Date.now(),
+      detail,
+    };
+    this.emit({ to: 'chat', type: 'event', payload: event });
+    this.state = next;
+  }
+
+  // ── buildErrorResponse + buildResponse ─────────────────────────────────────
+
+  private buildErrorResponse(
+    code:    string,
+    message: string,
+    inState: ChatState,
+    to:      AgentId | 'user' = 'user',
+  ): AgentMessage {
+    const traceId = this.currentTraceId ?? generateTraceId(); // save BEFORE reset
     this.state          = 'idle';
     this.currentTraceId = null;
     return {
       traceId,
       from:      'chat',
-      to:        _msg.from as AgentId | 'user',
+      to,
       type:      'error',
-      payload:   {
-        code:    'NOT_IMPLEMENTED',
-        message: 'P6-05C: process() not yet implemented',
-        state:   'idle' satisfies ChatState,
-      },
+      payload:   { code, message, state: inState },
       timestamp: Date.now(),
     };
+  }
+
+  private buildResponse(to: AgentId | 'user', output: ChatOutput): AgentMessage {
+    return {
+      traceId:    this.currentTraceId!,
+      from:       'chat',
+      to,
+      type:       'response',
+      payload:    output,
+      timestamp:  Date.now(),
+      legalBasis: this.collectLegalBasis(output),
+    };
+  }
+
+  // ── collectLegalBasis ──────────────────────────────────────────────────────
+
+  /**
+   * Merges legal citations from two sources (Set dedup):
+   *   1. CHAT_LEGAL_BASIS constant
+   *   2. output.sources — KB source citations drawn from this answer
+   */
+  private collectLegalBasis(output: ChatOutput): string[] {
+    const citations = new Set<string>(CHAT_LEGAL_BASIS);
+    for (const src of output.sources) {
+      citations.add(src);
+    }
+    return [...citations];
+  }
+
+  // ── process ────────────────────────────────────────────────────────────────
+
+  async process(msg: AgentMessage): Promise<AgentMessage> {
+    const traceId    = msg.traceId;
+    const callerFrom = msg.from;
+    this.currentTraceId = traceId;
+    this.registry.log(msg);
+
+    const input = msg.payload as ChatInput | undefined;
+
+    if (!input?.message || input.message.trim() === '') {
+      return this.buildErrorResponse(
+        'CHAT_EMPTY_INPUT',
+        'ChatInput.message không được để trống',
+        'idle',
+        callerFrom,
+      );
+    }
+
+    try {
+      // ── ANALYZING_REQUEST — parse query and build enriched search context
+      this.transition('analyzing-request', `"${input.message.slice(0, 60)}"`);
+
+      // ── INVOKING_AGENT — KB search + optional P5-03 review (via chat())
+      this.transition('invoking-agent', 'Truy vấn cơ sở tri thức pháp luật');
+      const output = chat(input);
+
+      // ── COMPOSING_RESPONSE
+      this.transition('composing-response', `confidence=${output.confidence}`);
+
+      const response = this.buildResponse(callerFrom, output);
+      this.registry.log(response);
+      this.state          = 'idle';
+      this.currentTraceId = null;
+      return response;
+
+    } catch (err) {
+      return this.buildErrorResponse(
+        'CHAT_INTERNAL_ERROR',
+        String(err),
+        this.state,
+        callerFrom,
+      );
+    }
   }
 }
