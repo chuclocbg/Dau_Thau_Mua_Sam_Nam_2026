@@ -136,6 +136,17 @@ export {
 } from './PromptTemplateManager';
 
 export {
+  ToolRegistry,
+  type ToolDefinition,
+  type ToolParameter,
+  type ToolCall,
+  type ToolResult,
+  type ToolRegistryError,
+  type ToolRegistryErrorCode,
+  type ToolRegistryResult,
+} from './ToolRegistry';
+
+export {
   ConversationBuilder,
   type ConversationBuilderOptions,
   type ConversationBuildResult,
