@@ -32,6 +32,7 @@ import {
 } from './ProviderRegistry';
 import { type StreamChunk, type StreamResponse } from './StreamingTypes';
 import { ConversationMemory }                    from './ConversationMemory';
+import { RetryPolicy, type RetryOptions, type FallbackOptions, type RetryResult } from './RetryPolicy';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -339,6 +340,259 @@ export class ProviderManager {
       `Provider '${entry.id}' (type '${entry.type}') does not support stream()`,
     );
     yield { event: 'done' };
+  }
+
+  // ─── retry / fallback public API ───────────────────────────────────────────
+
+  /**
+   * Attempts the request against each provider in the fallback chain, retrying
+   * transient errors up to RetryOptions.maxAttempts times per provider.
+   *
+   * Provider chain resolution (highest priority first):
+   *   1. fallbackOptions.providerOrder (explicit)
+   *   2. request.providerId first, then all other registered providers
+   *   3. default provider first, then all other registered providers
+   *
+   * Returns a RetryResult with providerUsed, attempts, fallbackCount metadata.
+   * Never throws.
+   */
+  async chatWithFallback(
+    request:          ProviderManagerRequest,
+    retryOptions?:    RetryOptions,
+    fallbackOptions?: FallbackOptions,
+  ): Promise<RetryResult<ProviderManagerResponse>> {
+    if (!Array.isArray(request.messages) || request.messages.length === 0) {
+      return {
+        ok: false,
+        error:         { code: 'INVALID_REQUEST', message: 'messages must be a non-empty array' },
+        providerUsed:  '',
+        attempts:      0,
+        fallbackCount: 0,
+      };
+    }
+
+    const policy      = new RetryPolicy(retryOptions);
+    const providerIds = this.resolveProviderChain(request.providerId, fallbackOptions);
+
+    if (providerIds.length === 0) {
+      return {
+        ok: false,
+        error:         { code: 'NO_DEFAULT_PROVIDER', message: 'No providers registered' },
+        providerUsed:  '',
+        attempts:      0,
+        fallbackCount: 0,
+      };
+    }
+
+    // Prepend memory once; shared across all attempts and providers.
+    const dispatchReq: ProviderManagerRequest = this.memory
+      ? { ...request, messages: [...this.memory.getMessages(), ...request.messages] }
+      : request;
+
+    let totalAttempts  = 0;
+    let fallbackCount  = 0;
+    let lastProviderId = providerIds[0]!;
+    let lastError: { code: string; message: string; cause?: unknown } = {
+      code: 'PROVIDER_ERROR', message: 'All providers failed',
+    };
+
+    for (let pi = 0; pi < providerIds.length; pi++) {
+      const pid = providerIds[pi]!;
+      lastProviderId = pid;
+
+      const entryResult = this.registry.get(pid);
+      if (!entryResult.ok) {
+        totalAttempts++;
+        lastError = { code: 'NO_PROVIDER', message: entryResult.error.message };
+        if (pi < providerIds.length - 1) fallbackCount++;
+        continue;
+      }
+      const entry = entryResult.value;
+
+      let providerSucceeded = false;
+
+      for (let attempt = 0; attempt < policy.maxAttempts; attempt++) {
+        totalAttempts++;
+        const result = await this.dispatchChat(entry, dispatchReq);
+
+        if (result.ok) {
+          if (this.memory) {
+            for (const msg of request.messages) this.memory.add(msg);
+            this.memory.addAssistant(result.value.content);
+          }
+          providerSucceeded = true;
+          return {
+            ok:            true,
+            value:         result.value,
+            providerUsed:  pid,
+            attempts:      totalAttempts,
+            fallbackCount,
+          };
+        }
+
+        lastError = result.error;
+        // dispatchChat normalizes provider errors to PROVIDER_ERROR; the original
+        // provider error code (RATE_LIMITED, NETWORK_ERROR, …) is preserved in cause.
+        const code = (result.error.cause as { code?: string } | undefined)?.code
+          ?? result.error.code;
+
+        if (policy.isNonRetryable(code)) break;
+
+        if (policy.isTransient(code) && attempt < policy.maxAttempts - 1) {
+          await policy.sleep(attempt);
+          continue;
+        }
+
+        break;
+      }
+
+      if (!providerSucceeded && pi < providerIds.length - 1) fallbackCount++;
+    }
+
+    return {
+      ok: false,
+      error:         lastError,
+      providerUsed:  lastProviderId,
+      attempts:      totalAttempts,
+      fallbackCount,
+    };
+  }
+
+  /**
+   * Streams the response through the fallback chain with the same retry semantics
+   * as chatWithFallback().
+   *
+   * Buffers each provider's stream attempt, then replays the successful stream.
+   * Emits a 'meta' StreamChunk just before the final 'done' chunk.
+   *
+   * Event sequence (success):         token* → message → meta → done
+   * Event sequence (all fail):        error  → meta → done
+   * Event sequence (INVALID_REQUEST): error  → done  (no meta; no provider tried)
+   *
+   * Never throws.
+   */
+  async *streamWithFallback(
+    request:          ProviderManagerRequest,
+    retryOptions?:    RetryOptions,
+    fallbackOptions?: FallbackOptions,
+  ): AsyncGenerator<StreamChunk> {
+    if (!Array.isArray(request.messages) || request.messages.length === 0) {
+      yield { event: 'error', error: { code: 'INVALID_REQUEST', message: 'messages must be a non-empty array' } };
+      yield { event: 'done' };
+      return;
+    }
+
+    const policy      = new RetryPolicy(retryOptions);
+    const providerIds = this.resolveProviderChain(request.providerId, fallbackOptions);
+
+    if (providerIds.length === 0) {
+      yield smgrErr('NO_DEFAULT_PROVIDER', 'No providers registered');
+      yield { event: 'done' };
+      return;
+    }
+
+    const augmented: ProviderManagerRequest = this.memory
+      ? { ...request, messages: [...this.memory.getMessages(), ...request.messages] }
+      : request;
+
+    let totalAttempts  = 0;
+    let fallbackCount  = 0;
+    let lastProviderId = providerIds[0]!;
+    let lastBuffered:  StreamChunk[] = [
+      { event: 'error', error: { code: 'PROVIDER_ERROR', message: 'All providers failed' } },
+      { event: 'done' },
+    ];
+
+    for (let pi = 0; pi < providerIds.length; pi++) {
+      const pid = providerIds[pi]!;
+      lastProviderId = pid;
+
+      const entryResult = this.registry.get(pid);
+      if (!entryResult.ok) {
+        totalAttempts++;
+        lastBuffered = [
+          { event: 'error', error: { code: 'NO_PROVIDER', message: entryResult.error.message } },
+          { event: 'done' },
+        ];
+        if (pi < providerIds.length - 1) fallbackCount++;
+        continue;
+      }
+      const entry = entryResult.value;
+
+      let succeeded = false;
+
+      for (let attempt = 0; attempt < policy.maxAttempts; attempt++) {
+        totalAttempts++;
+
+        const buffered: StreamChunk[] = [];
+        let   errorCode               = '';
+
+        for await (const chunk of this.dispatchStream(entry, augmented)) {
+          buffered.push(chunk);
+          if (chunk.event === 'error') errorCode = chunk.error.code;
+        }
+        lastBuffered = buffered;
+
+        if (!errorCode) {
+          if (this.memory) {
+            const msgChunk = buffered.find(c => c.event === 'message') as
+              Extract<StreamChunk, { event: 'message' }> | undefined;
+            for (const msg of request.messages) this.memory.add(msg);
+            this.memory.addAssistant(msgChunk?.content ?? '');
+          }
+          succeeded = true;
+
+          for (const chunk of buffered) {
+            if (chunk.event === 'done') {
+              yield { event: 'meta', providerUsed: pid, attempts: totalAttempts, fallbackCount };
+            }
+            yield chunk;
+          }
+          return;
+        }
+
+        if (policy.isNonRetryable(errorCode)) break;
+
+        if (policy.isTransient(errorCode) && attempt < policy.maxAttempts - 1) {
+          await policy.sleep(attempt);
+          continue;
+        }
+
+        break;
+      }
+
+      if (!succeeded && pi < providerIds.length - 1) fallbackCount++;
+    }
+
+    // All providers failed — replay last buffered result with meta before done.
+    for (const chunk of lastBuffered) {
+      if (chunk.event === 'done') {
+        yield { event: 'meta', providerUsed: lastProviderId, attempts: totalAttempts, fallbackCount };
+      }
+      yield chunk;
+    }
+  }
+
+  // ─── private provider chain resolution ─────────────────────────────────────
+
+  private resolveProviderChain(
+    requestProviderId: ProviderId | undefined,
+    fallbackOptions:   FallbackOptions | undefined,
+  ): ProviderId[] {
+    if (fallbackOptions?.providerOrder && fallbackOptions.providerOrder.length > 0) {
+      return fallbackOptions.providerOrder;
+    }
+
+    const all = this.registry.list().map(e => e.id);
+
+    if (requestProviderId !== undefined) {
+      return [requestProviderId, ...all.filter(id => id !== requestProviderId)];
+    }
+
+    const defResult = this.registry.getDefault();
+    if (!defResult.ok) return all;
+    const defId = defResult.value.id;
+    return [defId, ...all.filter(id => id !== defId)];
   }
 
   // ─── private chat dispatch ──────────────────────────────────────────────────

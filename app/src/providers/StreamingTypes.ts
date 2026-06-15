@@ -36,6 +36,13 @@ export type StreamChunk =
   | {
       event: 'error';
       error: { code: string; message: string; cause?: unknown; };
+    }
+  | {
+      /** Emitted by streamWithFallback() just before 'done' — carries retry metadata. */
+      event:         'meta';
+      providerUsed:  string;
+      attempts:      number;
+      fallbackCount: number;
     };
 
 // ─── StreamResponse ───────────────────────────────────────────────────────────

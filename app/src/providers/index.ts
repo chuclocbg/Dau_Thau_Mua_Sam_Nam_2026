@@ -113,6 +113,13 @@ export {
 } from './ConversationMemory';
 
 export {
+  RetryPolicy,
+  type RetryOptions,
+  type FallbackOptions,
+  type RetryResult,
+} from './RetryPolicy';
+
+export {
   // Streaming types
   type StreamEventType,
   type StreamChunk,
