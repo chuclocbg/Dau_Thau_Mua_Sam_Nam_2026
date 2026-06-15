@@ -128,6 +128,14 @@ export {
 } from './ModelManager';
 
 export {
+  PromptTemplateManager,
+  type PromptTemplate,
+  type PromptVariable,
+  type PromptRenderOptions,
+  type PromptRenderResult,
+} from './PromptTemplateManager';
+
+export {
   // Streaming types
   type StreamEventType,
   type StreamChunk,
