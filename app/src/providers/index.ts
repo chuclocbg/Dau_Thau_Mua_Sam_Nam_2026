@@ -136,6 +136,14 @@ export {
 } from './PromptTemplateManager';
 
 export {
+  ToolExecutor,
+  type ToolExecutionOptions,
+  type ToolExecutionResult,
+  type ToolExecutionError,
+  type ToolExecutionErrorCode,
+} from './ToolExecutor';
+
+export {
   ToolRegistry,
   type ToolDefinition,
   type ToolParameter,
