@@ -1,8 +1,8 @@
 /**
- * P6-08A/B: Persistence layer — public API barrel.
+ * P6-08A/B/C: Persistence layer — public API barrel.
  *
- * Import from this path rather than directly from schema.ts or memory.ts so
- * that future milestones (P6-08C migration runner, alternative backends) can
+ * Import from this path rather than directly from the individual modules so
+ * that future milestones (alternative backends, additional migrations) can
  * be wired in here without changing call sites.
  */
 
@@ -44,3 +44,22 @@ export {
   InMemoryExportStore,
   createInMemoryPersistenceLayer,
 } from './memory';
+
+// ─── P6-08C: Migration runner ─────────────────────────────────────────────────
+
+export {
+  type MigrationErrorCode,
+  MigrationError,
+  MigrationRegistry,
+  runMigration,
+  migrateSession,
+  migrateTrace,
+  migrateSnapshot,
+} from './migration';
+
+export {
+  MigratingSessionStore,
+  MigratingTraceStore,
+  MigratingExportStore,
+  createMigratingPersistenceLayer,
+} from './migrating-stores';
