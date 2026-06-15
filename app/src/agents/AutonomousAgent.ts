@@ -384,27 +384,287 @@ export class AutonomousAgent implements IAgent {
     ];
   }
 
-  // ── P6-06C: emit(), transition(), buildErrorResponse(), buildResponse(),
-  //            collectLegalBasis() — added in P6-06C.
+  // ── emit + transition ────────────────────────────────────────────────────────
 
-  // ── P6-06D: process() full implementation (run / pause / resume / status / export)
-  //            — replaces the stub below in P6-06D.
+  private emit(partial: Omit<AgentMessage, 'traceId' | 'from' | 'timestamp'>): void {
+    const msg: AgentMessage = {
+      traceId:   this.currentTraceId!,
+      from:      'autonomous',
+      timestamp: Date.now(),
+      ...partial,
+    };
+    this.registry.log(msg);
+    if (msg.to === 'broadcast') {
+      this.registry.notifySubscribers(msg.type, msg);
+    }
+  }
 
-  async process(_msg: AgentMessage): Promise<AgentMessage> {
-    const traceId = _msg.traceId || generateTraceId();
+  private transition(next: WorkflowState, detail?: string): void {
+    const event: AutonomousStateEvent = {
+      previousState: this.state,
+      nextState:     next,
+      timestamp:     Date.now(),
+      detail,
+    };
+    this.emit({ to: 'autonomous', type: 'event', payload: event });
+    this.state = next;
+    if (this.session) {
+      this.session = { ...this.session, state: next };
+    }
+  }
+
+  // ── buildErrorResponse + buildResponse ────────────────────────────────────────
+
+  private buildErrorResponse(
+    code:    string,
+    message: string,
+    inState: WorkflowState,
+    to:      AgentId | 'user' = 'user',
+  ): AgentMessage {
+    const traceId = this.currentTraceId ?? generateTraceId(); // save BEFORE reset
+    if (this.session) {
+      this.session = { ...this.session, state: 'error', completedAt: Date.now() };
+    }
     this.state          = 'idle';
     this.currentTraceId = null;
     return {
       traceId,
       from:      'autonomous',
-      to:        _msg.from as AgentId | 'user',
+      to,
       type:      'error',
-      payload:   {
-        code:    'NOT_IMPLEMENTED',
-        message: 'P6-06D: process() not yet implemented',
-        state:   'idle' satisfies WorkflowState,
-      },
+      payload:   { code, message, state: inState },
       timestamp: Date.now(),
     };
+  }
+
+  private buildResponse(to: AgentId | 'user', session: AgentSession): AgentMessage {
+    const legalBasis = this.collectLegalBasis(session);
+    const output: AutonomousOutput = {
+      session,
+      summary:    buildSessionSummary(session),
+      legalBasis,
+    };
+    return {
+      traceId:    this.currentTraceId!,
+      from:       'autonomous',
+      to,
+      type:       'response',
+      payload:    output,
+      timestamp:  Date.now(),
+      legalBasis,
+    };
+  }
+
+  // ── collectLegalBasis ────────────────────────────────────────────────────────
+
+  private collectLegalBasis(session: AgentSession): string[] {
+    const citations = new Set<string>(AUTONOMOUS_LEGAL_BASIS);
+    for (const s of session.plannerOutput?.legalBasis ?? []) {
+      citations.add(s);
+    }
+    for (const s of session.dossierReview?.legalBasis ?? []) {
+      citations.add(s);
+    }
+    // LegalFinding.legalBasis is a single string citation
+    for (const f of session.dossierReview?.findings ?? []) {
+      if (f.legalBasis) citations.add(f.legalBasis);
+    }
+    for (const s of session.riskOutput?.legalBasis ?? []) {
+      citations.add(s);
+    }
+    return [...citations];
+  }
+
+  // ── Action handlers ───────────────────────────────────────────────────────────
+
+  private async runWorkflow(
+    input: AutonomousInput,
+    to:    AgentId | 'user',
+  ): Promise<AgentMessage> {
+    if (this.state !== 'idle') {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_ALREADY_RUNNING',
+        `Cannot start a new workflow while in state '${this.state}'`,
+        this.state,
+        to,
+      );
+    }
+    if (!input.goal?.trim()) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_MISSING_GOAL',
+        'AutonomousInput.goal is required for action=run',
+        this.state,
+        to,
+      );
+    }
+
+    this.session = {
+      sessionId:   generateTraceId(),
+      state:       'idle',
+      goal:        input.goal.trim(),
+      messageLog:  [],
+      startedAt:   Date.now(),
+      specRetries: 0,
+      totalBudget: input.totalBudget,
+      budgetYear:  input.budgetYear,
+    };
+
+    this.transition('planning', input.goal.slice(0, 60));
+    this.session = await runPlanning(this.session, this.registry, this.currentTraceId!);
+
+    this.transition('specifying');
+    this.session = await runSpecifying(this.session, this.registry, this.currentTraceId!);
+
+    this.transition('legal-review');
+    this.session = await runLegalReview(this.session, this.registry, this.currentTraceId!);
+
+    this.transition('risk-assessment');
+    this.session = await runRiskAssessment(this.session, this.registry, this.currentTraceId!);
+
+    this.transition('ready-for-export');
+    this.session = { ...this.session, completedAt: Date.now() };
+
+    const response = this.buildResponse(to, this.session);
+    this.registry.log(response);
+    this.state          = 'idle';
+    this.currentTraceId = null;
+    return response;
+  }
+
+  private pauseWorkflow(to: AgentId | 'user'): AgentMessage {
+    if (!this.session ||
+        this.session.state === 'idle' ||
+        this.session.state === 'done'  ||
+        this.session.state === 'error') {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_CANNOT_PAUSE',
+        `Cannot pause: session is in state '${this.session?.state ?? 'no-session'}'`,
+        this.state,
+        to,
+      );
+    }
+    const pendingQuestion: UserQuestion = {
+      questionId:   generateTraceId(),
+      agentId:      'autonomous',
+      question:     'Phiên làm việc đã tạm dừng. Vui lòng xác nhận để tiếp tục hoặc cung cấp thông tin bổ sung.',
+      required:     true,
+      legalContext: 'Theo yêu cầu của người dùng — tạm dừng để xem xét thủ công.',
+    };
+    this.transition('ask-user', 'Tạm dừng theo yêu cầu người dùng');
+    this.session = { ...this.session, pendingQuestion };
+
+    const response = this.buildResponse(to, this.session);
+    this.registry.log(response);
+    this.state          = 'idle';
+    this.currentTraceId = null;
+    return response;
+  }
+
+  private resumeWorkflow(input: AutonomousInput, to: AgentId | 'user'): AgentMessage {
+    if (!this.session || this.session.state !== 'ask-user') {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_NOT_PAUSED',
+        `Cannot resume: session is in state '${this.session?.state ?? 'no-session'}'`,
+        this.state,
+        to,
+      );
+    }
+    if (!input.userAnswer) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_MISSING_ANSWER',
+        'AutonomousInput.userAnswer is required for action=resume',
+        this.state,
+        to,
+      );
+    }
+    if (this.session.pendingQuestion &&
+        input.userAnswer.questionId !== this.session.pendingQuestion.questionId) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_ANSWER_MISMATCH',
+        'userAnswer.questionId does not match pendingQuestion.questionId',
+        this.state,
+        to,
+      );
+    }
+    this.session = { ...this.session, pendingQuestion: undefined };
+    this.transition(
+      'ready-for-export',
+      `Tiếp tục sau câu trả lời: ${input.userAnswer.answer.slice(0, 40)}`,
+    );
+
+    const response = this.buildResponse(to, this.session);
+    this.registry.log(response);
+    this.state          = 'idle';
+    this.currentTraceId = null;
+    return response;
+  }
+
+  private getStatus(to: AgentId | 'user'): AgentMessage {
+    if (!this.session) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_NO_SESSION',
+        'No active session — call action=run first',
+        this.state,
+        to,
+      );
+    }
+    const response = this.buildResponse(to, this.session);
+    this.registry.log(response);
+    this.state          = 'idle';
+    this.currentTraceId = null;
+    return response;
+  }
+
+  private exportSession(to: AgentId | 'user'): AgentMessage {
+    if (!this.session) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_NO_SESSION',
+        'No active session — call action=run first',
+        this.state,
+        to,
+      );
+    }
+    const response = this.buildResponse(to, this.session);
+    this.registry.log(response);
+    this.state          = 'idle';
+    this.currentTraceId = null;
+    return response;
+  }
+
+  // ── process ───────────────────────────────────────────────────────────────────
+
+  async process(msg: AgentMessage): Promise<AgentMessage> {
+    const traceId    = msg.traceId;
+    const callerFrom = msg.from;
+    this.currentTraceId = traceId;
+    this.registry.log(msg);
+
+    const input = msg.payload as AutonomousInput | undefined;
+
+    if (!input?.action) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_MISSING_ACTION',
+        'AutonomousInput.action is required',
+        this.state,
+        callerFrom,
+      );
+    }
+
+    try {
+      switch (input.action) {
+        case 'run':    return await this.runWorkflow(input, callerFrom);
+        case 'pause':  return this.pauseWorkflow(callerFrom);
+        case 'resume': return this.resumeWorkflow(input, callerFrom);
+        case 'status': return this.getStatus(callerFrom);
+        case 'export': return this.exportSession(callerFrom);
+      }
+    } catch (err) {
+      return this.buildErrorResponse(
+        'AUTONOMOUS_INTERNAL_ERROR',
+        String(err),
+        this.state,
+        callerFrom,
+      );
+    }
   }
 }
