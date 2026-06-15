@@ -155,6 +155,15 @@ export {
 } from './ToolRegistry';
 
 export {
+  Planner,
+  type PlannerOptions,
+  type PlanStep,
+  type PlanResult,
+  type PlannerError,
+  type PlannerErrorCode,
+} from './Planner';
+
+export {
   AgentRuntime,
   type AgentRuntimeOptions,
   type AgentRuntimeResult,
