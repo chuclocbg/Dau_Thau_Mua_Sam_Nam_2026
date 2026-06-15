@@ -1,9 +1,12 @@
 /**
- * P6-10A: Providers barrel — public API for LLM provider adapters.
+ * P6-10A / P6-10B: Providers barrel — public API for LLM provider adapters.
  *
  * Import from this path rather than directly from individual provider modules
- * so that future adapters (AnthropicProvider, AzureOpenAIProvider, etc.) can
- * be added here without changing call sites.
+ * so that future adapters (AzureOpenAIProvider, etc.) can be added here
+ * without changing call sites.
+ *
+ * ModelInfo is shared across all providers; it is defined once in OpenAIProvider
+ * and re-exported here as the canonical source.
  */
 
 export {
@@ -22,6 +25,23 @@ export {
   type OpenAIProviderError,
   type OpenAIResult,
 
-  // Model info
+  // Shared model info (used by all providers)
   type ModelInfo,
 } from './OpenAIProvider';
+
+export {
+  ClaudeProvider,
+
+  // Config
+  type ClaudeProviderConfig,
+
+  // Request / Response
+  type ClaudeChatMessage,
+  type ClaudeChatRequest,
+  type ClaudeChatResponse,
+
+  // Error types
+  type ClaudeErrorCode,
+  type ClaudeProviderError,
+  type ClaudeResult,
+} from './ClaudeProvider';
