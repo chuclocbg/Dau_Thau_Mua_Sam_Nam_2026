@@ -1,5 +1,5 @@
 /**
- * P6-10G / P6-10H: ProviderManager — unified chat and streaming interface over ProviderRegistry.
+ * P6-10G / P6-10H / P6-10I: ProviderManager — unified chat and streaming interface over ProviderRegistry.
  *
  * Wraps a ProviderRegistry and provides a single chat() entry point that:
  *   1. Resolves the target provider (per-request override or registry default).
@@ -31,11 +31,20 @@ import {
   type ProviderId,
 } from './ProviderRegistry';
 import { type StreamChunk, type StreamResponse } from './StreamingTypes';
+import { ConversationMemory }                    from './ConversationMemory';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export interface ProviderManagerConfig {
   registry: ProviderRegistry;
+  /**
+   * Optional conversation memory.  When provided:
+   *   - chat() prepends stored history before each provider call and appends
+   *     the new user message(s) plus the assistant reply on success.
+   *   - stream() does the same; memory is updated after the generator exhausts.
+   * Omit (or pass undefined) to preserve the stateless behaviour from P6-10G.
+   */
+  memory?: ConversationMemory;
 }
 
 // ─── Normalized request ───────────────────────────────────────────────────────
@@ -99,9 +108,11 @@ export type ProviderManagerResult<T> =
 
 export class ProviderManager {
   private readonly registry: ProviderRegistry;
+  private readonly memory?:  ConversationMemory;
 
   constructor(config: ProviderManagerConfig) {
     this.registry = config.registry;
+    this.memory   = config.memory;
   }
 
   /**
@@ -143,8 +154,21 @@ export class ProviderManager {
       return mgrErr('INVALID_REQUEST', 'messages must be a non-empty array');
     }
 
+    // ── prepend conversation memory ───────────────────────────────────────────
+    const dispatchRequest: ProviderManagerRequest = this.memory
+      ? { ...request, messages: [...this.memory.getMessages(), ...request.messages] }
+      : request;
+
     // ── dispatch ──────────────────────────────────────────────────────────────
-    return this.dispatchChat(entry, request);
+    const result = await this.dispatchChat(entry, dispatchRequest);
+
+    // ── append to memory on success ───────────────────────────────────────────
+    if (result.ok && this.memory) {
+      for (const msg of request.messages) this.memory.add(msg);
+      this.memory.addAssistant(result.value.content);
+    }
+
+    return result;
   }
 
   /** Returns the registry entry for the given id, or NO_PROVIDER. */
@@ -186,13 +210,48 @@ export class ProviderManager {
    *
    * Provider resolution order and error semantics mirror chat().
    * Error events are yielded as StreamChunk; 'done' is always the last chunk.
+   * When memory is configured, history is prepended and the assistant reply is
+   * appended to memory once the generator exhausts (after 'done').
    * Never throws — use `for await (const chunk of manager.stream(request))`.
    */
   stream(request: ProviderManagerRequest): StreamResponse {
-    return this.streamGen(request);
+    return this.memory ? this.streamWithMemory(request) : this.streamGen(request);
   }
 
   // ─── private stream helpers ─────────────────────────────────────────────────
+
+  private async *streamWithMemory(
+    request: ProviderManagerRequest,
+  ): AsyncGenerator<StreamChunk> {
+    // Validate original request before augmenting (mirror chat() behaviour).
+    if (!Array.isArray(request.messages) || request.messages.length === 0) {
+      yield smgrErr('INVALID_REQUEST', 'messages must be a non-empty array');
+      yield { event: 'done' };
+      return;
+    }
+
+    // Prepend memory history.
+    const augmented: ProviderManagerRequest = {
+      ...request,
+      messages: [...this.memory!.getMessages(), ...request.messages],
+    };
+
+    // Delegate to stateless streamGen, tracking outcome.
+    let hadError         = false;
+    let assistantContent = '';
+
+    for await (const chunk of this.streamGen(augmented)) {
+      if (chunk.event === 'error')   hadError         = true;
+      if (chunk.event === 'message') assistantContent = chunk.content;
+      yield chunk;
+    }
+
+    // Append to memory after the inner generator exhausts (after 'done').
+    if (!hadError) {
+      for (const msg of request.messages) this.memory!.add(msg);
+      this.memory!.addAssistant(assistantContent);
+    }
+  }
 
   private async *streamGen(
     request: ProviderManagerRequest,

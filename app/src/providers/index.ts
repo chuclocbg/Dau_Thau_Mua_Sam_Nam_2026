@@ -1,5 +1,5 @@
 /**
- * P6-10A / P6-10B / P6-10C / P6-10D / P6-10F / P6-10H: Providers barrel — public API for LLM provider adapters.
+ * P6-10A / P6-10B / P6-10C / P6-10D / P6-10F / P6-10H / P6-10I: Providers barrel — public API for LLM provider adapters.
  *
  * Import from this path rather than directly from individual provider modules
  * so that future adapters (AzureOpenAIProvider, etc.) can be added here
@@ -105,6 +105,12 @@ export {
   type ProviderManagerError,
   type ProviderManagerResult,
 } from './ProviderManager';
+
+export {
+  ConversationMemory,
+  type MemoryMessage,
+  type MemoryOptions,
+} from './ConversationMemory';
 
 export {
   // Streaming types
