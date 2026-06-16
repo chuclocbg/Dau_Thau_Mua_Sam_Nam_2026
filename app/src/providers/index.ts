@@ -396,3 +396,13 @@ export {
   type PipelineError,
   type PipelineErrorCode,
 } from './Pipeline';
+
+export {
+  MiddlewareChain,
+  type MiddlewareFn,
+  type MiddlewareContext,
+  type MiddlewareEntry,
+  type MiddlewareResult,
+  type MiddlewareError,
+  type MiddlewareErrorCode,
+} from './MiddlewareChain';
