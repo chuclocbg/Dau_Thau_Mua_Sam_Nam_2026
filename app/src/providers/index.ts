@@ -378,3 +378,12 @@ export {
   type WebSocketClientError,
   type WebSocketClientErrorCode,
 } from './WebSocketClient';
+
+export {
+  Scheduler,
+  type SchedulerJob,
+  type ScheduledJob,
+  type SchedulerResult,
+  type SchedulerError,
+  type SchedulerErrorCode,
+} from './Scheduler';
