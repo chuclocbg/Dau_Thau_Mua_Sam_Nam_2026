@@ -276,3 +276,10 @@ export {
   type EventBusError,
   type EventBusErrorCode,
 } from './EventBus';
+
+export {
+  CacheStore,
+  type CacheResult,
+  type CacheError,
+  type CacheErrorCode,
+} from './CacheStore';
