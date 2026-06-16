@@ -362,3 +362,19 @@ export {
   type HttpInterceptorError,
   type HttpInterceptorErrorCode,
 } from './HttpInterceptor';
+
+export {
+  WebSocketClient,
+  type ConnectionStatus,
+  type WebSocketCloseEvent,
+  type MessageHandler,
+  type OpenHandler,
+  type CloseHandler,
+  type ErrorHandler,
+  type WebSocketTransport,
+  type WebSocketFactory,
+  type WebSocketClientOptions,
+  type WebSocketClientResult,
+  type WebSocketClientError,
+  type WebSocketClientErrorCode,
+} from './WebSocketClient';
