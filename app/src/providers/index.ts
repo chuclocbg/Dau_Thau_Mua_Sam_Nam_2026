@@ -349,3 +349,16 @@ export {
   type RateLimiterError,
   type RateLimiterErrorCode,
 } from './RateLimiter';
+
+export {
+  HttpInterceptor,
+  type HttpRequest,
+  type HttpResponse,
+  type HttpInterceptorEntry,
+  type HttpInterceptorResult,
+  type HttpHandler,
+  type RequestInterceptorFn,
+  type ResponseInterceptorFn,
+  type HttpInterceptorError,
+  type HttpInterceptorErrorCode,
+} from './HttpInterceptor';
