@@ -313,3 +313,11 @@ export {
   type TaskQueueError,
   type TaskQueueErrorCode,
 } from './TaskQueue';
+
+export {
+  ResourcePool,
+  type ResourcePoolOptions,
+  type ResourcePoolResult,
+  type ResourcePoolError,
+  type ResourcePoolErrorCode,
+} from './ResourcePool';
