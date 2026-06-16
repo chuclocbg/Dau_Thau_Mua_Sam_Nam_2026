@@ -330,3 +330,14 @@ export {
   type RetryManagerError,
   type RetryManagerErrorCode,
 } from './RetryManager';
+
+export {
+  RestClient,
+  type RestClientFetch,
+  type RestClientOptions,
+  type RequestOptions,
+  type RestResponse,
+  type RestClientResult,
+  type RestClientError,
+  type RestClientErrorCode,
+} from './RestClient';
