@@ -255,3 +255,13 @@ export {
   // Streaming utility
   readSseLines,
 } from './StreamingTypes';
+
+export {
+  Logger,
+  type LogLevel,
+  type LogEntry,
+  type LoggerOptions,
+  type LoggerResult,
+  type LoggerError,
+  type LoggerErrorCode,
+} from './Logger';
