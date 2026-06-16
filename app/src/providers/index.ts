@@ -415,3 +415,11 @@ export {
   type HookError,
   type HookErrorCode,
 } from './HookManager';
+
+export {
+  PluginManager,
+  type PluginInfo,
+  type PluginResult,
+  type PluginError,
+  type PluginErrorCode,
+} from './PluginManager';
