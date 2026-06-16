@@ -321,3 +321,12 @@ export {
   type ResourcePoolError,
   type ResourcePoolErrorCode,
 } from './ResourcePool';
+
+export {
+  RetryManager,
+  type RetryManagerOptions,
+  type RetryAttempt,
+  type RetryManagerResult,
+  type RetryManagerError,
+  type RetryManagerErrorCode,
+} from './RetryManager';
