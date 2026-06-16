@@ -224,6 +224,17 @@ export {
 } from './ConversationBuilder';
 
 export {
+  MultiAgentCoordinator,
+  type AgentDefinition,
+  type AgentTask,
+  type AgentExecution,
+  type AgentCoordinatorOptions,
+  type AgentCoordinatorResult,
+  type AgentCoordinatorError,
+  type AgentCoordinatorErrorCode,
+} from './MultiAgentCoordinator';
+
+export {
   // Streaming types
   type StreamEventType,
   type StreamChunk,
