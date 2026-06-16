@@ -224,6 +224,17 @@ export {
 } from './ConversationBuilder';
 
 export {
+  ApiServer,
+  type ApiRoute,
+  type ApiRequest,
+  type ApiResponse,
+  type ApiServerOptions,
+  type ApiServerResult,
+  type ApiServerError,
+  type ApiServerErrorCode,
+} from './ApiServer';
+
+export {
   MultiAgentCoordinator,
   type AgentDefinition,
   type AgentTask,
