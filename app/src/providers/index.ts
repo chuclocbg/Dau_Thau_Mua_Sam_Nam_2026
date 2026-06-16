@@ -283,3 +283,10 @@ export {
   type CacheError,
   type CacheErrorCode,
 } from './CacheStore';
+
+export {
+  ConfigStore,
+  type ConfigResult,
+  type ConfigError,
+  type ConfigErrorCode,
+} from './ConfigStore';
