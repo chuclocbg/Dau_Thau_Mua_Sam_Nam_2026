@@ -298,3 +298,11 @@ export {
   type MetricsError,
   type MetricsErrorCode,
 } from './MetricsCollector';
+
+export {
+  StateStore,
+  type StateSnapshot,
+  type StateResult,
+  type StateError,
+  type StateErrorCode,
+} from './StateStore';
