@@ -406,3 +406,12 @@ export {
   type MiddlewareError,
   type MiddlewareErrorCode,
 } from './MiddlewareChain';
+
+export {
+  HookManager,
+  type HookFn,
+  type HookEntry,
+  type HookResult,
+  type HookError,
+  type HookErrorCode,
+} from './HookManager';
