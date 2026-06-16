@@ -341,3 +341,11 @@ export {
   type RestClientError,
   type RestClientErrorCode,
 } from './RestClient';
+
+export {
+  RateLimiter,
+  type RateLimiterOptions,
+  type RateLimiterResult,
+  type RateLimiterError,
+  type RateLimiterErrorCode,
+} from './RateLimiter';
