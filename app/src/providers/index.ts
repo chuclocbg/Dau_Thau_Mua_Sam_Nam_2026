@@ -423,3 +423,11 @@ export {
   type PluginError,
   type PluginErrorCode,
 } from './PluginManager';
+
+export {
+  ServiceLocator,
+  type ServiceEntry,
+  type ServiceResult,
+  type ServiceError,
+  type ServiceErrorCode,
+} from './ServiceLocator';
