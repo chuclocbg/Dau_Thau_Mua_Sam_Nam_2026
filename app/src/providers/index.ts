@@ -306,3 +306,10 @@ export {
   type StateError,
   type StateErrorCode,
 } from './StateStore';
+
+export {
+  TaskQueue,
+  type TaskQueueResult,
+  type TaskQueueError,
+  type TaskQueueErrorCode,
+} from './TaskQueue';
