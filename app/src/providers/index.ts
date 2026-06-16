@@ -265,3 +265,14 @@ export {
   type LoggerError,
   type LoggerErrorCode,
 } from './Logger';
+
+export {
+  EventBus,
+  type EventListener,
+  type EventPayload,
+  type SubscriptionToken,
+  type PublishResult,
+  type EventBusResult,
+  type EventBusError,
+  type EventBusErrorCode,
+} from './EventBus';
