@@ -1,5 +1,5 @@
 /**
- * P6-10X / P6-10Y: components barrel — public API for UI panel components.
+ * P6-10X / P6-10Y / P6-10Z: components barrel — public API for UI panel components.
  */
 
 export { ProviderPanel, type ProviderInfo, type ProviderPanelProps } from './ProviderPanel';
@@ -15,3 +15,11 @@ export {
 } from './Dashboard';
 
 export { RoutePanel, type RouteDisplayInfo, type RoutePanelProps, type RouteMethod } from './RoutePanel';
+
+export {
+  AuditTrailPanel,
+  type AuditEntry,
+  type AuditTrailPanelProps,
+  type AuditStatus,
+  type AuditMessageFlow,
+} from './AuditTrailPanel';
