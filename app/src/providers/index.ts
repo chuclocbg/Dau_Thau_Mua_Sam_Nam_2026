@@ -387,3 +387,12 @@ export {
   type SchedulerError,
   type SchedulerErrorCode,
 } from './Scheduler';
+
+export {
+  Pipeline,
+  type PipelineStage,
+  type PipelineStageEntry,
+  type PipelineResult,
+  type PipelineError,
+  type PipelineErrorCode,
+} from './Pipeline';
