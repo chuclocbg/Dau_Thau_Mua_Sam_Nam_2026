@@ -290,3 +290,11 @@ export {
   type ConfigError,
   type ConfigErrorCode,
 } from './ConfigStore';
+
+export {
+  MetricsCollector,
+  type MetricEntry,
+  type MetricsResult,
+  type MetricsError,
+  type MetricsErrorCode,
+} from './MetricsCollector';
