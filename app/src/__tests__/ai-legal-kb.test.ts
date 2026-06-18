@@ -87,6 +87,69 @@ describe('P5-04 searchLegalKB', () => {
   it('KB has at least 10 entries covering key legal areas', () => {
     expect(LEGAL_KB.length).toBeGreaterThanOrEqual(10);
   });
+
+  // 8-C: new entries
+  it('KB has exactly 21 entries after 8-C expansion', () => {
+    expect(LEGAL_KB).toHaveLength(21);
+  });
+
+  it('kb-016 (package splitting prohibition) is searchable', () => {
+    const results = searchLegalKB('chia nhỏ gói thầu tách gói né ngưỡng');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-016');
+  });
+
+  it('kb-017 (e-procurement portal registration) is searchable', () => {
+    const results = searchLegalKB('đăng ký tài khoản mạng đấu thầu cổng thông tin');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-017');
+  });
+
+  it('kb-018 (State Treasury payment control) is searchable', () => {
+    const results = searchLegalKB('kho bạc nhà nước kiểm soát chi thanh toán hợp đồng');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-018');
+  });
+
+  it('kb-019 (public asset standards and inventory) is searchable', () => {
+    const results = searchLegalKB('tiêu chuẩn định mức tài sản công kiểm kê');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-019');
+  });
+
+  it('kb-020 (contract supervision and violation handling) is searchable', () => {
+    const results = searchLegalKB('giám sát hợp đồng kiểm tra thực hiện vi phạm');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-020');
+  });
+
+  it('kb-021 (periodic reporting to Ministry) is searchable', () => {
+    const results = searchLegalKB('báo cáo định kỳ tổng hợp mua sắm Bộ Công Thương');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-021');
+  });
+
+  it('all 6 new entries have required fields and content > 100 chars', () => {
+    const newIds = ['kb-016', 'kb-017', 'kb-018', 'kb-019', 'kb-020', 'kb-021'];
+    for (const id of newIds) {
+      const entry = LEGAL_KB.find(e => e.id === id);
+      expect(entry).toBeDefined();
+      expect(entry!.title.length).toBeGreaterThan(10);
+      expect(entry!.source.length).toBeGreaterThan(10);
+      expect(entry!.keywords.length).toBeGreaterThanOrEqual(4);
+      expect(entry!.content.length).toBeGreaterThan(100);
+      expect(Array.isArray(entry!.appliesTo)).toBe(true);
+    }
+  });
+
+  it('new entries cover distinct appliesTo contexts', () => {
+    const kb016 = LEGAL_KB.find(e => e.id === 'kb-016')!;
+    const kb018 = LEGAL_KB.find(e => e.id === 'kb-018')!;
+    const kb019 = LEGAL_KB.find(e => e.id === 'kb-019')!;
+    expect(kb016.appliesTo).toContain('audit-risk');
+    expect(kb018.appliesTo).toContain('payment');
+    expect(kb019.appliesTo).toContain('asset-recording');
+  });
 });
 
 describe('P5-04 answerQuestion', () => {
