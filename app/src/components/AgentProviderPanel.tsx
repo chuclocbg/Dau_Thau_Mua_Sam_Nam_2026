@@ -32,6 +32,11 @@ export interface AgentSystemBundle {
   autonomous: AutonomousAgent;
   /** Exposed so Task C (ChatInterfacePanel) can wire conversation turns. */
   chat:       ChatAgent;
+  /** Exposed so 8-B (AgentOutputPanel) can surface specialist agent metadata. */
+  planner:    PlannerAgent;
+  spec:       SpecificationAgent;
+  legal:      LegalReviewerAgent;
+  risk:       RiskAgent;
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -61,6 +66,10 @@ export function createAgentSystem(): AgentSystemBundle {
     registry,
     autonomous,
     chat,
+    planner,
+    spec,
+    legal,
+    risk,
     agents: [planner, spec, legal, risk, chat, autonomous].map(a => ({
       id:           a.id,
       name:         a.name,

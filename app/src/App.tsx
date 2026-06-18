@@ -14,6 +14,7 @@ import AiAssistantPanel from './AiAssistantPanel';
 import AgentProviderPanel, { createAgentSystem } from './components/AgentProviderPanel';
 import AutonomousWorkflowPanel from './components/AutonomousWorkflowPanel';
 import ChatInterfacePanel from './components/ChatInterfacePanel';
+import AgentOutputPanel from './components/AgentOutputPanel';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -31,9 +32,10 @@ export default function App() {
   const [activeSection, setActiveSection] = useState<'info' | 'dates' | 'items'>('info');
   const [isExportingZip, setIsExportingZip] = useState<boolean>(false);
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
-  const [showAgentPanel, setShowAgentPanel]       = useState<boolean>(false);
-  const [showWorkflowPanel, setShowWorkflowPanel] = useState<boolean>(false);
-  const [showChatPanel, setShowChatPanel]         = useState<boolean>(false);
+  const [showAgentPanel, setShowAgentPanel]           = useState<boolean>(false);
+  const [showWorkflowPanel, setShowWorkflowPanel]     = useState<boolean>(false);
+  const [showChatPanel, setShowChatPanel]             = useState<boolean>(false);
+  const [showSpecialistPanel, setShowSpecialistPanel] = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -227,6 +229,12 @@ export default function App() {
             {showChatPanel ? 'Ẩn Chat' : 'Chat pháp lý'}
           </button>
           <button
+            className={`btn ${showSpecialistPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowSpecialistPanel(p => !p)}
+          >
+            {showSpecialistPanel ? 'Ẩn tác nhân' : 'Tác nhân chuyên biệt'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -262,6 +270,15 @@ export default function App() {
         <ChatInterfacePanel
           agent={agentSystem.chat}
           packageContext={selectedPackage}
+        />
+      )}
+
+      {showSpecialistPanel && (
+        <AgentOutputPanel
+          planner={agentSystem.planner}
+          spec={agentSystem.spec}
+          legal={agentSystem.legal}
+          risk={agentSystem.risk}
         />
       )}
 
