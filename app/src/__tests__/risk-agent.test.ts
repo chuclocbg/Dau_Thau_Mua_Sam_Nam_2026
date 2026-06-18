@@ -643,3 +643,123 @@ describe('RiskAgent — legalBasis collection and deduplication', () => {
     expect(lb).toContain(findingBasis);
   });
 });
+
+// ─── Group 7: Additional pure function tests ──────────────────────────────────
+
+describe('RiskAgent — additional pure functions', () => {
+  it('RA-01: agent.name === "Risk Agent"', () => {
+    expect(new RiskAgent(createTestRegistry()).name).toBe('Risk Agent');
+  });
+
+  it('RA-02: MEDIUM finding → riskScore=9, likelihood=3, impact=3', () => {
+    const review = { ...makeCleanDossierReview(), findings: [makeLegalFinding('MEDIUM')] };
+    const matrix = buildRiskMatrix(review);
+    expect(matrix[0].riskScore).toBe(9);
+    expect(matrix[0].likelihood).toBe(3);
+    expect(matrix[0].impact).toBe(3);
+  });
+
+  it('RA-03: LOW finding → riskScore=4, likelihood=2, impact=2', () => {
+    const review = { ...makeCleanDossierReview(), findings: [makeLegalFinding('LOW')] };
+    const matrix = buildRiskMatrix(review);
+    expect(matrix[0].riskScore).toBe(4);
+    expect(matrix[0].likelihood).toBe(2);
+    expect(matrix[0].impact).toBe(2);
+  });
+
+  it('RA-04: "contract-type" finding category → matrix entry category="procedural"', () => {
+    const review = {
+      ...makeCleanDossierReview(),
+      findings: [makeLegalFinding('HIGH', { category: 'contract-type' })],
+    };
+    expect(buildRiskMatrix(review)[0].category).toBe('procedural');
+  });
+
+  it('RA-05: "asset-recording" finding category → matrix entry category="financial"', () => {
+    const review = {
+      ...makeCleanDossierReview(),
+      findings: [makeLegalFinding('MEDIUM', { category: 'asset-recording' })],
+    };
+    expect(buildRiskMatrix(review)[0].category).toBe('financial');
+  });
+
+  it('RA-06: 2 packages different packageType, same dateResultApprove → no systemic risk', () => {
+    const pkgs = [
+      makePkg({ packageType: 'goods_consumable',  dateResultApprove: '2026-02-25', packageName: 'Gói A' }),
+      makePkg({ packageType: 'goods_fixed_asset', dateResultApprove: '2026-02-25', packageName: 'Gói B' }),
+    ];
+    expect(detectSystemicRisks(pkgs)).toHaveLength(0);
+  });
+
+  it('RA-07: same supplier in exactly 2 packages (<3 threshold) → no MEDIUM systemic risk', () => {
+    const supplier = 'Công ty TNHH Thiết bị Kỹ thuật ABC';
+    const pkgs = [
+      makePkg({ packageName: 'Gói A', supplier1Name: supplier }),
+      makePkg({ packageName: 'Gói B', supplier1Name: supplier }),
+    ];
+    const risks = detectSystemicRisks(pkgs);
+    expect(risks.every(r => r.severity !== 'MEDIUM')).toBe(true);
+  });
+});
+
+// ─── Group 8: Additional RiskAgent.process() tests ────────────────────────────
+
+describe('RiskAgent — additional process() tests', () => {
+  let registry: AgentRegistry;
+  let agent:    RiskAgent;
+
+  beforeEach(() => {
+    registry = createTestRegistry();
+    agent    = new RiskAgent(registry);
+  });
+
+  it('PA-11: response.payload has all RiskOutput fields', async () => {
+    const msg    = makeRiskRequest(makePkg(), makeCleanDossierReview(), 'trace-PA11');
+    const resp   = await agent.process(msg);
+    const output = resp.payload as RiskOutput;
+    expect(output).toHaveProperty('overallRisk');
+    expect(output).toHaveProperty('riskMatrix');
+    expect(output).toHaveProperty('systemicRisks');
+    expect(output).toHaveProperty('auditExposure');
+    expect(output).toHaveProperty('mitigationPlan');
+    expect(output).toHaveProperty('legalBasis');
+  });
+
+  it('PA-12: clean dossierReview (no findings) → overallRisk="CLEAN"', async () => {
+    const msg    = makeRiskRequest(makePkg(), makeCleanDossierReview(), 'trace-PA12');
+    const resp   = await agent.process(msg);
+    const output = resp.payload as RiskOutput;
+    expect(output.overallRisk).toBe('CLEAN');
+  });
+
+  it('PA-13: CRITICAL finding in dossierReview → overallRisk="CRITICAL"', async () => {
+    const review = { ...makeCleanDossierReview(), findings: [makeLegalFinding('CRITICAL')] };
+    const msg    = makeRiskRequest(makePkg(), review, 'trace-PA13');
+    const resp   = await agent.process(msg);
+    const output = resp.payload as RiskOutput;
+    expect(output.overallRisk).toBe('CRITICAL');
+  });
+
+  it('PA-14: response.legalBasis (AgentMessage level) is a non-empty array', async () => {
+    const msg      = makeRiskRequest(makePkg(), makeCleanDossierReview(), 'trace-PA14');
+    const response = await agent.process(msg);
+    expect(Array.isArray(response.legalBasis)).toBe(true);
+    expect((response.legalBasis ?? []).length).toBeGreaterThan(0);
+  });
+
+  it('PA-15: consecutive sequential process() calls both return type="response"', async () => {
+    const msg1 = makeRiskRequest(makePkg(), makeCleanDossierReview(), 'trace-PA15a');
+    const msg2 = makeRiskRequest(makePkg(), makeCleanDossierReview(), 'trace-PA15b');
+    const r1   = await agent.process(msg1);
+    const r2   = await agent.process(msg2);
+    expect(r1.type).toBe('response');
+    expect(r2.type).toBe('response');
+  });
+
+  it('PA-16: CLEAN dossierReview → auditExposure.probability="low"', async () => {
+    const msg    = makeRiskRequest(makePkg(), makeCleanDossierReview(), 'trace-PA16');
+    const resp   = await agent.process(msg);
+    const output = resp.payload as RiskOutput;
+    expect(output.auditExposure.probability).toBe('low');
+  });
+});

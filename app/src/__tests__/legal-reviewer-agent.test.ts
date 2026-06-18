@@ -503,3 +503,144 @@ describe('LegalReviewerAgent — legalBasis collection and deduplication', () =>
     }
   });
 });
+
+// ─── Group 7: Additional module constants + pure function tests ───────────────
+
+describe('LegalReviewerAgent — additional constants and pure functions', () => {
+  it('MC-04: agent.name === "Legal Reviewer Agent"', () => {
+    expect(new LegalReviewerAgent(createTestRegistry()).name).toBe('Legal Reviewer Agent');
+  });
+
+  it('CS-06: CRITICAL cross-check issue deducts 20 → score 80', () => {
+    expect(calculateComplianceScore([], [makeCrossIssue('CRITICAL')])).toBe(80);
+  });
+
+  it('CS-07: HIGH cross-check issue deducts 10 → score 90', () => {
+    expect(calculateComplianceScore([], [makeCrossIssue('HIGH')])).toBe(90);
+  });
+
+  it('CS-08: MEDIUM cross-check issue deducts 5 → score 95', () => {
+    expect(calculateComplianceScore([], [makeCrossIssue('MEDIUM')])).toBe(95);
+  });
+
+  it('CS-09: LOW cross-check issue deducts 2 → score 98', () => {
+    expect(calculateComplianceScore([], [makeCrossIssue('LOW')])).toBe(98);
+  });
+
+  it('CS-10: CRITICAL finding (−25) + CRITICAL cross-check (−20) → score 55', () => {
+    expect(
+      calculateComplianceScore([makeFinding('CRITICAL')], [makeCrossIssue('CRITICAL')]),
+    ).toBe(55);
+  });
+
+  it('CC-07: expertEstablish before khlcntApprove → HIGH issue (doc11→doc13)', () => {
+    const pkg    = makePkg({ dateKhlcntApprove: '2026-01-20', dateExpertEstablish: '2026-01-10' });
+    const issues = detectCrossDocumentIssues(pkg);
+    const issue  = issues.find(i => i.doc1Id === 11 && i.doc2Id === 13);
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe('HIGH');
+  });
+
+  it('CC-08: docIssue before expertEstablish → CRITICAL issue (doc13→doc12)', () => {
+    const pkg    = makePkg({ dateExpertEstablish: '2026-02-10', dateDocIssue: '2026-02-01' });
+    const issues = detectCrossDocumentIssues(pkg);
+    const issue  = issues.find(i => i.doc1Id === 13 && i.doc2Id === 12);
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe('CRITICAL');
+  });
+
+  it('CC-09: bidClose before docIssue → CRITICAL issue (doc12→doc28)', () => {
+    const pkg    = makePkg({ dateDocIssue: '2026-02-20', dateBidClose: '2026-02-10' });
+    const issues = detectCrossDocumentIssues(pkg);
+    const issue  = issues.find(i => i.doc1Id === 12 && i.doc2Id === 28);
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe('CRITICAL');
+  });
+
+  it('RP-07: HIGH-only cross-check issue → auditReadiness="conditional"', () => {
+    // evaluate (Feb 25) after appraise (Feb 15) → HIGH cross-check, no CRITICAL
+    const pkg    = makePkg({ dateEvaluate: '2026-02-25', dateAppraise: '2026-02-15' });
+    const output = reviewPackage({ pkg, documentIds: [], methodCode: 'DIRECT_SELECTION_SIMPLIFIED' });
+    expect(output.auditReadiness).toBe('conditional');
+    expect(output.crossCheckIssues.some(c => c.severity === 'HIGH')).toBe(true);
+  });
+});
+
+// ─── Group 8: Additional process() + legalBasis tests ─────────────────────────
+
+describe('LegalReviewerAgent — additional process() and legalBasis', () => {
+  let registry: AgentRegistry;
+  let agent:    LegalReviewerAgent;
+
+  beforeEach(() => {
+    registry = createTestRegistry();
+    agent    = new LegalReviewerAgent(registry);
+  });
+
+  it('PA-11: agent.state is "idle" before any process() call', () => {
+    expect((agent as unknown as { state: string }).state).toBe('idle');
+  });
+
+  it('PA-12: null payload → error with code REVIEWER_EMPTY_INPUT', async () => {
+    const msg: AgentMessage = {
+      traceId:   'trace-PA12',
+      from:      'user',
+      to:        'legal-reviewer',
+      type:      'request',
+      payload:   null,
+      timestamp: Date.now(),
+    };
+    const response = await agent.process(msg);
+    expect(response.type).toBe('error');
+    expect((response.payload as { code: string }).code).toBe('REVIEWER_EMPTY_INPUT');
+  });
+
+  it('PA-13: consecutive sequential process() calls both return type="response"', async () => {
+    const msg1 = makeReviewerRequest(makePkg(), 'trace-PA13a');
+    const msg2 = makeReviewerRequest(makePkg(), 'trace-PA13b');
+    const r1   = await agent.process(msg1);
+    const r2   = await agent.process(msg2);
+    expect(r1.type).toBe('response');
+    expect(r2.type).toBe('response');
+  });
+
+  it('PA-14: response.payload is DossierReviewOutput with all required fields', async () => {
+    const msg    = makeReviewerRequest(makePkg(), 'trace-PA14');
+    const resp   = await agent.process(msg);
+    const output = resp.payload as DossierReviewOutput;
+    expect(output).toHaveProperty('findings');
+    expect(output).toHaveProperty('crossCheckIssues');
+    expect(output).toHaveProperty('complianceScore');
+    expect(output).toHaveProperty('auditReadiness');
+    expect(output).toHaveProperty('recommendations');
+    expect(output).toHaveProperty('legalBasis');
+  });
+
+  it('LB-05: response.legalBasis (AgentMessage level) includes all REVIEWER_LEGAL_BASIS entries', async () => {
+    const msg      = makeReviewerRequest(makePkg(), 'trace-LB05');
+    const response = await agent.process(msg);
+    for (const basis of REVIEWER_LEGAL_BASIS) {
+      expect(response.legalBasis).toContain(basis);
+    }
+  });
+
+  it('LB-06: response.legalBasis (AgentMessage level) has no duplicate entries', async () => {
+    const msg      = makeReviewerRequest(makePkg(), 'trace-LB06');
+    const response = await agent.process(msg);
+    const lb       = response.legalBasis ?? [];
+    expect(new Set(lb).size).toBe(lb.length);
+  });
+
+  it('SF-06: summarizeFindings includes [CRITICAL] severity tag for critical findings', () => {
+    const output: DossierReviewOutput = {
+      findings:         [makeFinding('CRITICAL', 'Khắc phục vi phạm ngay.')],
+      crossCheckIssues: [],
+      complianceScore:  75,
+      auditReadiness:   'not-ready',
+      recommendations:  [],
+      legalBasis:       [...REVIEWER_LEGAL_BASIS],
+    };
+    const recs = summarizeFindings(output);
+    expect(recs.some(r => r.includes('[CRITICAL]'))).toBe(true);
+  });
+});

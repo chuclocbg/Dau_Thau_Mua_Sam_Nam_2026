@@ -495,3 +495,52 @@ describe('extras', () => {
     expect(assignQuarter(bigAsset)).toBe('Q3');
   });
 });
+
+// ─── Group 9: PlannerAgent identity + additional process details ───────────────
+
+describe('PlannerAgent — identity and additional process details', () => {
+  let registry: AgentRegistry;
+  let agent:    PlannerAgent;
+
+  beforeEach(() => {
+    registry = createTestRegistry();
+    agent    = new PlannerAgent(registry);
+  });
+
+  it('PL-01: agent.id === "planner"', () => {
+    expect(agent.id).toBe('planner');
+  });
+
+  it('PL-02: agent.name === "Procurement Planner Agent"', () => {
+    expect(agent.name).toBe('Procurement Planner Agent');
+  });
+
+  it('PL-03: getCapabilities() returns exactly 4 capability strings', () => {
+    expect(agent.getCapabilities()).toHaveLength(4);
+  });
+
+  it('PL-04: parseGoalIntoItems("   ") → [] (whitespace-only is treated as empty)', () => {
+    expect(parseGoalIntoItems('   ')).toEqual([]);
+  });
+
+  it('PL-05: buildMinimalProcurementPackage goods_consumable → warrantyMonths=0', () => {
+    const s = makeSuggestion('vpp', 10_000_000, {
+      packageType: 'goods_consumable',
+      packageCode: 'VPP-001',
+    });
+    expect(buildMinimalProcurementPackage(s, 2026).warrantyMonths).toBe(0);
+  });
+
+  it('PL-06: process() success response.from === "planner"', async () => {
+    const msg      = makePlannerRequest('máy tính để bàn', 'trace-PL06');
+    const response = await agent.process(msg);
+    expect(response.from).toBe('planner');
+  });
+
+  it('PL-07: process() with totalBudget provided → budgetUtilization ≥ 0 (not sentinel −1)', async () => {
+    const msg    = makePlannerRequest('máy tính để bàn', 'trace-PL07', { totalBudget: 200_000_000 });
+    const resp   = await agent.process(msg);
+    const output = resp.payload as PlannerOutput;
+    expect(output.budgetUtilization).toBeGreaterThanOrEqual(0);
+  });
+});

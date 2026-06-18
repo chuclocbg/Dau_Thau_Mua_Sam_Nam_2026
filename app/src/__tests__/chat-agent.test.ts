@@ -488,3 +488,111 @@ describe('ChatAgent — legalBasis collection and deduplication', () => {
     expect((response.legalBasis ?? []).length).toBeGreaterThan(0);
   });
 });
+
+// ─── Group 8: Additional pure function tests ──────────────────────────────────
+
+describe('ChatAgent — additional pure functions and identity', () => {
+  it('CX-01: agent.name === "Chat Agent"', () => {
+    expect(new ChatAgent(createTestRegistry()).name).toBe('Chat Agent');
+  });
+
+  it('CX-02: searchKnowledge is deterministic — same query returns same result count', () => {
+    const q = 'ngưỡng chỉ định thầu rút gọn';
+    expect(searchKnowledge(q).length).toBe(searchKnowledge(q).length);
+  });
+
+  it('CX-03: searchKnowledge(query, 2) → at most 2 results', () => {
+    const results = searchKnowledge('ngưỡng phương thức lựa chọn nhà thầu', 2);
+    expect(results.length).toBeLessThanOrEqual(2);
+  });
+
+  it('CX-04: extractPackageContext goods_fixed_asset → "Hàng hóa tài sản cố định"', () => {
+    const ctx = extractPackageContext(makePkg({ packageType: 'goods_fixed_asset' }));
+    expect(ctx).toContain('Hàng hóa tài sản cố định');
+  });
+
+  it('CX-05: extractPackageContext service → "Dịch vụ phi tư vấn"', () => {
+    const ctx = extractPackageContext(makePkg({ packageType: 'service' }));
+    expect(ctx).toContain('Dịch vụ phi tư vấn');
+  });
+
+  it('CX-06: suggestFollowUps with appliesTo=["contract"] → contract-related question', () => {
+    const suggestions = suggestFollowUps([makeSearchResult(['contract'])]);
+    expect(suggestions.some(q => q.includes('Hợp đồng'))).toBe(true);
+  });
+
+  it('CX-07: suggestFollowUps with appliesTo=["authority"] → authority question', () => {
+    const suggestions = suggestFollowUps([makeSearchResult(['authority'])]);
+    expect(suggestions.some(q => q.includes('Thẩm quyền'))).toBe(true);
+  });
+
+  it('CX-08: buildAnswer top result score < 4 → confidence="low"', () => {
+    const output = buildAnswer(
+      [makeSearchResult(['khlcnt'], 3)],
+      makeChatInput('câu hỏi thử nghiệm'),
+    );
+    expect(output.confidence).toBe('low');
+  });
+});
+
+// ─── Group 9: Additional process() + integration tests ────────────────────────
+
+describe('ChatAgent — additional process() and integration', () => {
+  let registry: AgentRegistry;
+  let agent:    ChatAgent;
+
+  beforeEach(() => {
+    registry = createTestRegistry();
+    agent    = new ChatAgent(registry);
+  });
+
+  it('CY-01: whitespace-only message → error CHAT_EMPTY_INPUT', async () => {
+    const msg      = makeChatRequest(makeChatInput('   '), 'trace-CY01');
+    const response = await agent.process(msg);
+    expect(response.type).toBe('error');
+    expect((response.payload as { code: string }).code).toBe('CHAT_EMPTY_INPUT');
+  });
+
+  it('CY-02: process() response.payload has all required ChatOutput fields', async () => {
+    const msg    = makeChatRequest(makeChatInput('ngưỡng phương thức'), 'trace-CY02');
+    const resp   = await agent.process(msg);
+    const output = resp.payload as ChatOutput;
+    expect(output).toHaveProperty('answer');
+    expect(output).toHaveProperty('sources');
+    expect(output).toHaveProperty('confidence');
+    expect(output).toHaveProperty('followUpSuggestions');
+    expect(output).toHaveProperty('relatedKBEntries');
+  });
+
+  it('CY-03: consecutive sequential process() calls both return type="response"', async () => {
+    const msg1 = makeChatRequest(makeChatInput('ngưỡng phương thức'), 'trace-CY03a');
+    const msg2 = makeChatRequest(makeChatInput('hợp đồng trọn gói'), 'trace-CY03b');
+    const r1   = await agent.process(msg1);
+    const r2   = await agent.process(msg2);
+    expect(r1.type).toBe('response');
+    expect(r2.type).toBe('response');
+  });
+
+  it('CY-04: agent.state is "idle" before any process() call', () => {
+    expect((agent as unknown as { state: string }).state).toBe('idle');
+  });
+
+  it('CY-05: extractPackageContext with empty items → no "Giá trị ước tính" line', () => {
+    const ctx = extractPackageContext(makePkg({ items: [] }));
+    expect(ctx).not.toContain('Giá trị ước tính');
+  });
+
+  it('CY-06: process() with packageContext in payload → type="response", no exception', async () => {
+    const input = makeChatInput('hợp đồng trọn gói điều kiện áp dụng', {
+      packageContext: makePkg(),
+    });
+    const msg      = makeChatRequest(input, 'trace-CY06');
+    const response = await agent.process(msg);
+    expect(response.type).toBe('response');
+  });
+
+  it('CY-07: chat() with empty message → confidence="low" (no KB results)', () => {
+    const output = chat(makeChatInput(''));
+    expect(output.confidence).toBe('low');
+  });
+});
