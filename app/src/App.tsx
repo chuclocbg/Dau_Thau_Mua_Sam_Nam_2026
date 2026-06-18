@@ -15,6 +15,8 @@ import AgentProviderPanel, { createAgentSystem } from './components/AgentProvide
 import AutonomousWorkflowPanel from './components/AutonomousWorkflowPanel';
 import ChatInterfacePanel from './components/ChatInterfacePanel';
 import AgentOutputPanel from './components/AgentOutputPanel';
+import LegalKBPanel from './components/LegalKBPanel';
+import { searchLegalKB } from './ai/legalKnowledgeBase';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -36,6 +38,7 @@ export default function App() {
   const [showWorkflowPanel, setShowWorkflowPanel]     = useState<boolean>(false);
   const [showChatPanel, setShowChatPanel]             = useState<boolean>(false);
   const [showSpecialistPanel, setShowSpecialistPanel] = useState<boolean>(false);
+  const [showLegalKBPanel, setShowLegalKBPanel]       = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -235,6 +238,12 @@ export default function App() {
             {showSpecialistPanel ? 'Ẩn tác nhân' : 'Tác nhân chuyên biệt'}
           </button>
           <button
+            className={`btn ${showLegalKBPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowLegalKBPanel(p => !p)}
+          >
+            {showLegalKBPanel ? 'Ẩn tra cứu pháp lý' : 'Tra cứu pháp lý'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -279,6 +288,13 @@ export default function App() {
           spec={agentSystem.spec}
           legal={agentSystem.legal}
           risk={agentSystem.risk}
+        />
+      )}
+
+      {showLegalKBPanel && (
+        <LegalKBPanel
+          query={selectedPackage.packageName}
+          results={searchLegalKB(selectedPackage.packageName, 5)}
         />
       )}
 
