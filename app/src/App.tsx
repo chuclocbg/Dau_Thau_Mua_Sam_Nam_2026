@@ -12,6 +12,7 @@ import { validateDateGaps, validatePackageBeforeExport } from './utils';
 import { DocErrorBoundary } from './DocErrorBoundary';
 import AiAssistantPanel from './AiAssistantPanel';
 import AgentProviderPanel, { createAgentSystem } from './components/AgentProviderPanel';
+import AutonomousWorkflowPanel from './components/AutonomousWorkflowPanel';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -29,7 +30,8 @@ export default function App() {
   const [activeSection, setActiveSection] = useState<'info' | 'dates' | 'items'>('info');
   const [isExportingZip, setIsExportingZip] = useState<boolean>(false);
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
-  const [showAgentPanel, setShowAgentPanel] = useState<boolean>(false);
+  const [showAgentPanel, setShowAgentPanel]       = useState<boolean>(false);
+  const [showWorkflowPanel, setShowWorkflowPanel] = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -211,6 +213,12 @@ export default function App() {
             {showAgentPanel ? 'Ẩn Multi-Agent' : 'Multi-Agent'}
           </button>
           <button
+            className={`btn ${showWorkflowPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowWorkflowPanel(p => !p)}
+          >
+            {showWorkflowPanel ? 'Ẩn Workflow' : 'Workflow'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -236,6 +244,10 @@ export default function App() {
           agents={agentSystem.agents}
           title="Hệ thống Multi-Agent"
         />
+      )}
+
+      {showWorkflowPanel && (
+        <AutonomousWorkflowPanel agent={agentSystem.autonomous} />
       )}
 
       {/* Main Layout */}

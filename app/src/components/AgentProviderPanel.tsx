@@ -26,8 +26,10 @@ export interface AgentStatusInfo {
 }
 
 export interface AgentSystemBundle {
-  registry: AgentRegistry;
-  agents:   AgentStatusInfo[];
+  registry:  AgentRegistry;
+  agents:    AgentStatusInfo[];
+  /** Exposed so Task B (AutonomousWorkflowPanel) can wire live sessions. */
+  autonomous: AutonomousAgent;
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ export function createAgentSystem(): AgentSystemBundle {
 
   return {
     registry,
+    autonomous,
     agents: [planner, spec, legal, risk, chat, autonomous].map(a => ({
       id:           a.id,
       name:         a.name,
