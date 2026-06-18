@@ -1,5 +1,5 @@
 /**
- * P7-03: ChatInterfacePanel — wires AgentChatPanel to the ChatAgent.
+ * P7-03 / 8-A: ChatInterfacePanel — wires AgentChatPanel to the ChatAgent.
  *
  * Manages conversation history in React and delegates each turn to
  * ChatAgent via AgentMessage / process().  AgentChatPanel receives the
@@ -8,6 +8,9 @@
  * The `initial*` props are provided for SSR-safe testing with renderToString —
  * they seed the initial hook values so every state variant is renderable
  * without executing async agent calls.
+ *
+ * 8-A: `packageContext` is forwarded to every ChatInput so ChatAgent can
+ * enrich answers with package-specific details (method, value, dates, etc.).
  */
 
 import { useState, useCallback } from 'react';
@@ -20,6 +23,7 @@ import {
   type ChatMessage as ChatMessageRecord,
 } from '../agents';
 
+import type { ProcurementPackage } from '../demoData';
 import AgentChatPanel from './AgentChatPanel';
 
 // ─── Local trace-id helper ────────────────────────────────────────────────────
@@ -34,6 +38,9 @@ function makeTraceId(): string {
 
 export interface ChatInterfacePanelProps {
   agent:            ChatAgent;
+  /** Active procurement package — forwarded to ChatInput on every send so
+   *  ChatAgent can enrich answers with package-specific legal context. */
+  packageContext?:  ProcurementPackage;
   // ── Initial state overrides (for testing / SSR snapshots) ──────────────────
   initialMessages?: ChatMessageRecord[];
   initialInput?:    string;
@@ -45,6 +52,7 @@ export interface ChatInterfacePanelProps {
 
 export default function ChatInterfacePanel({
   agent,
+  packageContext,
   initialMessages = [],
   initialInput    = '',
   initialLoading  = false,
@@ -76,6 +84,7 @@ export default function ChatInterfacePanel({
     const chatInput: ChatInput = {
       message: text,
       history: messages,
+      ...(packageContext !== undefined ? { packageContext } : {}),
     };
 
     const agentMsg: AgentMessage = {
@@ -110,10 +119,15 @@ export default function ChatInterfacePanel({
     } finally {
       setLoading(false);
     }
-  }, [agent, input, messages]);
+  }, [agent, input, messages, packageContext]);
 
   return (
     <div data-panel="chat-interface">
+      {packageContext && (
+        <div data-field="package-context" data-package-code={packageContext.packageCode}>
+          <span data-field="package-name">{packageContext.packageName}</span>
+        </div>
+      )}
       <div data-field="controls">
         <input
           data-field="chat-input"

@@ -259,7 +259,10 @@ export default function App() {
       )}
 
       {showChatPanel && (
-        <ChatInterfacePanel agent={agentSystem.chat} />
+        <ChatInterfacePanel
+          agent={agentSystem.chat}
+          packageContext={selectedPackage}
+        />
       )}
 
       {/* Main Layout */}

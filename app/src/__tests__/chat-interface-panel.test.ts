@@ -24,6 +24,7 @@ import ChatInterfacePanel from '../components/ChatInterfacePanel';
 import { createAgentSystem } from '../components/AgentProviderPanel';
 import { AgentRegistry, ChatAgent } from '../agents';
 import type { ChatMessage as ChatMessageRecord } from '../agents/ChatAgent';
+import type { ProcurementPackage } from '../demoData';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -347,5 +348,78 @@ describe('CI-12 · createAgentSystem bundle — chat agent', () => {
 
   it('CI-12-06: capabilities list has at least 5 entries', () => {
     expect(bundle.chat.getCapabilities().length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+// ─── CI-13 · packageContext prop ─────────────────────────────────────────────
+
+function makePkg(overrides?: Partial<ProcurementPackage>): ProcurementPackage {
+  return {
+    id: 'pkg-test',
+    packageName: 'Gói thầu thử nghiệm 8-A',
+    packageCode: 'TEST-8A',
+    fundingSource: 'autonomy_fund',
+    fundingSourceName: 'Quỹ phát triển hoạt động sự nghiệp',
+    budgetYear: 2026,
+    rectorName: '[Hiệu trưởng]',
+    departmentName: '[Phòng đề xuất]',
+    departmentCode: 'PĐX',
+    expertTeamLeader: '[Tổ trưởng tổ chuyên gia]',
+    expertTeamMember1: '[Thành viên tổ chuyên gia 1]',
+    expertTeamMember2: '[Thành viên tổ chuyên gia 2]',
+    appraisalLeader: '[Tổ trưởng thẩm định độc lập]',
+    appraisalMember: '[Thành viên thẩm định độc lập]',
+    supplier1Name: '[Nhà cung cấp số 1]',
+    supplier1Address: '',
+    supplier1TaxCode: '',
+    supplier1Representative: '',
+    supplier1Position: '',
+    supplier2Name: '[Nhà cung cấp số 2]',
+    supplier2Address: '',
+    supplier3Name: '[Nhà cung cấp số 3]',
+    supplier3Address: '',
+    dateProposal: '2026-01-01',
+    dateSurvey: '2026-01-02',
+    dateQuotes: '2026-01-03',
+    dateCompare: '2026-01-04',
+    dateKhlcnt: '2026-01-05',
+    dateKhlcntApprove: '2026-01-06',
+    dateExpertEstablish: '2026-01-07',
+    dateDocIssue: '2026-01-08',
+    dateBidClose: '2026-01-15',
+    dateEvaluate: '2026-01-16',
+    dateAppraise: '2026-01-17',
+    dateResultProposal: '2026-01-18',
+    dateResultApprove: '2026-01-19',
+    dateContractSign: '2026-01-20',
+    dateDelivery: '2026-02-01',
+    dateAcceptance: '2026-02-05',
+    dateLiquidation: '2026-03-01',
+    dateAssetIncrease: '2026-03-02',
+    contractDurationDays: 30,
+    items: [],
+    ...overrides,
+  };
+}
+
+describe('CI-13 · packageContext prop', () => {
+  it('CI-13-01: renders without throwing when packageContext is provided', () => {
+    expect(() => render({ packageContext: makePkg() })).not.toThrow();
+  });
+
+  it('CI-13-02: data-field="package-context" present when packageContext is provided', () => {
+    const html = render({ packageContext: makePkg() });
+    expect(html).toContain('data-field="package-context"');
+  });
+
+  it('CI-13-03: packageContext.packageName appears inside data-field="package-name"', () => {
+    const html = render({ packageContext: makePkg() });
+    expect(html).toContain('data-field="package-name"');
+    expect(html).toContain('Gói thầu thử nghiệm 8-A');
+  });
+
+  it('CI-13-04: no data-field="package-context" when packageContext is undefined', () => {
+    const html = render({});
+    expect(html).not.toContain('data-field="package-context"');
   });
 });
