@@ -1,5 +1,5 @@
 # Kiến Trúc Hệ Thống — Hồ Sơ Mua Sắm Nam 2026
-> **Cập nhật:** 13/06/2026 — Phiên bản 2.0 (dựa trên phân tích toàn bộ CLAUDE.md, SKILL.md và mã nguồn)
+> **Cập nhật:** 18/06/2026 — Phiên bản 3.0 (bổ sung Phase 6: multi-agent layer + provider infrastructure)
 
 ---
 
@@ -391,3 +391,159 @@ Theo CLAUDE.md, dự án cần duy trì:
 3. Thêm logic so sánh giá để xác định nhà thầu trúng
 4. Xóa hardcode "Đã hoàn thành" trong Doc 24
 5. Sửa Doc 6 HTML tên nhà cung cấp
+
+---
+
+## Phase 6 — Multi-Agent Layer (✅ Hoàn thành 18/06/2026)
+
+Phase 6 thêm ba lớp mới vào kiến trúc, hoàn toàn độc lập với lớp Phase 1–5.
+
+---
+
+### Lớp 1 — Agent Layer (`app/src/agents/`)
+
+Hệ thống 6 agent chuyên biệt giao tiếp qua message-passing, được điều phối bởi `AgentRegistry`.
+
+**Kiến trúc message-passing:**
+
+```
+User / App.tsx
+      │  AgentMessage { traceId, from, to, type, payload, legalBasis }
+      ▼
+AgentRegistry          ← message broker + audit trace log
+      │  route(msg) → agent
+      ├──► PlannerAgent        (id: 'planner')
+      ├──► SpecificationAgent  (id: 'specification')
+      ├──► LegalReviewerAgent  (id: 'legal-reviewer')
+      ├──► RiskAgent           (id: 'risk')
+      ├──► ChatAgent           (id: 'chat')
+      └──► AutonomousAgent     (id: 'autonomous')  ← master orchestrator
+```
+
+**Invariant bất biến:** `AgentRegistry.log()` ném lỗi nếu `traceId` rỗng — đảm bảo mọi message đều có thể truy vết kiểm toán.
+
+**Mô tả các agent:**
+
+| Agent | File | Chức năng chính | Tests |
+|---|---|---|---|
+| PlannerAgent | `PlannerAgent.ts` | Lập KHLCNT năm từ NL goal; phát hiện chia nhỏ gói thầu; lịch mua sắm | 56 |
+| SpecificationAgent | `SpecificationAgent.ts` | Sinh YCKT chuẩn đấu thầu; phát hiện khóa nhãn hiệu; batch generate | 58 |
+| LegalReviewerAgent | `LegalReviewerAgent.ts` | Rà soát pháp lý toàn hồ sơ; cross-check 28 văn bản; compliance score 0–100 | 57 |
+| RiskAgent | `RiskAgent.ts` | Risk matrix theo chuẩn KTNN; phát hiện rủi ro hệ thống; kế hoạch giảm thiểu | 57 |
+| ChatAgent | `ChatAgent.ts` | Hỏi đáp đa lượt tiếng Việt; KB-first (không fabricate); suggest follow-ups | 57 |
+| AutonomousAgent | `AutonomousAgent.ts` | State machine IDLE→PLANNING→…→DONE; pause/resume; full audit trail | 56 |
+
+**Public API — barrel `agents/index.ts`:**
+
+```typescript
+// Import từ đây thay vì trực tiếp từ agent file
+import { PlannerAgent, LegalReviewerAgent, ChatAgent, AgentRegistry } from './agents';
+import type { AgentMessage, IAgent, AgentId } from './agents';
+```
+
+> **Wiring status:** Barrel đã xuất đủ; chưa được import bởi `App.tsx` — tích hợp UI được lùi sang Phase 7.
+
+---
+
+### Lớp 2 — Provider Infrastructure (`app/src/providers/` — P6-10x)
+
+Các module cung cấp khả năng gọi LLM, quản lý session, memory và điều phối đa agent.
+
+| Module | Mô tả |
+|---|---|
+| `OpenAIProvider.ts` | Adapter gọi OpenAI API (chat completions + streaming) |
+| `ClaudeProvider.ts` | Adapter gọi Anthropic Claude API |
+| `GeminiProvider.ts` | Adapter gọi Google Gemini API |
+| `ProviderRegistry.ts` | Đăng ký và tra cứu provider theo tên |
+| `ProviderManager.ts` | Điều phối providers: fallback, retry, model selection |
+| `ModelManager.ts` | Quản lý danh sách model và metadata |
+| `PromptTemplateManager.ts` | Quản lý và render prompt template có biến |
+| `ConversationBuilder.ts` | Xây dựng conversation array (system + history + user) |
+| `ConversationMemory.ts` | Lưu lịch sử hội thoại theo session (in-memory) |
+| `MemoryStore.ts` | Snapshot persistence cho agent memory |
+| `SessionManager.ts` | Quản lý lifecycle session (create/resume/close) |
+| `AgentRuntime.ts` | Runtime vòng lặp request→LLM→tool→response |
+| `ToolRegistry.ts` | Đăng ký và tra cứu tool definitions |
+| `ToolExecutor.ts` | Thực thi tool calls (sync và async) |
+| `MultiAgentCoordinator.ts` | Điều phối nhiều agent chạy song song |
+| `ApiServer.ts` | Mock HTTP API server (route registration + request dispatch) |
+| `Planner.ts` | Task decomposition planner |
+| `WorkflowEngine.ts` | Topological multi-step workflow orchestrator |
+| `ToolCallingAgent.ts` | Agent vòng lặp multi-format tool calling |
+| `StreamingTypes.ts` / `RetryPolicy.ts` / `env.ts` | Types, retry logic, environment config |
+
+**Nguyên tắc thiết kế:** Tất cả provider module là SSR-compatible (không dùng `window`, `document`, `localStorage`). Provider pattern: `{ ok: true; value: T } | { ok: false; error: E }`.
+
+---
+
+### Lớp 3 — Utility Infrastructure (`app/src/providers/` — P6-11x và P6-12x)
+
+#### P6-11x — Core Utilities (9 modules)
+
+Các primitive độc lập, không phụ thuộc lẫn nhau, có thể dùng trong bất kỳ layer nào.
+
+| Module | Mô tả |
+|---|---|
+| `Logger.ts` | Structured in-process log store (level-filtered, iterable) |
+| `EventBus.ts` | In-process pub/sub message bus (sync emit, typed events) |
+| `CacheStore.ts` | Key-value cache với optional TTL expiry |
+| `ConfigStore.ts` | Ordered key-value configuration store |
+| `MetricsCollector.ts` | Numeric metrics accumulator (count, sum, min, max) |
+| `StateStore.ts` | Key-value state store với full snapshot |
+| `TaskQueue.ts` | FIFO task queue với safe empty-queue semantics |
+| `ResourcePool.ts` | FIFO generic object pool (acquire/release) |
+| `RetryManager.ts` | Configurable async retry với exponential backoff |
+
+#### P6-12x — Network & Integration (10 modules)
+
+Các client và pipeline cho giao tiếp mạng và xử lý request/response.
+
+| Module | Mô tả |
+|---|---|
+| `RestClient.ts` | fetch-based HTTP client (timeout, query params, base URL) |
+| `RateLimiter.ts` | Sliding-window rate limiter |
+| `HttpInterceptor.ts` | Request/response interceptor pipeline |
+| `WebSocketClient.ts` | Injectable-transport WebSocket client |
+| `Scheduler.ts` | FIFO job scheduler (delay, interval, one-shot) |
+| `Pipeline.ts` | Sequential stage processor (`(input) → output`) |
+| `MiddlewareChain.ts` | `(context, next)` middleware runner (Express-style) |
+| `HookManager.ts` | Fire-and-forget named hook runner |
+| `PluginManager.ts` | Named plugin registry (register/activate/deactivate) |
+| `ServiceLocator.ts` | String-keyed service registry (IoC container lite) |
+
+---
+
+### Lớp 4 — UI Components (`app/src/components/`)
+
+18 React component SSR-compatible (không dùng hooks, không dùng browser API):
+
+- **Wired vào Dashboard.tsx:** ProviderPanel, SessionPanel, MemoryPanel, WorkflowEnginePanel, AgentPanel, ToolPanel, ChatPanel
+- **Standalone panels:** AgentStatusDashboard, RoutePanel, AuditTrailPanel
+- **Primitive components:** AgentCard, StepTimeline, ChatMessage, ChatInput, AutonomousPanel
+
+**Deferred components (tồn tại, chưa wire):**
+
+| Component | Lý do defer |
+|---|---|
+| `WorkflowPanel.tsx` | Cần wire với `AutonomousAgent` state machine — Phase 7 |
+| `AgentChatPanel.tsx` | Cần wire với `ChatAgent` message-passing — Phase 7 |
+
+---
+
+### Tóm tắt lớp kiến trúc (Phase 6 hoàn chỉnh)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  App.tsx (Phase 1–5 SPA)  ←── Phases 1–5 không thay đổi   │
+│  demoData.ts / docTemplates.ts / utils.ts / ai/             │
+├─────────────────────────────────────────────────────────────┤
+│  components/  (Phase 6 UI — 18 files, SSR-safe)            │
+│  ⚠ WorkflowPanel, AgentChatPanel chưa wire vào App.tsx     │
+├─────────────────────────────────────────────────────────────┤
+│  agents/  (Phase 6 Multi-Agent — 6 agents + registry)      │
+│  ⚠ agents/index.ts barrel chưa import bởi App.tsx          │
+├─────────────────────────────────────────────────────────────┤
+│  providers/  (Phase 6 Infrastructure — 42 modules)          │
+│  P6-10x: LLM runtime  │  P6-11x: Utilities  │  P6-12x: Net │
+└─────────────────────────────────────────────────────────────┘
+```
