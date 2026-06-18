@@ -13,6 +13,7 @@ import { DocErrorBoundary } from './DocErrorBoundary';
 import AiAssistantPanel from './AiAssistantPanel';
 import AgentProviderPanel, { createAgentSystem } from './components/AgentProviderPanel';
 import AutonomousWorkflowPanel from './components/AutonomousWorkflowPanel';
+import ChatInterfacePanel from './components/ChatInterfacePanel';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -32,6 +33,7 @@ export default function App() {
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
   const [showAgentPanel, setShowAgentPanel]       = useState<boolean>(false);
   const [showWorkflowPanel, setShowWorkflowPanel] = useState<boolean>(false);
+  const [showChatPanel, setShowChatPanel]         = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -219,6 +221,12 @@ export default function App() {
             {showWorkflowPanel ? 'Ẩn Workflow' : 'Workflow'}
           </button>
           <button
+            className={`btn ${showChatPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowChatPanel(p => !p)}
+          >
+            {showChatPanel ? 'Ẩn Chat' : 'Chat pháp lý'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -248,6 +256,10 @@ export default function App() {
 
       {showWorkflowPanel && (
         <AutonomousWorkflowPanel agent={agentSystem.autonomous} />
+      )}
+
+      {showChatPanel && (
+        <ChatInterfacePanel agent={agentSystem.chat} />
       )}
 
       {/* Main Layout */}
