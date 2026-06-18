@@ -11,9 +11,15 @@ import {
 import { validateDateGaps, validatePackageBeforeExport } from './utils';
 import { DocErrorBoundary } from './DocErrorBoundary';
 import AiAssistantPanel from './AiAssistantPanel';
+import AgentProviderPanel, { createAgentSystem } from './components/AgentProviderPanel';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
+
+// Module-level singleton — created once when the module loads.
+// Agents are stateful; creating them outside the component function
+// keeps instances stable across re-renders.
+const agentSystem = createAgentSystem();
 
 export default function App() {
   // Main State
@@ -23,6 +29,7 @@ export default function App() {
   const [activeSection, setActiveSection] = useState<'info' | 'dates' | 'items'>('info');
   const [isExportingZip, setIsExportingZip] = useState<boolean>(false);
   const [showAiPanel, setShowAiPanel] = useState<boolean>(false);
+  const [showAgentPanel, setShowAgentPanel] = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -198,6 +205,12 @@ export default function App() {
             {showAiPanel ? 'Ẩn trợ lý AI' : 'Trợ lý AI'}
           </button>
           <button
+            className={`btn ${showAgentPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowAgentPanel(p => !p)}
+          >
+            {showAgentPanel ? 'Ẩn Multi-Agent' : 'Multi-Agent'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -215,6 +228,13 @@ export default function App() {
             setActiveDocIndex(0);
             setShowAiPanel(false);
           }}
+        />
+      )}
+
+      {showAgentPanel && (
+        <AgentProviderPanel
+          agents={agentSystem.agents}
+          title="Hệ thống Multi-Agent"
         />
       )}
 
