@@ -1,8 +1,8 @@
 # Lộ Trình Phát Triển — Hệ Thống Hồ Sơ Mua Sắm 2026
 
 > **Trạng thái cập nhật:** 18/06/2026  
-> **Phiên bản hiện tại:** 4.0 — tag `phase6-complete`, branch `develop`  
-> **Test suite:** 3431 tests passing across 78 test files
+> **Phiên bản hiện tại:** 4.1 — Phase 7 complete, branch `develop`  
+> **Test suite:** 3655 tests passing across 82 test files
 
 ---
 
@@ -16,6 +16,7 @@
 | Phase 4 — Low | 6 nợ kỹ thuật dài hạn | ✅ DONE |
 | Phase 5 — AI Agent | 5 module AI (rule-based, client-side) | ✅ DONE (tag `phase5-complete`) |
 | Phase 6 — Multi-Agent | 6 agent chuyên biệt, kiến trúc message-passing + 42 provider/utility modules | ✅ DONE (tag `phase6-complete`) |
+| Phase 7 — UI Wiring | Wire agent layer vào App.tsx, E2E UI tests | ✅ DONE (commits 566592a–5f61a19) |
 
 ---
 
@@ -72,7 +73,7 @@ app/src/agents/                         # ✅ Implemented
 ├── types.ts                    # AgentId, AgentMessage, IAgent — core contracts
 ├── AgentRegistry.ts            # Message broker, routing, audit trace log
 ├── index.ts                    # Barrel — exports all 6 agents + types + helpers
-│                               #   ⚠ Not yet imported by App.tsx — wiring deferred to Phase 7
+│                               #   ✅ Imported by AgentProviderPanel — wired in Phase 7
 ├── PlannerAgent.ts             # P6-01 — 56 tests
 ├── SpecificationAgent.ts       # P6-02 — 58 tests
 ├── LegalReviewerAgent.ts       # P6-03 — 57 tests
@@ -91,27 +92,28 @@ app/src/components/             # ✅ Implemented (flat structure — see note b
 ├── Dashboard.tsx               # Composite panel (composes 7 sub-panels)
 ├── ProviderPanel.tsx, SessionPanel.tsx, MemoryPanel.tsx
 ├── WorkflowEnginePanel.tsx, AgentPanel.tsx, ToolPanel.tsx, ChatPanel.tsx
-├── WorkflowPanel.tsx           # ⚠ DEFERRED — not imported anywhere (see below)
-└── AgentChatPanel.tsx          # ⚠ DEFERRED — not imported anywhere (see below)
+├── WorkflowPanel.tsx           # ✅ Wired via AutonomousWorkflowPanel (Phase 7)
+├── AgentChatPanel.tsx          # ✅ Wired via ChatInterfacePanel (Phase 7)
+├── AgentProviderPanel.tsx      # ✅ Phase 7 — createAgentSystem(), AgentSystemBundle
+├── AutonomousWorkflowPanel.tsx # ✅ Phase 7 — AutonomousAgent UI container
+└── ChatInterfacePanel.tsx      # ✅ Phase 7 — ChatAgent UI container (wired in App.tsx)
 
 app/src/providers/              # ✅ Implemented — P6-10x / P6-11x / P6-12x (42 modules)
                                 #   See architecture.md §Phase 6 Provider Infrastructure
 ```
 
 > **Ghi chú — cấu trúc component phẳng:**  
-> Thiết kế ban đầu dự kiến 3 thư mục con (`AgentChat/`, `AgentStatus/`, `AutonomousWorkflow/`).  
-> Thực tế: tất cả 18 component triển khai phẳng trong `components/`. Không ảnh hưởng chức năng.  
-> Quyết định tái cấu trúc thư mục được lùi sang Phase 7.
+> Tất cả component triển khai phẳng trong `components/`. Không ảnh hưởng chức năng.  
+> Phase 7 đã bổ sung 3 component mới: `AgentProviderPanel.tsx`, `AutonomousWorkflowPanel.tsx`, `ChatInterfacePanel.tsx`.
 
 > **Ghi chú — `WorkflowPanel.tsx` và `AgentChatPanel.tsx`:**  
-> Hai component này tồn tại trong codebase nhưng chưa được import bởi bất kỳ file nào.  
-> Chúng đại diện cho UI tích hợp đầu-cuối (agent chat + workflow state display).  
-> Tích hợp vào App.tsx được lùi sang Phase 7 (cần wire với agents/index.ts barrel).
+> Cả hai đã được wire trong Phase 7:  
+> `WorkflowPanel` ← `AutonomousWorkflowPanel` ← `App.tsx`;  
+> `AgentChatPanel` ← `ChatInterfacePanel` ← `App.tsx`.
 
 > **Ghi chú — `agents/index.ts` barrel:**  
-> Barrel xuất đủ 6 agent, AgentRegistry, types và helper functions.  
-> Chưa được import bởi App.tsx hoặc bất kỳ component nào ngoài `agents/`.  
-> Đây là điểm tích hợp Phase 7: khi UI panels được wire, chúng import từ barrel này.
+> Barrel được import bởi `AgentProviderPanel.tsx` (Phase 7).  
+> `createAgentSystem()` khởi tạo tất cả 6 agent với `AgentRegistry` dùng chung và trả về `AgentSystemBundle`.
 
 **Core message contract (types.ts):**
 
@@ -569,7 +571,7 @@ export interface UserQuestion {
 |---|---|---|
 | `agents/types.ts` | Định nghĩa `AgentMessage`, `IAgent`, `AgentId` | ✅ Done |
 | `agents/AgentRegistry.ts` | Message broker, routing, audit trace log | ✅ Done |
-| `agents/index.ts` | Barrel export — public API cho toàn bộ agent layer | ✅ Done (wiring deferred) |
+| `agents/index.ts` | Barrel export — public API cho toàn bộ agent layer | ✅ Done (wired via AgentProviderPanel — Phase 7) |
 | P6-10x providers (10 modules) | LLM providers, runtime, session, memory, multi-agent coordinator, UI panels | ✅ Done |
 | P6-11x utilities (9 modules) | Logger, EventBus, CacheStore, ConfigStore, MetricsCollector, StateStore, TaskQueue, ResourcePool, RetryManager | ✅ Done |
 | P6-12x network (10 modules) | RestClient, RateLimiter, HttpInterceptor, WebSocketClient, Scheduler, Pipeline, MiddlewareChain, HookManager, PluginManager, ServiceLocator | ✅ Done |
@@ -585,10 +587,15 @@ export interface UserQuestion {
 ### Chiến lược testing Phase 6 — Kết quả thực tế
 
 ```
-Tổng test đạt được: 3431 tests (mục tiêu: 400+)
+Tổng test đạt được: 3655 tests (82 test files)
 ├── Agent tests (56-test standard):  341 tests — 6 agents × ~57 avg
 ├── Provider tests (P6-10x/11x/12x): 2352 tests — 42 modules × 56
 ├── E2E + integration tests:          ~300 tests (e2e-workflow a/b/c/d, providers-e2e)
+├── Phase 7 UI tests:                 168 tests — 3 tasks × 56 tests
+│   ├── agent-provider-panel.test.ts  56 tests (Task A — 566592a)
+│   ├── autonomous-workflow-panel.test.ts 56 tests (Task B — e9ec23b)
+│   └── chat-interface-panel.test.ts  56 tests (Task C — beb2d5b)
+├── Phase 7 E2E tests:                56 tests — e2e-phase7-ui.test.ts (Task E — 5f61a19)
 └── Regression (Phase 1–5):           269+ tests tiếp tục pass
 ```
 
@@ -614,7 +621,7 @@ Tổng test đạt được: 3431 tests (mục tiêu: 400+)
 ## Nguyên tắc duy trì (cập nhật cho Phase 6+)
 
 1. **Audit trail bắt buộc:** Mọi `AgentMessage` phải có `traceId` — `AgentRegistry.log()` throws on empty `traceId`
-2. **Floor test count:** Không được giảm dưới 3431 passing tests khi phát triển Phase 7+
+2. **Floor test count:** Không được giảm dưới 3655 passing tests khi phát triển Phase 8+
 3. **KB-first cho pháp lý:** Mọi căn cứ pháp lý phải có trong `LEGAL_KB` trước khi agent sử dụng; không fabricate
 4. **Placeholder data:** Demo data vẫn dùng `[Tổ trưởng tổ chuyên gia]`, `[Nhà cung cấp số 1]`, v.v.
 5. **Không breaking change:** Phase 5 API (`runWorkflow`, `reviewPackage`, `searchLegalKB`...) phải tiếp tục hoạt động
@@ -622,14 +629,46 @@ Tổng test đạt được: 3431 tests (mục tiêu: 400+)
 
 ---
 
-## Định hướng Phase 7 (chưa lên kế hoạch)
+## Phase 7 — UI Wiring ✅ DONE
 
-Các việc còn dở dang từ Phase 6, được lùi có chủ đích:
+> **Trạng thái:** Hoàn thành — branch `develop` (18/06/2026)  
+> **Kết quả thực tế:**  
+> - 3 component mới + 56 tests mỗi component  
+> - 1 bộ E2E tests (56 tests)  
+> - Tổng: 3655 tests passing / 82 test files / 0 regressions  
+> - TypeScript: `tsc --noEmit` clean — 0 errors  
+
+### Các task Phase 7
+
+| Task | Nội dung | Trạng thái | Commit |
+|---|---|---|---|
+| Task A | AgentProviderPanel — createAgentSystem(), AgentSystemBundle | ✅ DONE | `566592a` |
+| Task B | AutonomousWorkflowPanel — wire AutonomousAgent + WorkflowPanel | ✅ DONE | `e9ec23b` |
+| Task C | ChatInterfacePanel — wire ChatAgent + AgentChatPanel, import vào App.tsx | ✅ DONE | `beb2d5b` |
+| Task D | Tái cấu trúc thư mục components | ⏭ Intentionally skipped — không cần thiết |  |
+| Task E | E2E UI tests — cover 3 panel mới + App.tsx integration | ✅ DONE | `5f61a19` |
+
+### Kiến trúc wiring Phase 7
+
+```
+App.tsx
+├── AgentProviderPanel (createAgentSystem → AgentSystemBundle)
+│   ├── AgentRegistry (shared message broker)
+│   ├── PlannerAgent, SpecificationAgent, LegalReviewerAgent
+│   ├── RiskAgent, ChatAgent, AutonomousAgent
+│   └── AgentStatusDashboard (status display)
+├── AutonomousWorkflowPanel (bundle.autonomous)
+│   └── WorkflowPanel (step timeline, session display)
+└── ChatInterfacePanel (bundle.chat)
+    └── AgentChatPanel (message bubbles, loading, error)
+```
+
+### Backlog Phase 8 (chưa lên kế hoạch)
 
 | Hạng mục | Mô tả |
 |---|---|
-| Wire agents/index.ts → App.tsx | Tích hợp agent layer vào UI chính |
-| Tích hợp WorkflowPanel.tsx | Wire với AutonomousAgent state machine |
-| Tích hợp AgentChatPanel.tsx | Wire với ChatAgent message-passing |
-| Cấu trúc thư mục components | Tái tổ chức thành AgentChat/, AgentStatus/, AutonomousWorkflow/ |
-| E2E coverage agent → UI | Browser test cho golden path qua UI |
+| Cấu trúc thư mục components | Tái tổ chức thành AgentChat/, AgentStatus/, AutonomousWorkflow/ (Task D đã skip) |
+| LLM integration | Kết nối Claude API cho ChatAgent và LegalReviewerAgent |
+| IndexedDB persistence | Lưu AgentSession qua IndexedDB; giới hạn 10 sessions |
+| E2E browser tests | Playwright/Cypress cho golden path qua UI thực |
+| Export agent output | Tích hợp output agent vào dossier ZIP export |
