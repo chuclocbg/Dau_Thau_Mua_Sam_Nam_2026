@@ -1,8 +1,13 @@
 /**
- * P6-01A: AgentRegistry — message broker for the multi-agent system.
+ * P6-01A / P9-01: AgentRegistry — message broker for the multi-agent system.
  *
  * Use as an injected instance (never a module-level singleton) so that
  * each test group can create a fresh registry and avoid state leakage.
+ *
+ * P9-01 additions:
+ *   listTraceIds()  — returns all trace IDs with logged messages (Map insertion order)
+ *   getAllMessages() — returns all messages across all traces, sorted ascending by timestamp
+ *   log() now notifies 'message' subscribers on every append — enables live UI wiring
  */
 
 import type { AgentId, AgentMessage, IAgent } from './types';
@@ -14,18 +19,34 @@ export class AgentRegistry {
 
   constructor() {}
 
-  /** Appends msg to its trace.  Throws on empty traceId (audit invariant). */
+  /** Appends msg to its trace.  Throws on empty traceId (audit invariant).
+   *  Notifies 'message' subscribers synchronously after append. */
   log(msg: AgentMessage): void {
     if (!msg.traceId) {
       throw new Error('AgentMessage.traceId is required — audit invariant violated');
     }
     const existing = this.traces.get(msg.traceId) ?? [];
     this.traces.set(msg.traceId, [...existing, msg]);
+    this.notifySubscribers('message', msg);
   }
 
   /** Returns all messages logged under traceId, or [] if none. */
   getTrace(traceId: string): AgentMessage[] {
     return this.traces.get(traceId) ?? [];
+  }
+
+  /** Returns all trace IDs that have at least one logged message (insertion order). */
+  listTraceIds(): string[] {
+    return [...this.traces.keys()];
+  }
+
+  /** Returns every logged message across all traces, sorted ascending by timestamp. */
+  getAllMessages(): AgentMessage[] {
+    const all: AgentMessage[] = [];
+    for (const msgs of this.traces.values()) {
+      all.push(...msgs);
+    }
+    return all.sort((a, b) => a.timestamp - b.timestamp);
   }
 
   /** Registers an agent.  Last-write-wins for duplicate AgentId. */

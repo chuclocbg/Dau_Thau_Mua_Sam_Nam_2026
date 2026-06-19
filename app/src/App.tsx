@@ -19,6 +19,7 @@ import LegalKBPanel from './components/LegalKBPanel';
 import PackageLegalReviewPanel from './components/PackageLegalReviewPanel';
 import Phase8DashboardPanel from './components/Phase8DashboardPanel';
 import { searchLegalKB } from './ai/legalKnowledgeBase';
+import type { AgentMessage } from './agents/types';
 import { reviewPackage } from './ai/legalReviewer';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
@@ -44,6 +45,16 @@ export default function App() {
   const [showLegalKBPanel, setShowLegalKBPanel]         = useState<boolean>(false);
   const [showLegalReviewPanel, setShowLegalReviewPanel] = useState<boolean>(false);
   const [showPhase8Dashboard, setShowPhase8Dashboard]   = useState<boolean>(false);
+  const [traceMessages, setTraceMessages]                = useState<AgentMessage[]>([]);
+  const [traceIds, setTraceIds]                          = useState<string[]>([]);
+
+  // Subscribe to AgentRegistry once on mount — populates live trace panels
+  useEffect(() => {
+    agentSystem.registry.subscribe('message', (msg) => {
+      setTraceMessages(prev => [...prev, msg]);
+      setTraceIds(prev => prev.includes(msg.traceId) ? prev : [...prev, msg.traceId]);
+    });
+  }, []);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -328,10 +339,10 @@ export default function App() {
           kbResults={searchLegalKB(selectedPackage.packageName, 5)}
           legalReviewResult={reviewPackage(selectedPackage)}
           auditReport={null}
-          traceMessages={[]}
+          traceMessages={traceMessages}
           traceId={null}
           registry={agentSystem.registry}
-          traceIds={[]}
+          traceIds={traceIds}
         />
       )}
 
