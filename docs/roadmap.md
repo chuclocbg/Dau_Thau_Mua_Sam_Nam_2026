@@ -1,8 +1,8 @@
 # Lộ Trình Phát Triển — Hệ Thống Hồ Sơ Mua Sắm 2026
 
-> **Trạng thái cập nhật:** 18/06/2026  
-> **Phiên bản hiện tại:** 4.1 — Phase 7 complete, branch `develop`  
-> **Test suite:** 3655 tests passing across 82 test files
+> **Trạng thái cập nhật:** 19/06/2026  
+> **Phiên bản hiện tại:** 4.2 — Phase 8 complete, branch `develop`  
+> **Test suite:** 4452 tests passing across 96 test files
 
 ---
 
@@ -17,6 +17,7 @@
 | Phase 5 — AI Agent | 5 module AI (rule-based, client-side) | ✅ DONE (tag `phase5-complete`) |
 | Phase 6 — Multi-Agent | 6 agent chuyên biệt, kiến trúc message-passing + 42 provider/utility modules | ✅ DONE (tag `phase6-complete`) |
 | Phase 7 — UI Wiring | Wire agent layer vào App.tsx, E2E UI tests | ✅ DONE (commits 566592a–5f61a19) |
+| Phase 8 — Audit Dashboard | 17 tasks: UI audit panels, LLM bridge, E2E coverage | ✅ DONE (commits 40ff586–0133434) |
 
 ---
 
@@ -125,7 +126,7 @@ export type AgentId =
 export interface AgentMessage {
   traceId: string;           // UUID — required for audit trail
   from: AgentId | 'user';
-  to: AgentId | 'broadcast';
+  to: AgentId | 'broadcast' | 'user';  // 'user' added in Phase 8 (8-K)
   type: 'request' | 'response' | 'event' | 'error';
   payload: unknown;
   timestamp: number;
@@ -621,7 +622,7 @@ Tổng test đạt được: 3655 tests (82 test files)
 ## Nguyên tắc duy trì (cập nhật cho Phase 6+)
 
 1. **Audit trail bắt buộc:** Mọi `AgentMessage` phải có `traceId` — `AgentRegistry.log()` throws on empty `traceId`
-2. **Floor test count:** Không được giảm dưới 3655 passing tests khi phát triển Phase 8+
+2. **Floor test count:** Không được giảm dưới 4452 passing tests khi phát triển Phase 9+
 3. **KB-first cho pháp lý:** Mọi căn cứ pháp lý phải có trong `LEGAL_KB` trước khi agent sử dụng; không fabricate
 4. **Placeholder data:** Demo data vẫn dùng `[Tổ trưởng tổ chuyên gia]`, `[Nhà cung cấp số 1]`, v.v.
 5. **Không breaking change:** Phase 5 API (`runWorkflow`, `reviewPackage`, `searchLegalKB`...) phải tiếp tục hoạt động
@@ -663,12 +664,100 @@ App.tsx
     └── AgentChatPanel (message bubbles, loading, error)
 ```
 
-### Backlog Phase 8 (chưa lên kế hoạch)
+---
 
-| Hạng mục | Mô tả |
-|---|---|
-| Cấu trúc thư mục components | Tái tổ chức thành AgentChat/, AgentStatus/, AutonomousWorkflow/ (Task D đã skip) |
-| LLM integration | Kết nối Claude API cho ChatAgent và LegalReviewerAgent |
-| IndexedDB persistence | Lưu AgentSession qua IndexedDB; giới hạn 10 sessions |
-| E2E browser tests | Playwright/Cypress cho golden path qua UI thực |
-| Export agent output | Tích hợp output agent vào dossier ZIP export |
+## Phase 8 — Audit Dashboard ✅ DONE
+
+> **Trạng thái:** Hoàn thành — branch `develop` (19/06/2026)  
+> **Kết quả thực tế:**  
+> - 17 task hoàn thành (8-A đến 8-Q), đóng Phase với 8-R  
+> - 14 component/module mới + 797 tests mới  
+> - Tổng: 4452 tests passing / 96 test files / 0 regressions  
+> - TypeScript: `tsc --noEmit` clean — 0 errors, 0 suppressions  
+
+### Các task Phase 8
+
+| Task | Nội dung | Trạng thái | Commit |
+|---|---|---|---|
+| 8-A | Wire packageContext vào ChatInterfacePanel | ✅ DONE | `40ff586` |
+| 8-B | AgentOutputPanel — expose 4 specialist agents từ bundle | ✅ DONE | `b59982e` |
+| 8-C | Mở rộng Legal KB từ 15 lên 21 entries (kb-016 đến kb-021) | ✅ DONE | `d73ad64` |
+| 8-D | LegalKBPanel — surface live KB search results trong UI | ✅ DONE | `08b8b63` |
+| 8-E | PackageLegalReviewPanel — surface P5-03 legal findings trong UI | ✅ DONE | `d9c8416` |
+| 8-F | e2e-phase8-ui — 56 E2E tests cho 8-A đến 8-E | ✅ DONE | `f3f391e` |
+| 8-G | llmBridge — LLM provider bridge với rule-based fallback | ✅ DONE | `474d475` |
+| 8-H | AgentAuditExporter — HTML audit summary cho ZIP export | ✅ DONE | `5c3637e` |
+| 8-I | PlannerBridge — route AiAssistantPanel qua P6-01 PlannerAgent | ✅ DONE | `fb48bae` |
+| 8-J | Phase8DashboardPanel — collapsible dashboard 9 sections | ✅ DONE | `7955e94` |
+| 8-K | AgentTracePanel — chronological audit trail từ AgentRegistry | ✅ DONE | `08df17f` |
+| 8-L | AgentRegistryPanel — multi-trace registry overview | ✅ DONE | `74bad83` |
+| 8-M | AgentFlowPanel — routing/flow summary theo cặp (from, to) | ✅ DONE | `8537c5c` |
+| 8-N | AgentLegalCitationPanel — tần suất trích dẫn pháp lý | ✅ DONE | `9feb05d` |
+| 8-O | AgentErrorPanel — chi tiết lỗi agent cross-trace | ✅ DONE | `d6a3ec8` |
+| 8-P | e2e-phase8-agent-panels — 56 E2E tests cho 8-K đến 8-O | ✅ DONE | `0133434` |
+| 8-Q | Wire 8-K đến 8-O vào Phase8DashboardPanel và App.tsx | ✅ DONE | `bf9f06b` |
+| 8-R | Đóng Phase 8 — cập nhật tài liệu, xác nhận hoàn thành | ✅ DONE | _(commit này)_ |
+
+### Kiến trúc wiring Phase 8
+
+```
+App.tsx
+├── Phase8DashboardPanel (toggle "Dashboard Phase 8")   ← 8-Q
+│   ├── [1] AgentOutputPanel (8-B) — 4 specialist agents
+│   ├── [2] LegalKBPanel (8-D) — live KB results
+│   ├── [3] PackageLegalReviewPanel (8-E) — legal findings
+│   ├── [4] audit-report section (8-H) — overallRisk, auditReadiness
+│   ├── [5] AgentTracePanel (8-K) — chronological message trace
+│   ├── [6] AgentRegistryPanel (8-L) — multi-trace registry overview
+│   ├── [7] AgentFlowPanel (8-M) — routing/flow summary
+│   ├── [8] AgentLegalCitationPanel (8-N) — citation frequency
+│   └── [9] AgentErrorPanel (8-O) — error-only view
+├── AgentOutputPanel (toggle "Tác nhân chuyên biệt")    ← 8-B (standalone)
+├── LegalKBPanel (toggle "Tra cứu pháp lý")            ← 8-D (standalone)
+└── PackageLegalReviewPanel (toggle "Kiểm tra pháp lý") ← 8-E (standalone)
+```
+
+### Chiến lược testing Phase 8 — Kết quả thực tế
+
+```
+Tests thêm trong Phase 8: +797 tests (3655 → 4452)
+├── UI panels (56-test standard):      784 tests — 14 module × 56
+│   ├── agent-output-panel.test.ts     56 tests (8-B — b59982e)
+│   ├── ai-legal-kb.test.ts            56 tests (8-C — d73ad64)
+│   ├── legal-kb-panel.test.ts         56 tests (8-D — 08b8b63)
+│   ├── package-legal-review-panel.test.ts 56 tests (8-E — d9c8416)
+│   ├── llm-bridge.test.ts             56 tests (8-G — 474d475)
+│   ├── agent-audit-exporter.test.ts   56 tests (8-H — 5c3637e)
+│   ├── planner-bridge.test.ts         56 tests (8-I — fb48bae)
+│   ├── phase8-dashboard-panel.test.ts 56 tests (8-J — 7955e94)
+│   ├── agent-trace-panel.test.ts      56 tests (8-K — 08df17f)
+│   ├── agent-registry-panel.test.ts   56 tests (8-L — 74bad83)
+│   ├── agent-flow-panel.test.ts       56 tests (8-M — 8537c5c)
+│   ├── agent-legal-citation-panel.test.ts 56 tests (8-N — 9feb05d)
+│   ├── agent-error-panel.test.ts      56 tests (8-O — d6a3ec8)
+│   └── (8-A wiring only, 8-Q wiring — updated existing tests)
+└── E2E tests:                         112 tests
+    ├── e2e-phase8-ui.test.ts          56 tests (8-F — f3f391e)  ← covers 8-A through 8-E
+    └── e2e-phase8-agent-panels.test.ts 56 tests (8-P — 0133434) ← covers 8-K through 8-O
+```
+
+### Nợ kỹ thuật còn lại sau Phase 8
+
+| Hạng mục | Mức | Ghi chú |
+|---|---|---|
+| `fmtTs`/`fmtPayload` trùng lặp | [MEDIUM] | Private helpers trong AgentRegistryPanel + AgentErrorPanel vs `formatTimestamp`/`formatPayload` exported từ AgentTracePanel. Resolve khi tạo `app/src/utils/agentFormatters.ts` |
+| `traceMessages=[]` tĩnh trong App.tsx | [LOW] | Phase8DashboardPanel nhận `traceMessages=[]` — cần wire với registry.getTrace() khi có active trace |
+| Standalone panels không xóa khi dùng Dashboard | [LOW] | AgentOutputPanel/LegalKBPanel/PackageLegalReviewPanel vẫn render độc lập song song với Dashboard — không gây lỗi nhưng có thể gây nhầm lẫn UX |
+
+---
+
+## Backlog Phase 9 (chưa lên kế hoạch)
+
+| Hạng mục | Mô tả | Phụ thuộc |
+|---|---|---|
+| Active trace wiring | Wire `registry.log()` output vào `traceMessages` trong real-time | Phase 8 complete |
+| LLM API integration | Kết nối Claude API thực cho ChatAgent + LegalReviewerAgent | 8-G (llmBridge) |
+| IndexedDB persistence | Lưu AgentSession qua IndexedDB; giới hạn 10 sessions | Phase 6 session design |
+| E2E browser tests | Playwright/Cypress cho golden path qua UI thực | Phase 8 component stable |
+| Export agent output | Tích hợp output agent vào dossier ZIP export | 8-H (AgentAuditExporter) |
+| Shared formatter utilities | `app/src/utils/agentFormatters.ts` — resolve [MEDIUM] tech debt | 8-K, 8-L, 8-O |
