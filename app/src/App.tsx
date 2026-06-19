@@ -23,6 +23,9 @@ import type { AgentMessage } from './agents/types';
 import { reviewPackage } from './ai/legalReviewer';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
+import { buildAgentAuditReport } from './ai/agentAuditExporter';
+import type { DossierReviewOutput } from './agents/LegalReviewerAgent';
+import type { RiskOutput } from './agents/RiskAgent';
 import './App.css';
 
 // Module-level singleton — created once when the module loads.
@@ -200,6 +203,11 @@ export default function App() {
           .replace(/[^a-zA-Z0-9]/g, '_');
         zip.file(`${indexStr}_HSMS_${nameClean}.docx`, blob);
       }
+      const dossierReview: DossierReviewOutput | null = null;
+      const riskOutput: RiskOutput | null = null;
+      const report = buildAgentAuditReport(dossierReview, riskOutput);
+      zip.file('BiolReport.html', new Blob([report.html], { type: 'text/html' }));
+
       const content = await zip.generateAsync({ type: 'blob' });
       const { saveAs } = await import('file-saver');
       saveAs(content, `Bo_Ho_So_Mua_Sam_${selectedPackage.packageCode || '2026'}.zip`);
