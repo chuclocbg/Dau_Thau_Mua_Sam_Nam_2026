@@ -64,6 +64,15 @@ export {
   createMigratingPersistenceLayer,
 } from './migrating-stores';
 
+// ─── P9-04: AgentSession store (bounded, SSR-safe) ───────────────────────────
+
+export {
+  SESSION_STORE_MAX,
+  createAgentSessionStore,
+  type AgentSessionStoreOptions,
+  type AgentSessionStore,
+} from './agentSessionStore';
+
 // ─── P6-08D: IndexedDB adapters ───────────────────────────────────────────────
 
 export {
