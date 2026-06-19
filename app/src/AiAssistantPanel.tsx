@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Packer } from 'docx';
 import JSZip from 'jszip';
-import { runWorkflow, WorkflowResult, WORKFLOW_DOCUMENT_NAMES } from './ai/workflowOrchestrator';
+import { runPlannerWorkflow, PlannerBridgeResult } from './ai/plannerBridge';
+import { WORKFLOW_DOCUMENT_NAMES } from './ai/workflowOrchestrator';
 import { documentTemplates, getProcurementMethod } from './docTemplates';
 import { ProcurementPackage } from './demoData';
 
@@ -32,22 +33,19 @@ const CONTRACT_TYPE_LABEL: Record<string, string> = {
 export default function AiAssistantPanel({ onApplyPackage }: Props) {
   const [request, setRequest] = useState('');
   const [year, setYear]       = useState(new Date().getFullYear());
-  const [result, setResult]   = useState<WorkflowResult | null>(null);
+  const [result, setResult]   = useState<PlannerBridgeResult | null>(null);
   const [isRunning, setIsRunning]   = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  function handleRun() {
+  async function handleRun() {
     if (!request.trim()) return;
     setIsRunning(true);
-    // runWorkflow is synchronous; wrap in timeout to allow render update
-    setTimeout(() => {
-      try {
-        const r = runWorkflow(request.trim(), year);
-        setResult(r);
-      } finally {
-        setIsRunning(false);
-      }
-    }, 0);
+    try {
+      const r = await runPlannerWorkflow(request.trim(), year);
+      setResult(r);
+    } finally {
+      setIsRunning(false);
+    }
   }
 
   async function handleDownloadZip() {
@@ -138,10 +136,11 @@ export default function AiAssistantPanel({ onApplyPackage }: Props) {
           </div>
 
           {/* Package summary */}
-          <div className="ai-summary">
+          <div className="ai-summary" data-source={result.source} data-trace-id={result.traceId}>
             <div><b>Gói thầu:</b> {result.pkg.packageName}</div>
             <div><b>Mã:</b> {result.pkg.packageCode} &nbsp;|&nbsp; <b>Năm:</b> {result.pkg.budgetYear}</div>
             <div><b>Loại:</b> {PACKAGE_TYPE_LABEL[result.pkg.packageType ?? ''] ?? result.pkg.packageType} &nbsp;|&nbsp; <b>Hợp đồng:</b> {CONTRACT_TYPE_LABEL[result.pkg.contractType ?? ''] ?? result.pkg.contractType}</div>
+            <div><b>Nguồn:</b> {result.source === 'planner-agent' ? 'P6-01 PlannerAgent' : 'P5 Workflow (fallback)'} &nbsp;|&nbsp; <b>TraceID:</b> {result.traceId.slice(0, 8)}…</div>
           </div>
 
           {/* Legal findings */}
