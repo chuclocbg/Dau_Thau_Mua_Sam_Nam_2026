@@ -15,6 +15,7 @@ import { useState, useCallback } from 'react';
 
 import {
   AutonomousAgent,
+  generateTraceId,
   type AgentMessage,
   type AgentSession,
   type AutonomousInput,
@@ -22,14 +23,6 @@ import {
 } from '../agents';
 
 import WorkflowPanel from './WorkflowPanel';
-
-// ─── Local trace-id helper ────────────────────────────────────────────────────
-// generateTraceId is not re-exported from the agents barrel, so we provide
-// a lightweight equivalent that satisfies the audit-trail non-empty invariant.
-
-function makeTraceId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,7 +57,7 @@ export default function AutonomousWorkflowPanel({
   const [goal, setGoal]       = useState('');
 
   const sendAction = useCallback(async (input: AutonomousInput): Promise<void> => {
-    const tid: string = makeTraceId();
+    const tid: string = generateTraceId();
     setTraceId(tid);
     setLoading(true);
     setError(undefined);

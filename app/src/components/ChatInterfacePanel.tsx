@@ -17,6 +17,7 @@ import { useState, useCallback } from 'react';
 
 import {
   ChatAgent,
+  generateTraceId,
   type AgentMessage,
   type ChatInput,
   type ChatOutput,
@@ -25,14 +26,6 @@ import {
 
 import type { ProcurementPackage } from '../demoData';
 import AgentChatPanel from './AgentChatPanel';
-
-// ─── Local trace-id helper ────────────────────────────────────────────────────
-// generateTraceId is not re-exported from the agents barrel, so we provide
-// a lightweight equivalent that satisfies the audit-trail non-empty invariant.
-
-function makeTraceId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,7 +61,7 @@ export default function ChatInterfacePanel({
     if (!text) return;
 
     const userMsg: ChatMessageRecord = {
-      id:         makeTraceId(),
+      id:         generateTraceId(),
       role:       'user',
       content:    text,
       sources:    [],
@@ -88,7 +81,7 @@ export default function ChatInterfacePanel({
     };
 
     const agentMsg: AgentMessage = {
-      traceId:   makeTraceId(),
+      traceId:   generateTraceId(),
       from:      'user',
       to:        'chat',
       type:      'request',
@@ -104,7 +97,7 @@ export default function ChatInterfacePanel({
       } else {
         const output = response.payload as ChatOutput;
         const agentReply: ChatMessageRecord = {
-          id:              makeTraceId(),
+          id:              generateTraceId(),
           role:            'agent',
           content:         output.answer,
           sources:         output.sources,

@@ -15,6 +15,7 @@ export type { AgentId, AgentMessage, IAgent } from './types';
 
 export {
   PlannerAgent,
+  generateTraceId,
   buildMinimalProcurementPackage,
   parseGoalIntoItems,
   detectPackageSplitting,
