@@ -35,6 +35,8 @@ import type { Severity, LegalFinding, LegalReviewResult } from '../ai/legalRevie
 // P5-03 reviewPackage aliased to avoid collision with the dossier-level export below.
 import { reviewPackage as p5ReviewPackage } from '../ai/legalReviewer';
 import { generateTraceId }                  from './detectPackageSplitting';
+import { paraphraseAnswer }                from '../ai/llmBridge';
+import type { LLMBridgeConfig }            from '../ai/llmBridge';
 
 // ─── Re-export P5-03 types as unified entry point ────────────────────────────
 
@@ -81,6 +83,8 @@ export interface DossierReviewOutput {
   auditReadiness:   'ready' | 'conditional' | 'not-ready';
   recommendations:  string[];
   legalBasis:       string[];
+  /** LLM-generated prose summary of the compliance review. Undefined when no API key or on any error. */
+  llmSummary?:      string;
 }
 
 // ─── ReviewerState ────────────────────────────────────────────────────────────
@@ -399,12 +403,14 @@ export class LegalReviewerAgent implements IAgent {
   readonly id   = 'legal-reviewer' as const;
   readonly name = 'Legal Reviewer Agent';
 
-  private state:           ReviewerState = 'idle';
-  private currentTraceId:  string | null  = null;
+  private state:             ReviewerState = 'idle';
+  private currentTraceId:    string | null  = null;
   private readonly registry: AgentRegistry;
+  private readonly llmConfig?: LLMBridgeConfig;
 
-  constructor(registry: AgentRegistry) {
-    this.registry = registry;
+  constructor(registry: AgentRegistry, llmConfig?: LLMBridgeConfig) {
+    this.registry  = registry;
+    this.llmConfig = llmConfig;
   }
 
   getCapabilities(): string[] {
@@ -543,14 +549,18 @@ export class LegalReviewerAgent implements IAgent {
 
       // ── COMPOSING_RESPONSE
       this.transition('composing-response');
-      const legalBasis             = this.collectLegalBasis(dossierOutput);
-      const finalOutput: DossierReviewOutput = { ...dossierOutput, legalBasis };
-
-      const response = this.buildResponse(callerFrom, finalOutput);
-      this.registry.log(response);
+      const legalBasis  = this.collectLegalBasis(dossierOutput);
+      const baseOutput: DossierReviewOutput = { ...dossierOutput, legalBasis };
+      const kbResponse  = this.buildResponse(callerFrom, baseOutput);
+      this.registry.log(kbResponse);
       this.state          = 'idle';
       this.currentTraceId = null;
-      return response;
+
+      // Paraphrase after state reset — safe with concurrent LegalReviewerAgent.process() calls
+      const recText = dossierOutput.recommendations.join('\n');
+      const bridge  = await paraphraseAnswer(recText, this.llmConfig);
+      if (!bridge.usedLLM) return kbResponse;
+      return { ...kbResponse, payload: { ...baseOutput, llmSummary: bridge.answer } };
 
     } catch (err) {
       return this.buildErrorResponse(

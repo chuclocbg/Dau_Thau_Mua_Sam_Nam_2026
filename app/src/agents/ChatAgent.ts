@@ -43,6 +43,8 @@ import type { SearchResult }                   from '../ai/legalKnowledgeBase';
 import { generateTraceId }                  from './detectPackageSplitting';
 import { searchLegalKB }                   from '../ai/legalKnowledgeBase';
 import { reviewPackage as p5ReviewPackage } from '../ai/legalReviewer';
+import { paraphraseAnswer }                from '../ai/llmBridge';
+import type { LLMBridgeConfig }            from '../ai/llmBridge';
 
 // ─── ChatMessage ─────────────────────────────────────────────────────────────
 
@@ -360,12 +362,14 @@ export class ChatAgent implements IAgent {
   readonly id   = 'chat' as const;
   readonly name = 'Chat Agent';
 
-  private state:           ChatState   = 'idle';
-  private currentTraceId:  string | null = null;
+  private state:             ChatState   = 'idle';
+  private currentTraceId:    string | null = null;
   private readonly registry: AgentRegistry;
+  private readonly llmConfig?: LLMBridgeConfig;
 
-  constructor(registry: AgentRegistry) {
-    this.registry = registry;
+  constructor(registry: AgentRegistry, llmConfig?: LLMBridgeConfig) {
+    this.registry  = registry;
+    this.llmConfig = llmConfig;
   }
 
   getCapabilities(): string[] {
@@ -477,16 +481,20 @@ export class ChatAgent implements IAgent {
 
       // ── INVOKING_AGENT — KB search + optional P5-03 review (via chat())
       this.transition('invoking-agent', 'Truy vấn cơ sở tri thức pháp luật');
-      const output = chat(input);
+      const kbOutput = chat(input);
 
       // ── COMPOSING_RESPONSE
-      this.transition('composing-response', `confidence=${output.confidence}`);
+      this.transition('composing-response', `confidence=${kbOutput.confidence}`);
 
-      const response = this.buildResponse(callerFrom, output);
-      this.registry.log(response);
+      const kbResponse = this.buildResponse(callerFrom, kbOutput);
+      this.registry.log(kbResponse);
       this.state          = 'idle';
       this.currentTraceId = null;
-      return response;
+
+      // Paraphrase after state reset — safe with concurrent ChatAgent.process() calls
+      const bridge = await paraphraseAnswer(kbOutput.answer, this.llmConfig);
+      if (!bridge.usedLLM) return kbResponse;
+      return { ...kbResponse, payload: { ...kbOutput, answer: bridge.answer } };
 
     } catch (err) {
       return this.buildErrorResponse(
