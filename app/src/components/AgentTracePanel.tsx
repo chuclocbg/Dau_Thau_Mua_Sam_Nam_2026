@@ -36,6 +36,8 @@
  */
 
 import type { AgentMessage } from '../agents/types';
+import { formatTimestamp, formatPayload } from '../utils/agentFormatters';
+export { formatTimestamp, formatPayload };
 
 // ─── Public constants ─────────────────────────────────────────────────────────
 
@@ -52,34 +54,6 @@ export interface AgentTracePanelProps {
 }
 
 // ─── Pure helpers (exported for unit-testing) ─────────────────────────────────
-
-/**
- * Converts a unix-milliseconds timestamp to UTC 'HH:MM:SS.mmm'.
- * Uses Date.toISOString() so the result is deterministic and SSR-safe.
- *
- * Example: formatTimestamp(0) → '00:00:00.000'
- */
-export function formatTimestamp(ts: number): string {
-  const iso = new Date(ts).toISOString(); // 'YYYY-MM-DDTHH:MM:SS.mmmZ'
-  const timePart = iso.split('T')[1] ?? '';
-  return timePart.replace('Z', '');       // 'HH:MM:SS.mmm'
-}
-
-/**
- * Serialises an AgentMessage payload to a compact, truncated JSON string.
- * Truncates at 120 chars to keep the panel scannable.
- * Returns '—' when the value is undefined (JSON.stringify returns undefined for it).
- * Returns '[non-serializable]' on circular-reference errors.
- */
-export function formatPayload(payload: unknown): string {
-  try {
-    const s = JSON.stringify(payload);
-    if (!s) return '—';
-    return s.length > 120 ? s.slice(0, 117) + '…' : s;
-  } catch {
-    return '[non-serializable]';
-  }
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

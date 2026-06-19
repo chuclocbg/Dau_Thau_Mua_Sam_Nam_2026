@@ -42,6 +42,7 @@
  */
 
 import type { AgentRegistry } from '../agents/AgentRegistry';
+import { formatTimestamp } from '../utils/agentFormatters';
 
 // ─── Public constants ─────────────────────────────────────────────────────────
 
@@ -91,13 +92,6 @@ export function buildTraceSummary(registry: AgentRegistry, traceId: string): Tra
     firstTimestamp: timestamps.length > 0 ? Math.min(...timestamps) : null,
     lastTimestamp:  timestamps.length > 0 ? Math.max(...timestamps) : null,
   };
-}
-
-/** Converts unix-ms to UTC 'HH:MM:SS.mmm' — deterministic, SSR-safe. */
-function fmtTs(ts: number): string {
-  const iso = new Date(ts).toISOString();
-  const timePart = iso.split('T')[1] ?? '';
-  return timePart.replace('Z', '');
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -174,7 +168,7 @@ export default function AgentRegistryPanel({
                 <span data-field="error-flag">[ERROR]</span>
               )}
               {ft !== null && (
-                <span data-field="first-timestamp">{fmtTs(ft)}</span>
+                <span data-field="first-timestamp">{formatTimestamp(ft)}</span>
               )}
             </li>
           );

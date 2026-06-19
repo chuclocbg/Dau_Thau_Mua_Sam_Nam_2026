@@ -52,6 +52,7 @@
  */
 
 import type { AgentMessage } from '../agents/types';
+import { formatTimestamp, formatPayload } from '../utils/agentFormatters';
 
 // ─── Public constants ─────────────────────────────────────────────────────────
 
@@ -75,27 +76,6 @@ export function filterErrorMessages(messages: AgentMessage[]): AgentMessage[] {
   return messages
     .filter(m => m.type === 'error')
     .sort((a, b) => a.timestamp - b.timestamp);
-}
-
-/** Converts unix-ms to UTC 'HH:MM:SS.mmm' — deterministic, SSR-safe. */
-function fmtTs(ts: number): string {
-  const iso = new Date(ts).toISOString();
-  const timePart = iso.split('T')[1] ?? '';
-  return timePart.replace('Z', '');
-}
-
-/**
- * Serialises payload to compact JSON, truncated at 120 chars.
- * Returns '—' for undefined; '[non-serializable]' on circular-ref error.
- */
-function fmtPayload(payload: unknown): string {
-  try {
-    const s = JSON.stringify(payload);
-    if (!s) return '—';
-    return s.length > 120 ? s.slice(0, 117) + '…' : s;
-  } catch {
-    return '[non-serializable]';
-  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -147,10 +127,10 @@ export default function AgentErrorPanel({
             data-timestamp={msg.timestamp}
           >
             <span data-field="index">{i + 1}</span>
-            <span data-field="timestamp">{fmtTs(msg.timestamp)}</span>
+            <span data-field="timestamp">{formatTimestamp(msg.timestamp)}</span>
             <span data-field="routing">{`${msg.from} → ${msg.to}`}</span>
             <span data-field="trace-id">{`${msg.traceId.slice(0, 8)}…`}</span>
-            <span data-field="payload">{fmtPayload(msg.payload)}</span>
+            <span data-field="payload">{formatPayload(msg.payload)}</span>
             {msg.legalBasis != null && msg.legalBasis.length > 0 && (
               <span data-field="legal-basis-count">{msg.legalBasis.length}</span>
             )}
