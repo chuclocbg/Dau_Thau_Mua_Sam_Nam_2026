@@ -1,11 +1,16 @@
 /**
- * 8-J: Phase8DashboardPanel — collapsible dashboard composing all Phase 8 panels.
+ * 8-J / 8-Q: Phase8DashboardPanel — collapsible dashboard composing all Phase 8 panels.
  *
- * Sections (4 total):
- *   agent-output  — AgentOutputPanel (8-B) — 4 specialist agents
- *   legal-kb      — LegalKBPanel (8-D) — live KB search results
- *   legal-review  — PackageLegalReviewPanel (8-E) — P5-03 reviewPackage findings
- *   audit-report  — AgentAuditExporter (8-H) summary — overallRisk / auditReadiness
+ * Sections (9 total):
+ *   agent-output         — AgentOutputPanel (8-B) — 4 specialist agents
+ *   legal-kb             — LegalKBPanel (8-D) — live KB search results
+ *   legal-review         — PackageLegalReviewPanel (8-E) — P5-03 reviewPackage findings
+ *   audit-report         — AgentAuditExporter (8-H) summary — overallRisk / auditReadiness
+ *   agent-trace          — AgentTracePanel (8-K) — chronological message audit trail
+ *   agent-registry       — AgentRegistryPanel (8-L) — multi-trace registry overview
+ *   agent-flow           — AgentFlowPanel (8-M) — routing/flow summary
+ *   agent-legal-citation — AgentLegalCitationPanel (8-N) — citation frequency
+ *   agent-error          — AgentErrorPanel (8-O) — error-only filtered view
  *
  * Collapsible behavior:
  *   Controlled via the `collapsed` prop (SectionCollapseState).
@@ -14,32 +19,45 @@
  *   No hooks or browser globals — fully SSR-compatible and testable via renderToString.
  *
  * Fallback when data is unavailable:
- *   agentBundle=null     → <div data-section-fallback="agent-output"> shown instead of AgentOutputPanel
+ *   agentBundle=null       → <div data-section-fallback="agent-output"> shown
  *   legalReviewResult=null → <div data-section-fallback="legal-review"> shown
- *   auditReport=null     → <div data-section-fallback="audit-report"> shown
- *   kbResults=null/[]    → LegalKBPanel renders empty state (data-state="empty")
+ *   auditReport=null       → <div data-section-fallback="audit-report"> shown
+ *   registry=null          → <div data-section-fallback="agent-registry"> shown
+ *   kbResults/traceMessages null → child panel renders its own empty state
  */
 
 import AgentOutputPanel from './AgentOutputPanel';
 import LegalKBPanel from './LegalKBPanel';
 import PackageLegalReviewPanel from './PackageLegalReviewPanel';
+import AgentTracePanel from './AgentTracePanel';
+import AgentRegistryPanel from './AgentRegistryPanel';
+import AgentFlowPanel from './AgentFlowPanel';
+import AgentLegalCitationPanel from './AgentLegalCitationPanel';
+import AgentErrorPanel from './AgentErrorPanel';
 import type { AgentSystemBundle } from './AgentProviderPanel';
 import type { SearchResult } from '../ai/legalKnowledgeBase';
 import type { LegalReviewResult } from '../ai/legalReviewer';
 import type { AgentAuditReport } from '../ai/agentAuditExporter';
+import type { AgentMessage } from '../agents/types';
+import type { AgentRegistry } from '../agents/AgentRegistry';
 
 // ─── Public constants ─────────────────────────────────────────────────────────
 
 export const PHASE8_DASHBOARD_VERSION       = '8-J';
-export const PHASE8_DASHBOARD_SECTION_COUNT = 4;
+export const PHASE8_DASHBOARD_SECTION_COUNT = 9;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface SectionCollapseState {
-  agentOutput?: boolean;
-  legalKb?:     boolean;
-  legalReview?: boolean;
-  auditReport?: boolean;
+  agentOutput?:        boolean;
+  legalKb?:            boolean;
+  legalReview?:        boolean;
+  auditReport?:        boolean;
+  agentTrace?:         boolean;
+  agentRegistry?:      boolean;
+  agentFlow?:          boolean;
+  agentLegalCitation?: boolean;
+  agentError?:         boolean;
 }
 
 export interface Phase8DashboardPanelProps {
@@ -53,6 +71,14 @@ export interface Phase8DashboardPanelProps {
   legalReviewResult?: LegalReviewResult | null;
   /** Pre-computed audit report — null shows audit-report fallback. */
   auditReport?:       AgentAuditReport | null;
+  /** Flat message log for trace/flow/citation/error panels — null defaults to []. */
+  traceMessages?:     AgentMessage[] | null;
+  /** Active trace ID forwarded to AgentTracePanel — null shows all. */
+  traceId?:           string | null;
+  /** Live AgentRegistry for AgentRegistryPanel — null shows fallback. */
+  registry?:          AgentRegistry | null;
+  /** TraceIds to display in AgentRegistryPanel — null defaults to []. */
+  traceIds?:          string[] | null;
   /** Which sections are collapsed; missing keys default to false (expanded). */
   collapsed?:         SectionCollapseState | null;
   /** When true the panel renders a loading skeleton instead of sections. */
@@ -67,6 +93,10 @@ export default function Phase8DashboardPanel({
   kbResults,
   legalReviewResult,
   auditReport,
+  traceMessages,
+  traceId,
+  registry,
+  traceIds,
   collapsed,
   loading = false,
 }: Phase8DashboardPanelProps) {
@@ -170,6 +200,73 @@ export default function Phase8DashboardPanel({
               Chưa tạo báo cáo kiểm toán.
             </div>
           )
+        )}
+      </section>
+
+      {/* ── Section 5: Agent Trace (8-K) ─────────────────────────────────── */}
+      <section
+        data-section="agent-trace"
+        data-collapsed={String(col.agentTrace ?? false)}
+      >
+        <h2 data-field="section-title">Nhật ký Agent</h2>
+        {!col.agentTrace && (
+          <AgentTracePanel
+            messages={traceMessages ?? []}
+            traceId={traceId ?? null}
+          />
+        )}
+      </section>
+
+      {/* ── Section 6: Agent Registry (8-L) ──────────────────────────────── */}
+      <section
+        data-section="agent-registry"
+        data-collapsed={String(col.agentRegistry ?? false)}
+      >
+        <h2 data-field="section-title">Registry Agent</h2>
+        {!col.agentRegistry && (
+          registry != null ? (
+            <AgentRegistryPanel
+              registry={registry}
+              traceIds={traceIds ?? []}
+            />
+          ) : (
+            <div data-field="fallback" data-section-fallback="agent-registry">
+              Hệ thống Registry chưa sẵn sàng.
+            </div>
+          )
+        )}
+      </section>
+
+      {/* ── Section 7: Agent Flow (8-M) ──────────────────────────────────── */}
+      <section
+        data-section="agent-flow"
+        data-collapsed={String(col.agentFlow ?? false)}
+      >
+        <h2 data-field="section-title">Luồng giao tiếp Agent</h2>
+        {!col.agentFlow && (
+          <AgentFlowPanel messages={traceMessages ?? []} />
+        )}
+      </section>
+
+      {/* ── Section 8: Legal Citation (8-N) ──────────────────────────────── */}
+      <section
+        data-section="agent-legal-citation"
+        data-collapsed={String(col.agentLegalCitation ?? false)}
+      >
+        <h2 data-field="section-title">Trích dẫn pháp lý</h2>
+        {!col.agentLegalCitation && (
+          <AgentLegalCitationPanel messages={traceMessages ?? []} />
+        )}
+      </section>
+
+      {/* ── Section 9: Agent Error (8-O) ─────────────────────────────────── */}
+      <section
+        data-section="agent-error"
+        data-collapsed={String(col.agentError ?? false)}
+      >
+        <h2 data-field="section-title">Lỗi Agent</h2>
+        {!col.agentError && (
+          <AgentErrorPanel messages={traceMessages ?? []} />
         )}
       </section>
     </div>

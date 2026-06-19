@@ -17,6 +17,7 @@ import ChatInterfacePanel from './components/ChatInterfacePanel';
 import AgentOutputPanel from './components/AgentOutputPanel';
 import LegalKBPanel from './components/LegalKBPanel';
 import PackageLegalReviewPanel from './components/PackageLegalReviewPanel';
+import Phase8DashboardPanel from './components/Phase8DashboardPanel';
 import { searchLegalKB } from './ai/legalKnowledgeBase';
 import { reviewPackage } from './ai/legalReviewer';
 import JSZip from 'jszip';
@@ -42,6 +43,7 @@ export default function App() {
   const [showSpecialistPanel, setShowSpecialistPanel] = useState<boolean>(false);
   const [showLegalKBPanel, setShowLegalKBPanel]         = useState<boolean>(false);
   const [showLegalReviewPanel, setShowLegalReviewPanel] = useState<boolean>(false);
+  const [showPhase8Dashboard, setShowPhase8Dashboard]   = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -253,6 +255,12 @@ export default function App() {
             {showLegalReviewPanel ? 'Ẩn kiểm tra pháp lý' : 'Kiểm tra pháp lý'}
           </button>
           <button
+            className={`btn ${showPhase8Dashboard ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowPhase8Dashboard(p => !p)}
+          >
+            {showPhase8Dashboard ? 'Ẩn Dashboard Phase 8' : 'Dashboard Phase 8'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -310,6 +318,20 @@ export default function App() {
       {showLegalReviewPanel && (
         <PackageLegalReviewPanel
           result={reviewPackage(selectedPackage)}
+        />
+      )}
+
+      {showPhase8Dashboard && (
+        <Phase8DashboardPanel
+          agentBundle={agentSystem}
+          kbQuery={selectedPackage.packageName}
+          kbResults={searchLegalKB(selectedPackage.packageName, 5)}
+          legalReviewResult={reviewPackage(selectedPackage)}
+          auditReport={null}
+          traceMessages={[]}
+          traceId={null}
+          registry={agentSystem.registry}
+          traceIds={[]}
         />
       )}
 

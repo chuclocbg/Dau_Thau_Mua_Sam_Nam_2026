@@ -110,8 +110,8 @@ describe('PD-01: module exports and constants', () => {
     expect(typeof Phase8DashboardPanel).toBe('function');
   });
 
-  it('PD-01-02: PHASE8_DASHBOARD_SECTION_COUNT is 4', () => {
-    expect(PHASE8_DASHBOARD_SECTION_COUNT).toBe(4);
+  it('PD-01-02: PHASE8_DASHBOARD_SECTION_COUNT is 9', () => {
+    expect(PHASE8_DASHBOARD_SECTION_COUNT).toBe(9);
   });
 
   it('PD-01-03: PHASE8_DASHBOARD_VERSION is "8-J"', () => {
@@ -140,8 +140,8 @@ describe('PD-02: root element structure', () => {
     expect(render()).toContain('data-state="ready"');
   });
 
-  it('PD-02-03: data-section-count="4"', () => {
-    expect(render()).toContain('data-section-count="4"');
+  it('PD-02-03: data-section-count="9"', () => {
+    expect(render()).toContain('data-section-count="9"');
   });
 
   it('PD-02-04: data-field="title" present', () => {
@@ -172,10 +172,10 @@ describe('PD-03: section structure and default collapse state', () => {
     expect(render()).toContain('data-section="audit-report"');
   });
 
-  it('PD-03-05: all four sections default to data-collapsed="false"', () => {
+  it('PD-03-05: all nine sections default to data-collapsed="false"', () => {
     const html = render();
     const matches = html.match(/data-collapsed="false"/g) ?? [];
-    expect(matches.length).toBe(4);
+    expect(matches.length).toBe(9);
   });
 });
 
@@ -386,6 +386,9 @@ describe('PD-12: integration and SSR safety', () => {
       kbResults:         kbResultsFull,
       legalReviewResult: cleanReview,
       auditReport:       auditWithData,
+      registry:          bundle.registry,
+      traceMessages:     [],
+      traceIds:          [],
     });
     expect(html).not.toContain('data-section-fallback=');
   });
@@ -398,6 +401,9 @@ describe('PD-12: integration and SSR safety', () => {
         kbResults:         kbResultsFull,
         legalReviewResult: cleanReview,
         auditReport:       auditWithData,
+        registry:          bundle.registry,
+        traceMessages:     [],
+        traceIds:          [],
       })
     ).not.toThrow();
   });
@@ -420,12 +426,15 @@ describe('PD-12: integration and SSR safety', () => {
   });
 
   it('PD-12-05: identical renders with same pre-built props', () => {
-    const props = {
+    const props: Phase8DashboardPanelProps = {
       agentBundle:       bundle,
       kbQuery:           'kiểm toán',
       kbResults:         kbResultsFull,
       legalReviewResult: cleanReview,
       auditReport:       auditWithData,
+      registry:          bundle.registry,
+      traceMessages:     [],
+      traceIds:          [],
     };
     expect(render(props)).toBe(render(props));
   });
