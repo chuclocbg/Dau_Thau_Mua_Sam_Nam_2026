@@ -16,6 +16,7 @@ import {
   AutonomousAgent,
 } from '../agents';
 import type { AgentId } from '../agents';
+import type { LLMBridgeConfig } from '../ai/llmBridge';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -39,20 +40,47 @@ export interface AgentSystemBundle {
   risk:       RiskAgent;
 }
 
+// ─── Factory options ─────────────────────────────────────────────────────────
+
+export interface CreateAgentSystemOptions {
+  /**
+   * Anthropic API key.  When provided, ChatAgent and LegalReviewerAgent use
+   * the Claude API to paraphrase KB-derived answers.  When absent the agents
+   * operate in fully deterministic rule-based mode (zero network calls).
+   */
+  anthropicApiKey?: string;
+  /**
+   * Injectable fetch implementation.  Production code omits this; tests pass
+   * a mock so no real network calls are made against api.anthropic.com.
+   * Only applied when anthropicApiKey is also set.
+   */
+  _fetchFn?: LLMBridgeConfig['fetchFn'];
+}
+
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
 /**
  * Creates one AgentRegistry, instantiates and registers all 6 agents, and
  * returns a snapshot of their metadata for display.  Call once at module level
  * so agent instances are stable across renders.
+ *
+ * When opts.anthropicApiKey is provided, a single shared LLMBridgeConfig is
+ * injected into ChatAgent and LegalReviewerAgent so both can optionally
+ * paraphrase their KB-derived answers.  All other agents remain deterministic.
+ * legalBasis[] and sources[] are always populated from the KB — the LLM only
+ * rewrites the display text, never the citations.
  */
-export function createAgentSystem(): AgentSystemBundle {
+export function createAgentSystem(opts: CreateAgentSystemOptions = {}): AgentSystemBundle {
+  const llmConfig: LLMBridgeConfig | undefined = opts.anthropicApiKey
+    ? { apiKey: opts.anthropicApiKey, fetchFn: opts._fetchFn }
+    : undefined;
+
   const registry   = new AgentRegistry();
   const planner    = new PlannerAgent(registry);
   const spec       = new SpecificationAgent(registry);
-  const legal      = new LegalReviewerAgent(registry);
+  const legal      = new LegalReviewerAgent(registry, llmConfig);
   const risk       = new RiskAgent(registry);
-  const chat       = new ChatAgent(registry);
+  const chat       = new ChatAgent(registry, llmConfig);
   const autonomous = new AutonomousAgent(registry);
 
   registry.register(planner);
