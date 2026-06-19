@@ -16,7 +16,9 @@ import AutonomousWorkflowPanel from './components/AutonomousWorkflowPanel';
 import ChatInterfacePanel from './components/ChatInterfacePanel';
 import AgentOutputPanel from './components/AgentOutputPanel';
 import LegalKBPanel from './components/LegalKBPanel';
+import PackageLegalReviewPanel from './components/PackageLegalReviewPanel';
 import { searchLegalKB } from './ai/legalKnowledgeBase';
+import { reviewPackage } from './ai/legalReviewer';
 import JSZip from 'jszip';
 import { Packer } from 'docx';
 import './App.css';
@@ -38,7 +40,8 @@ export default function App() {
   const [showWorkflowPanel, setShowWorkflowPanel]     = useState<boolean>(false);
   const [showChatPanel, setShowChatPanel]             = useState<boolean>(false);
   const [showSpecialistPanel, setShowSpecialistPanel] = useState<boolean>(false);
-  const [showLegalKBPanel, setShowLegalKBPanel]       = useState<boolean>(false);
+  const [showLegalKBPanel, setShowLegalKBPanel]         = useState<boolean>(false);
+  const [showLegalReviewPanel, setShowLegalReviewPanel] = useState<boolean>(false);
 
   // Sync state when selecting a demo package
   const handleSelectDemo = (pkgId: string) => {
@@ -244,6 +247,12 @@ export default function App() {
             {showLegalKBPanel ? 'Ẩn tra cứu pháp lý' : 'Tra cứu pháp lý'}
           </button>
           <button
+            className={`btn ${showLegalReviewPanel ? 'btn-secondary' : 'btn-ai'}`}
+            onClick={() => setShowLegalReviewPanel(p => !p)}
+          >
+            {showLegalReviewPanel ? 'Ẩn kiểm tra pháp lý' : 'Kiểm tra pháp lý'}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleDownloadAllZip}
             disabled={isExportingZip}
@@ -295,6 +304,12 @@ export default function App() {
         <LegalKBPanel
           query={selectedPackage.packageName}
           results={searchLegalKB(selectedPackage.packageName, 5)}
+        />
+      )}
+
+      {showLegalReviewPanel && (
+        <PackageLegalReviewPanel
+          result={reviewPackage(selectedPackage)}
         />
       )}
 
