@@ -129,7 +129,7 @@ function checkPublicationObligations(pkg: ProcurementPackage): LegalFinding[] {
 
   // Packages ≥50M must publish KHLCNT on national e-procurement system (Điều 12 Luật ĐT 22/2023)
   if (methodTotal >= 50_000_000) {
-    const hasPublishDate = (pkg as Record<string, unknown>)['datePublishKhlcnt'] as string | undefined;
+    const hasPublishDate = pkg.datePublishKhlcnt;
     if (!hasPublishDate) {
       findings.push({
         severity: 'MEDIUM',

@@ -42,6 +42,7 @@ export interface ProcurementPackage {
   dateCompare: string;      // Ngày Bảng so sánh báo giá
   dateKhlcnt: string;       // Ngày trình KHLCNT
   dateKhlcntApprove: string;// Ngày Quyết định phê duyệt KHLCNT
+  datePublishKhlcnt?: string; // Ngày đăng tải KHLCNT lên hệ thống mạng đấu thầu quốc gia
   dateExpertEstablish: string; // Ngày Quyết định thành lập Tổ chuyên gia
   dateDocIssue: string;     // Ngày phát hành HSYC/HSMT
   dateBidClose: string;     // Ngày đóng thầu/hết hạn nộp HSDĐ
