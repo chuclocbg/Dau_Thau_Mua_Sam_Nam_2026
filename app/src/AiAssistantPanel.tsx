@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { Packer } from 'docx';
-import JSZip from 'jszip';
 import { runPlannerWorkflow, PlannerBridgeResult } from './ai/plannerBridge';
 import { WORKFLOW_DOCUMENT_NAMES } from './ai/workflowOrchestrator';
 import { documentTemplates, getProcurementMethod } from './docTemplates';
@@ -52,6 +50,8 @@ export default function AiAssistantPanel({ onApplyPackage }: Props) {
     if (!result) return;
     setIsExporting(true);
     try {
+      const { default: JSZip } = await import('jszip');
+      const { Packer } = await import('docx');
       const zip   = new JSZip();
       const method = getProcurementMethod(result.pkg);
       const selected = documentTemplates.filter(d =>

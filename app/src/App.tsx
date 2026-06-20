@@ -21,8 +21,6 @@ import Phase8DashboardPanel from './components/Phase8DashboardPanel';
 import { searchLegalKB } from './ai/legalKnowledgeBase';
 import type { AgentMessage } from './agents/types';
 import { reviewPackage } from './ai/legalReviewer';
-import JSZip from 'jszip';
-import { Packer } from 'docx';
 import { buildAgentAuditReport } from './ai/agentAuditExporter';
 import type { DossierReviewOutput } from './agents/LegalReviewerAgent';
 import type { RiskOutput } from './agents/RiskAgent';
@@ -190,6 +188,8 @@ export default function App() {
     }
     setIsExportingZip(true);
     try {
+      const { default: JSZip } = await import('jszip');
+      const { Packer } = await import('docx');
       const zip = new JSZip();
       for (const docConfig of documentTemplates) {
         const doc = docConfig.getDocx(selectedPackage, method.code);
