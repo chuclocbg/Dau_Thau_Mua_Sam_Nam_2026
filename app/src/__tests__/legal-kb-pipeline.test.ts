@@ -169,6 +169,14 @@ describe('PL-02 · Metadata extractor', () => {
     const meta = extractMetadata(makeDocFile('some-file.md'), REAL_MD_TEXT);
     expect(meta.category).toBe('root');
   });
+
+  it('PL-02-08: body preserves h2 headings but not h1 title', () => {
+    const meta = extractMetadata(makeDocFile('test.md'), REAL_MD_TEXT);
+    // h2 must survive so chunkText.splitAtSections can use it as a boundary
+    expect(meta.content).toContain('## Nội dung liên quan đến hồ sơ mua sắm');
+    // h1 title must be stripped (already captured in meta.title)
+    expect(meta.content).not.toContain('# NGHỊ ĐỊNH 60/2021/NĐ-CP');
+  });
 });
 
 // ─── PL-03: Chunker ────────────────────────────────────────────────────────────
@@ -346,6 +354,23 @@ describe('PL-06 · Source generator', () => {
     const s1 = generateKBSource([sampleEntry]);
     const s2 = generateKBSource([sampleEntry]);
     expect(s1).toBe(s2);
+  });
+
+  it('PL-06-05: content with apostrophe is safely serialized in generated source', () => {
+    const entryWithApostrophe: LegalEntry = {
+      id: 'doc-apos',
+      title: 'Quy định hợp đồng',
+      source: 'Nguồn (2026)',
+      keywords: ['hợp đồng'],
+      // apostrophe in content must not produce unescaped ' inside a JS string literal
+      content: "Điều khoản không được chia nhỏ gói thầu. Don't split packages.",
+      appliesTo: ['procurement'],
+    };
+    const src = generateKBSource([entryWithApostrophe]);
+    // Apostrophe survives literally (JSON doesn't escape ')
+    expect(src).toContain("Don't split packages.");
+    // JSON.stringify wraps the content value in double-quotes; no broken single-quote wrapping
+    expect(src).toMatch(/"content": ".*Don't split packages\./);
   });
 });
 
