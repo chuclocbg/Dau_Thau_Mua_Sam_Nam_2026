@@ -24,6 +24,7 @@ import TracePanel, { type TracePanelProps } from './TracePanel';
 import ChecklistPanel, { type ChecklistPanelProps } from './ChecklistPanel';
 import RiskPanel, { type RiskPanelProps } from './RiskPanel';
 import RecommendationPanel, { type RecommendationPanelProps } from './RecommendationPanel';
+import TimelinePanel, { type TimelinePanelProps } from './TimelinePanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,8 @@ export interface AgentOutputPanelProps {
   legalRisk?:            RiskPanelProps | null;
   /** Legal v2.6: severity-grouped recommendations — renders below RiskPanel. */
   legalRecommendations?: RecommendationPanelProps | null;
+  /** Legal v2.7: procurement lifecycle timeline — renders below RecommendationPanel. */
+  legalTimeline?:        TimelinePanelProps | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -78,6 +81,7 @@ export default function AgentOutputPanel({
   legalChecklist,
   legalRisk,
   legalRecommendations,
+  legalTimeline,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -108,6 +112,8 @@ export default function AgentOutputPanel({
       {legalRisk != null && <RiskPanel {...legalRisk} />}
       {/* Legal v2.6: render severity-grouped recommendations below risk panel */}
       {legalRecommendations != null && <RecommendationPanel {...legalRecommendations} />}
+      {/* Legal v2.7: render procurement lifecycle timeline below recommendations */}
+      {legalTimeline != null && <TimelinePanel {...legalTimeline} />}
     </div>
   );
 }
