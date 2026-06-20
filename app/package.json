@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:legal": "tsx scripts/buildLegalKB.ts"
   },
   "dependencies": {
     "@types/dompurify": "^3.0.5",
@@ -40,6 +41,7 @@
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "playwright": "^1.60.0",
+    "tsx": "^4.22.4",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
