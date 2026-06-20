@@ -37,6 +37,7 @@ import { reviewPackage as p5ReviewPackage } from '../ai/legalReviewer';
 import { generateTraceId }                  from './detectPackageSplitting';
 import { paraphraseAnswer }                from '../ai/llmBridge';
 import type { LLMBridgeConfig }            from '../ai/llmBridge';
+import { enrichLegalBasis }               from '../ai/legalSearchAdapter';
 
 // ─── Re-export P5-03 types as unified entry point ────────────────────────────
 
@@ -379,7 +380,7 @@ export function summarizeFindings(output: DossierReviewOutput): string[] {
  * and always performs a full scan so that tests remain deterministic.
  */
 export function reviewPackage(input: DossierReviewInput): DossierReviewOutput {
-  const p5Result        = p5ReviewPackage(input.pkg);
+  const p5Result         = p5ReviewPackage(input.pkg);
   const crossCheckIssues = detectCrossDocumentIssues(input.pkg);
   const complianceScore  = calculateComplianceScore(p5Result.findings, crossCheckIssues);
   const auditReadiness   = determineAuditReadiness(p5Result.findings, crossCheckIssues, complianceScore);
@@ -553,15 +554,21 @@ export class LegalReviewerAgent implements IAgent {
       const legalBasis  = this.collectLegalBasis(dossierOutput);
       const baseOutput: DossierReviewOutput = { ...dossierOutput, legalBasis };
       const kbResponse  = this.buildResponse(callerFrom, baseOutput);
-      this.registry.log(kbResponse);
+
+      // Enrich AgentMessage.legalBasis with index-based citations (Legal v1.5).
+      // Kept separate from payload.legalBasis so existing KB-authoritative invariants hold.
+      const enrichedLegalBasis = enrichLegalBasis(input.pkg.packageName, kbResponse.legalBasis ?? []);
+      const enrichedResponse: AgentMessage = { ...kbResponse, legalBasis: enrichedLegalBasis };
+
+      this.registry.log(enrichedResponse);
       this.state          = 'idle';
       this.currentTraceId = null;
 
       // Paraphrase after state reset — safe with concurrent LegalReviewerAgent.process() calls
       const recText = dossierOutput.recommendations.join('\n');
       const bridge  = await paraphraseAnswer(recText, this.llmConfig);
-      if (!bridge.usedLLM) return kbResponse;
-      return { ...kbResponse, payload: { ...baseOutput, llmSummary: bridge.answer } };
+      if (!bridge.usedLLM) return enrichedResponse;
+      return { ...enrichedResponse, payload: { ...baseOutput, llmSummary: bridge.answer } };
 
     } catch (err) {
       return this.buildErrorResponse(

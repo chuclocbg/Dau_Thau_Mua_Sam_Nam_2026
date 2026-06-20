@@ -41,7 +41,7 @@ import type { SearchResult }                   from '../ai/legalKnowledgeBase';
 // ─── Runtime imports ──────────────────────────────────────────────────────────
 
 import { generateTraceId }                  from './detectPackageSplitting';
-import { searchLegalKB }                   from '../ai/legalKnowledgeBase';
+import { searchWithFallback }              from '../ai/legalSearchAdapter';
 import { reviewPackage as p5ReviewPackage } from '../ai/legalReviewer';
 import { paraphraseAnswer }                from '../ai/llmBridge';
 import type { LLMBridgeConfig }            from '../ai/llmBridge';
@@ -183,7 +183,7 @@ const FOLLOW_UP_BY_CONTEXT: Partial<Record<string, string[]>> = {
  * Delegates to the P5-04 BM25-lite engine.  topK defaults to 3.
  */
 export function searchKnowledge(query: string, topK = 3): SearchResult[] {
-  return searchLegalKB(query.trim(), topK);
+  return searchWithFallback(query.trim(), topK);
 }
 
 /**
