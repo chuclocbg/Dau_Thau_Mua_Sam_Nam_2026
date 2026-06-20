@@ -1,7 +1,7 @@
 # Lộ Trình Phát Triển — Hệ Thống Hồ Sơ Mua Sắm 2026
 
 > **Trạng thái cập nhật:** 20/06/2026  
-> **Phiên bản hiện tại:** 4.3 — Phase 10 complete, branch `develop`  
+> **Phiên bản hiện tại:** 4.4 — v1.0.1 hotfix complete, branch `develop`  
 > **Test suite:** 4690 tests passing across 102 test files
 
 ---
@@ -20,6 +20,7 @@
 | Phase 8 — Audit Dashboard | 17 tasks: UI audit panels, LLM bridge, E2E coverage | ✅ DONE (commits 40ff586–0133434) |
 | Phase 9 — LLM & Persistence | Active trace wiring, formatter utilities, LLM wiring, IndexedDB, E2E Playwright | ✅ DONE (commits 56eb6e1–15f2d9a) |
 | Phase 10 — Code Quality | tsconfig strictness, dead code removal, dynamic imports, compatibility, docs | ✅ DONE (commits 0f52716–P10-09) |
+| v1.0.1 — Hotfix | CF-01 LR-006 threshold, CF-02 doc count 24→28, CF-04 DV prefix, CF-05 demo specs | ✅ DONE (commit 7e63bc2) |
 
 ---
 
