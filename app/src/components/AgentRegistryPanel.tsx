@@ -77,18 +77,17 @@ export interface AgentRegistryPanelProps {
  * Fetches all messages for traceId from the registry and aggregates counts.
  * Uses optional chaining so null registries (defensive tests) return zeros.
  */
-export function buildTraceSummary(registry: AgentRegistry, traceId: string): TraceSummary {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const messages = (registry as any)?.getTrace(traceId) ?? [];
-  const timestamps = (messages as { timestamp: number }[]).map(m => m.timestamp);
+export function buildTraceSummary(registry: AgentRegistry | null, traceId: string): TraceSummary {
+  const messages = registry?.getTrace(traceId) ?? [];
+  const timestamps = messages.map(m => m.timestamp);
 
   return {
     traceId,
     messageCount:   messages.length,
-    requestCount:   messages.filter((m: { type: string }) => m.type === 'request').length,
-    responseCount:  messages.filter((m: { type: string }) => m.type === 'response').length,
-    eventCount:     messages.filter((m: { type: string }) => m.type === 'event').length,
-    errorCount:     messages.filter((m: { type: string }) => m.type === 'error').length,
+    requestCount:   messages.filter(m => m.type === 'request').length,
+    responseCount:  messages.filter(m => m.type === 'response').length,
+    eventCount:     messages.filter(m => m.type === 'event').length,
+    errorCount:     messages.filter(m => m.type === 'error').length,
     firstTimestamp: timestamps.length > 0 ? Math.min(...timestamps) : null,
     lastTimestamp:  timestamps.length > 0 ? Math.max(...timestamps) : null,
   };
