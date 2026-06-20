@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "build:legal": "tsx scripts/buildLegalKB.ts"
+    "build:legal": "tsx scripts/buildLegalKB.ts",
+    "build:index": "tsx scripts/buildLegalIndex.ts"
   },
   "dependencies": {
     "@types/dompurify": "^3.0.5",

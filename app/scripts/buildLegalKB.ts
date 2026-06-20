@@ -201,19 +201,21 @@ export function extractMetadata(file: DocFile, rawText: string): DocumentMetadat
 }
 
 function pathToId(relPath: string): string {
-  // NFD-normalize first so Vietnamese characters survive the \w filter as ASCII
-  return 'doc-' + relPath
+  // Include extension suffix so .md and .docx variants of the same file get distinct ids
+  const ext = path.extname(relPath).slice(1).toLowerCase();  // 'md' | 'docx'
+  const base = relPath
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')  // strip combining diacritics
-    .replace(/đ/gi, 'd')              // đ → d (not in combining range)
+    .replace(/[̀-ͯ]/g, '')   // strip combining diacritics
+    .replace(/đ/gi, 'd')               // đ → d (not in combining range)
     .replace(/\\/g, '/')
-    .replace(/\.[^.]+$/, '')
+    .replace(/\.[^.]+$/, '')           // remove extension from path
     .toLowerCase()
     .replace(/[^\w/]+/g, '-')
     .replace(/\/+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 60);
+    .slice(0, 56);                     // shorter cap leaves room for -ext suffix
+  return ext ? `doc-${base}-${ext}` : `doc-${base}`;
 }
 
 // ─── Keyword Extractor ─────────────────────────────────────────────────────────
