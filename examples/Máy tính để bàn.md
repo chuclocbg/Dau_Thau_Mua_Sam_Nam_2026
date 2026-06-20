@@ -41,3 +41,53 @@ Nguồn vốn: Quỹ phát triển hoạt động sự nghiệp
 [HIGH] Không ghi tăng tài sản sau nghiệm thu → vi phạm Luật Quản lý, Sử dụng Tài sản Công và NĐ 186/2025.
 
 [MEDIUM] Bảo hành ghi "12 tháng" cho thiết bị máy tính → thấp hơn thông lệ thị trường, kiểm toán có thể đặt câu hỏi về tiêu chuẩn chất lượng.
+
+---
+
+## Kịch bản ví dụ cụ thể
+
+**Mục đích:** Trang bị mới phòng thực hành tin học 30 máy phục vụ dạy học lập trình và kỹ năng văn phòng.
+
+### Bảng dự toán mẫu
+
+| STT | Tên hàng | Thông số tối thiểu | ĐVT | SL | Đơn giá dự toán (VND) | Thành tiền (VND) |
+|---|---|---|---|---|---|---|
+| 1 | Máy tính để bàn đồng bộ | CPU đa nhân ≥3,5 GHz, RAM 16 GB DDR4, SSD 512 GB, màn hình 23–24 inch Full HD, có tích hợp camera | Bộ | 30 | 14.500.000 | 435.000.000 |
+| 2 | Switch Gigabit managed | 24 cổng, băng thông ≥48 Gbps, hỗ trợ VLAN và QoS | Cái | 2 | 5.500.000 | 11.000.000 |
+| 3 | Bộ lưu điện UPS | Công suất ≥1.000 VA/600 W, thời gian lưu điện ≥15 phút ở tải 50% | Cái | 6 | 3.200.000 | 19.200.000 |
+| 4 | Bàn phím + chuột không dây | Kết nối USB hoặc Bluetooth 5.0 trở lên, pin AA hoặc sạc USB-C | Bộ | 30 | 450.000 | 13.500.000 |
+| **Tổng** | | | | | | **478.700.000** |
+
+> ⚠ Các mức giá trên là **ước tính dự toán tham khảo**, không phải báo giá thực. Cơ quan phải thực hiện khảo sát giá thị trường theo quy trình Doc 5 trước khi phê duyệt dự toán.
+
+### Phân tích áp dụng
+
+| Hạng mục | Giá trị / Kết quả |
+|---|---|
+| Tổng dự toán | 478.700.000 VND |
+| Ngưỡng xác định phương thức | ≤ 500.000.000 VND |
+| **Phương thức lựa chọn nhà thầu** | **Chỉ định thầu rút gọn** (NĐ 214/2025) |
+| packageType | `goods_fixed_asset` (máy tính đơn giá 14,5 triệu/bộ ≥ 10 triệu VND) |
+| Ghi tăng tài sản (Doc 22) | **Bắt buộc** — mỗi máy tính ghi tăng riêng với số series |
+| Bảo hành tối thiểu | 24 tháng |
+
+> **Lưu ý dự toán tổng gói:** Tổng 478,7 triệu < 500 triệu — thuộc ngưỡng chỉ định thầu rút gọn. Nếu thêm hạng mục hoặc đơn giá thực tế cao hơn dự toán, cần kiểm tra lại phương thức trước khi phê duyệt KHLCNT.
+
+### Trình tự văn bản cần lập (chỉ định thầu rút gọn, goods_fixed_asset)
+
+1. Doc 1 — Tờ trình đề xuất mua sắm
+2. Doc 5 — Biên bản khảo sát, so sánh giá thị trường (≥3 báo giá)
+3. Doc 6 — Kế hoạch lựa chọn nhà thầu (KHLCNT)
+4. Doc 7 — Quyết định phê duyệt KHLCNT
+5. Doc 8 — Quyết định thành lập Tổ chuyên gia
+6. Doc 9 — Hồ sơ yêu cầu (HSYC)
+7. Doc 10 — Quyết định phê duyệt HSYC
+8. Doc 13 — Báo cáo đánh giá HSĐX
+9. Doc 14 — Báo cáo thẩm định kết quả (Tổ thẩm định độc lập)
+10. Doc 15 — Tờ trình đề nghị phê duyệt kết quả LCNT
+11. Doc 16 — Quyết định phê duyệt kết quả LCNT
+12. Doc 18 — Hợp đồng mua sắm (ghi rõ bảo hành 24 tháng)
+13. Doc 19 — Biên bản bàn giao hàng hóa (kèm danh sách serial number)
+14. Doc 20 — Biên bản nghiệm thu kỹ thuật (kiểm tra cấu hình thực tế từng máy)
+15. Doc 21 — Thanh lý hợp đồng
+16. **Doc 22** — Phiếu ghi tăng tài sản (30 phiếu riêng biệt, mỗi máy 1 phiếu)
