@@ -1,5 +1,5 @@
 # Kiến Trúc Hệ Thống — Hồ Sơ Mua Sắm Nam 2026
-> **Cập nhật:** 18/06/2026 — Phiên bản 3.0 (bổ sung Phase 6: multi-agent layer + provider infrastructure)
+> **Cập nhật:** 20/06/2026 — Phiên bản 4.0 (Phase 7–10: UI wiring, audit dashboard, persistence, code quality)
 
 ---
 
@@ -521,12 +521,12 @@ Các client và pipeline cho giao tiếp mạng và xử lý request/response.
 - **Standalone panels:** AgentStatusDashboard, RoutePanel, AuditTrailPanel
 - **Primitive components:** AgentCard, StepTimeline, ChatMessage, ChatInput, AutonomousPanel
 
-**Deferred components (tồn tại, chưa wire):**
+**Components đã wire (Phase 7):**
 
-| Component | Lý do defer |
-|---|---|
-| `WorkflowPanel.tsx` | Cần wire với `AutonomousAgent` state machine — Phase 7 |
-| `AgentChatPanel.tsx` | Cần wire với `ChatAgent` message-passing — Phase 7 |
+| Component | Wire vào | Commit Phase 7 |
+|---|---|---|
+| `WorkflowPanel.tsx` | `AutonomousWorkflowPanel` — wire với `AutonomousAgent` state machine | `e9ec23b` |
+| `AgentChatPanel.tsx` | `ChatInterfacePanel` — wire với `ChatAgent` message-passing | `beb2d5b` |
 
 ---
 
@@ -534,16 +534,72 @@ Các client và pipeline cho giao tiếp mạng và xử lý request/response.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  App.tsx (Phase 1–5 SPA)  ←── Phases 1–5 không thay đổi   │
+│  App.tsx (Phase 1–5 SPA + Phase 7/8 panel toggles)         │
 │  demoData.ts / docTemplates.ts / utils.ts / ai/             │
+│  AiAssistantPanel.tsx (P8-I: PlannerBridge route)          │
 ├─────────────────────────────────────────────────────────────┤
 │  components/  (Phase 6 UI — 18 files, SSR-safe)            │
-│  ⚠ WorkflowPanel, AgentChatPanel chưa wire vào App.tsx     │
+│  ✅ WorkflowPanel ← AutonomousWorkflowPanel (P7-B)         │
+│  ✅ AgentChatPanel ← ChatInterfacePanel (P7-C)             │
+│  Phase8DashboardPanel + 9 audit panels (P8-J–P8-O)        │
 ├─────────────────────────────────────────────────────────────┤
 │  agents/  (Phase 6 Multi-Agent — 6 agents + registry)      │
-│  ⚠ agents/index.ts barrel chưa import bởi App.tsx          │
+│  ✅ agents/index.ts ← AgentProviderPanel, App.tsx (P7-A)  │
+│  AgentRegistry: getTrace(), listTraceIds() — P9-01, P10-05 │
 ├─────────────────────────────────────────────────────────────┤
 │  providers/  (Phase 6 Infrastructure — 42 modules)          │
 │  P6-10x: LLM runtime  │  P6-11x: Utilities  │  P6-12x: Net │
+├─────────────────────────────────────────────────────────────┤
+│  utils/agentFormatters.ts  (P9-02: shared formatters)      │
+│  persistence/  (P9-04: IndexedDB session store — 7 files)  │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Bổ sung kiến trúc Phase 7–10
+
+### Phase 7 — UI Wiring (commit 566592a–5f61a19)
+
+```
+App.tsx
+├── AgentProviderPanel    — createAgentSystem() → AgentSystemBundle
+├── AutonomousWorkflowPanel — bundle.autonomous + WorkflowPanel
+└── ChatInterfacePanel    — bundle.chat + AgentChatPanel (packageContext P8-A)
+```
+
+### Phase 8 — Audit Dashboard (commits 40ff586–0133434)
+
+```
+App.tsx
+├── Phase8DashboardPanel (9 sections, collapsible)
+│   ├── AgentOutputPanel (4 specialist agents)
+│   ├── LegalKBPanel (KB search results)
+│   ├── PackageLegalReviewPanel (P5-03 legal findings)
+│   ├── audit-report section (overallRisk, auditReadiness)
+│   ├── AgentTracePanel (chronological trace)
+│   ├── AgentRegistryPanel (multi-trace overview)
+│   ├── AgentFlowPanel (routing/flow by pair)
+│   ├── AgentLegalCitationPanel (citation frequency)
+│   └── AgentErrorPanel (error-only cross-trace view)
+├── ai/llmBridge.ts      — LLM provider bridge, rule-based fallback
+├── ai/agentAuditExporter.ts — HTML audit summary → ZIP
+└── ai/plannerBridge.ts  — AiAssistantPanel → PlannerAgent (P6-01)
+```
+
+### Phase 9 — LLM & Persistence (commits 56eb6e1–15f2d9a)
+
+- `utils/agentFormatters.ts`: `formatTimestamp`, `formatPayload`, `buildTraceSummary` — shared formatters (loại bỏ duplicate trong AgentRegistryPanel, AgentErrorPanel, AgentTracePanel)
+- `persistence/agentSessionStore.ts`: IndexedDB, bounded max 10 sessions, fallback in-memory
+- AgentRegistry: `.getTrace(traceId)` public API, `.listTraceIds()` — wire real-time vào Phase8DashboardPanel
+- ChatAgent + LegalReviewerAgent: inject `LLMBridgeConfig` qua `createAgentSystem()`
+- `e2e/`: Playwright 13 golden-path browser tests (A–M)
+
+### Phase 10 — Code Quality (commits 0f52716–P10-09)
+
+- `tsconfig.app.json`: `noUnusedLocals: true`, `noUnusedParameters: true`
+- `agents/index.ts` barrel: export `generateTraceId` (dedup)
+- `App.tsx`: lazy `import('jszip')` + `import('docx')` trong ZIP handlers
+- `App.tsx`: `JSON.parse(JSON.stringify(pkg))` thay `structuredClone()` (Chrome 98+ → tất cả browser)
+- `docTemplates.ts`: xóa `export` khỏi `formatDateVietnamese` và `DocumentConfig` (nội bộ only)
+- `AgentRegistryPanel.tsx`: xóa `(registry as any)` → `registry.getTrace()` typed

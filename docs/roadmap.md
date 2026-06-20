@@ -1,8 +1,8 @@
 # Lộ Trình Phát Triển — Hệ Thống Hồ Sơ Mua Sắm 2026
 
-> **Trạng thái cập nhật:** 19/06/2026  
-> **Phiên bản hiện tại:** 4.2 — Phase 8 complete, branch `develop`  
-> **Test suite:** 4452 tests passing across 96 test files
+> **Trạng thái cập nhật:** 20/06/2026  
+> **Phiên bản hiện tại:** 4.3 — Phase 10 complete, branch `develop`  
+> **Test suite:** 4690 tests passing across 102 test files
 
 ---
 
@@ -18,6 +18,8 @@
 | Phase 6 — Multi-Agent | 6 agent chuyên biệt, kiến trúc message-passing + 42 provider/utility modules | ✅ DONE (tag `phase6-complete`) |
 | Phase 7 — UI Wiring | Wire agent layer vào App.tsx, E2E UI tests | ✅ DONE (commits 566592a–5f61a19) |
 | Phase 8 — Audit Dashboard | 17 tasks: UI audit panels, LLM bridge, E2E coverage | ✅ DONE (commits 40ff586–0133434) |
+| Phase 9 — LLM & Persistence | Active trace wiring, formatter utilities, LLM wiring, IndexedDB, E2E Playwright | ✅ DONE (commits 56eb6e1–15f2d9a) |
+| Phase 10 — Code Quality | tsconfig strictness, dead code removal, dynamic imports, compatibility, docs | ✅ DONE (commits 0f52716–P10-09) |
 
 ---
 
@@ -622,7 +624,7 @@ Tổng test đạt được: 3655 tests (82 test files)
 ## Nguyên tắc duy trì (cập nhật cho Phase 6+)
 
 1. **Audit trail bắt buộc:** Mọi `AgentMessage` phải có `traceId` — `AgentRegistry.log()` throws on empty `traceId`
-2. **Floor test count:** Không được giảm dưới 4452 passing tests khi phát triển Phase 9+
+2. **Floor test count:** Không được giảm dưới 4690 passing tests khi phát triển Phase 11+
 3. **KB-first cho pháp lý:** Mọi căn cứ pháp lý phải có trong `LEGAL_KB` trước khi agent sử dụng; không fabricate
 4. **Placeholder data:** Demo data vẫn dùng `[Tổ trưởng tổ chuyên gia]`, `[Nhà cung cấp số 1]`, v.v.
 5. **Không breaking change:** Phase 5 API (`runWorkflow`, `reviewPackage`, `searchLegalKB`...) phải tiếp tục hoạt động
@@ -751,13 +753,90 @@ Tests thêm trong Phase 8: +797 tests (3655 → 4452)
 
 ---
 
-## Backlog Phase 9 (chưa lên kế hoạch)
+## Phase 9 — LLM & Persistence ✅ DONE
 
-| Hạng mục | Mô tả | Phụ thuộc |
+> **Trạng thái:** Hoàn thành — branch `develop` (19/06/2026)
+> **Kết quả thực tế:**
+> - 7 task hoàn thành (P9-01 đến P9-07)
+> - 7 file mới: `utils/agentFormatters.ts`, `persistence/` (6 files)
+> - Tests thêm: +228 (4452+10 task3 → 4690)
+> - TypeScript: `tsc --noEmit` clean — 0 errors
+
+### Các task Phase 9
+
+| Task | Nội dung | Trạng thái | Commit | Tests mới |
+|---|---|---|---|---|
+| P9-01 | Active trace wiring — wire AgentRegistry.getTrace() vào Phase8DashboardPanel real-time | ✅ DONE | `56eb6e1` | 19 |
+| P9-02 | Extract shared formatter utilities — `utils/agentFormatters.ts` | ✅ DONE | `ce0b801` | 28 |
+| P9-03 | Wire LLM bridge vào ChatAgent và LegalReviewerAgent | ✅ DONE | `91fa28e` | 56 |
+| P9-04 | AgentSessionStore — bounded IndexedDB session persistence (max 10 sessions) | ✅ DONE | `7d13ab8` | 56 |
+| P9-05 | createAgentSystem — inject shared `LLMBridgeConfig` vào toàn bộ agent system | ✅ DONE | `57e1dad` | 28 |
+| P9-06 | Tích hợp HTML audit report (`BiolReport.html`) vào ZIP export (buildAgentAuditReport) | ✅ DONE | `5bd1b26` | 28 |
+| P9-07 | Playwright golden-path E2E suite — 13 browser tests (A–M) | ✅ DONE | `15f2d9a` | 13 |
+
+### Kiến trúc bổ sung Phase 9
+
+```
+app/src/
+├── utils/
+│   └── agentFormatters.ts    # P9-02: formatTimestamp, formatPayload, buildTraceSummary
+└── persistence/
+    ├── index.ts              # Barrel export cho persistence layer
+    ├── schema.ts             # DB schema types + version
+    ├── memory.ts             # In-memory fallback store
+    ├── migration.ts          # IndexedDB migration runner
+    ├── idb-stores.ts         # IDBObjectStore wrappers
+    ├── migrating-stores.ts   # Migration-aware store adapters
+    └── agentSessionStore.ts  # P9-04: bounded session store (max 10 sessions)
+```
+
+### Tech debt đã giải quyết trong Phase 9
+
+| Hạng mục từ Phase 8 | Giải pháp | Task |
 |---|---|---|
-| Active trace wiring | Wire `registry.log()` output vào `traceMessages` trong real-time | Phase 8 complete |
-| LLM API integration | Kết nối Claude API thực cho ChatAgent + LegalReviewerAgent | 8-G (llmBridge) |
-| IndexedDB persistence | Lưu AgentSession qua IndexedDB; giới hạn 10 sessions | Phase 6 session design |
-| E2E browser tests | Playwright/Cypress cho golden path qua UI thực | Phase 8 component stable |
-| Export agent output | Tích hợp output agent vào dossier ZIP export | 8-H (AgentAuditExporter) |
-| Shared formatter utilities | `app/src/utils/agentFormatters.ts` — resolve [MEDIUM] tech debt | 8-K, 8-L, 8-O |
+| `fmtTs`/`fmtPayload` trùng lặp [MEDIUM] | Tạo `utils/agentFormatters.ts`, consolidate (hoàn thành P10-04) | P9-02, P10-04 |
+| `traceMessages=[]` tĩnh trong App.tsx [LOW] | Wire `registry.getTrace()` vào Phase8DashboardPanel | P9-01 |
+
+---
+
+## Phase 10 — Code Quality ✅ DONE
+
+> **Trạng thái:** Hoàn thành — branch `develop` (20/06/2026)
+> **Mục tiêu:** Cải thiện chất lượng code trước khi đóng v1.0 — không thêm tính năng mới
+> **Tests:** 4690 (không tăng — phase quality không thêm test file mới)
+
+### Các task Phase 10
+
+| Task | Nội dung | Trạng thái | Commit |
+|---|---|---|---|
+| P10-01 | Thêm Playwright `.gitignore` entries và `.env.example` | ✅ DONE | `0f52716` |
+| P10-02 | Bật `noUnusedLocals` + `noUnusedParameters` trong `tsconfig.app.json` | ✅ DONE | `8e90e60` |
+| P10-03 | Export `generateTraceId` từ agents barrel, xóa duplicates | ✅ DONE | `9ec551b` |
+| P10-04 | Consolidate `formatTimestamp` vào `agentFormatters.ts`, xóa duplicates | ✅ DONE | `d559a90` |
+| P10-05 | Xóa unsafe `as any` cast trong `buildTraceSummary`; widen registry type sang `null` | ✅ DONE | `bc3d7a9` |
+| P10-06 | Lazy-load `jszip` và `docx/Packer` bằng dynamic import trong ZIP handlers | ✅ DONE | `d2320f3` |
+| P10-07 | Thay `structuredClone()` bằng `JSON.parse(JSON.stringify(...))` cho browser compat | ✅ DONE | `6e108c1` |
+| P10-08 | Xóa dead exports: `formatDateVietnamese` và `DocumentConfig` trong `docTemplates.ts` | ✅ DONE | `38165aa` |
+| P10-09 | Hoàn thiện tài liệu — cập nhật roadmap/architecture/workflow, tạo release-notes và CONTRIBUTING | ✅ DONE | _(commit này)_ |
+
+### Hiệu quả Phase 10
+
+| Cải thiện | Trước | Sau |
+|---|---|---|
+| Bundle size (initial load) | JSZip + docx/Packer tải ngay | Lazy load khi click "Download ZIP" |
+| TypeScript strictness | `noUnusedLocals: false` | `noUnusedLocals: true` |
+| Browser compatibility | `structuredClone()` — Chrome 98+ / Safari 15.4+ | `JSON.parse/stringify` — mọi browser |
+| Dead exports | 2 unused exports (formatDateVietnamese, DocumentConfig) | Xóa sạch |
+| Unsafe casts | `(registry as any).getTrace()` trong AgentRegistryPanel | `registry.getTrace()` typed public API |
+
+### Corrections giữa Phase 8 và Phase 10 (data fixes)
+
+| Commit | Nội dung |
+|---|---|
+| `b5aae8e` | fix(task1): Đổi tên Hiệu trưởng `TS. Nguyễn Hồng Giang` → `ThS. Đào Đức Quảng` |
+| `9a4aac0` | fix(task2): Sửa tên phòng ban và mã đơn vị trong toàn bộ codebase |
+| `b5761a4` | feat(task3): Hỗ trợ số nghìn tỷ trong `numberToWords` (+10 tests) |
+| `80f9967` | docs(task4): Phân tích pháp lý ngưỡng chỉ định thầu rút gọn 500M VND |
+| `8fefbf2` | docs(task5): Tạo `README.md` tại thư mục gốc |
+| `fc75da4` | docs(task6): Điền nội dung 3 ví dụ mua sắm thực tế (`examples/`) |
+| `f090b9d` | docs(task7): Tạo mẫu Quyết định phê duyệt dự toán + Báo cáo thực hiện hợp đồng |

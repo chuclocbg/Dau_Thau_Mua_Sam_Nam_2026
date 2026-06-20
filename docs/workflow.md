@@ -149,8 +149,8 @@ Tự động xác định theo ngưỡng giá trị (hàm `getProcurementMethod`
 |---|---|---|
 | ≤ 50.000.000 VND | Mua sắm trực tiếp (không qua thầu) | Khoản 4 Điều 80 NĐ 214/2025 |
 | 50M – 500M VND | Chỉ định thầu rút gọn | Điều 23(1)(m) Luật ĐT 22/2023; Điều 80 NĐ 214/2025 |
-| 500M – 10 tỷ VND | Chào hàng cạnh tranh | Điều 24 Luật ĐT 22/2023; Điều 81 NĐ 214/2025 |
-| > 10 tỷ VND | Đấu thầu rộng rãi qua mạng | Luật ĐT 22/2023; NĐ 214/2025; TT 79/2025/TT-BTC |
+| 500M – 5 tỷ VND | Chào hàng cạnh tranh | Điều 24 Luật ĐT 22/2023; Điều 81 NĐ 214/2025 |
+| > 5 tỷ VND | Đấu thầu rộng rãi qua mạng | Luật ĐT 22/2023; NĐ 214/2025; TT 79/2025/TT-BTC |
 
 ### 5c. Thẩm quyền phê duyệt
 
@@ -271,7 +271,7 @@ Tổng giá trị gói thầu
                │        Docs bắt buộc: 1–12, 17–21, 23–24
                │        Docs khuyến nghị: 13–16, 22
                │
-               └─ KHÔNG → ≤ 10 tỷ?
+               └─ KHÔNG → ≤ 5 tỷ?
                           ├─ CÓ → COMPETITIVE_SHOPPING: Chào hàng cạnh tranh
                           │        Docs bắt buộc: 1–21, 23–24
                           │        Docs khuyến nghị: 22
@@ -280,3 +280,90 @@ Tổng giá trị gói thầu
                                      Docs bắt buộc: 1–21, 23–24
                                      Docs khuyến nghị: 22
 ```
+
+---
+
+## Quy trình AI Assistant Panel (Tab "Trợ lý AI")
+
+Tab **"Trợ lý AI"** là luồng **một chạm** để tạo hồ sơ từ yêu cầu tiếng Việt tự nhiên, thay thế Bước 1–7 bằng pipeline tự động.
+
+### Luồng AI một chạm
+
+```
+Người dùng nhập yêu cầu (tiếng Việt tự nhiên)
+         │
+         ▼
+[Bước 1] P8-I PlannerBridge.runPlannerWorkflow()
+         ├── Thử route qua P6-01 PlannerAgent (nếu AgentRegistry khả dụng)
+         │   └── PlannerAgent → SpecificationAgent → LegalReviewerAgent
+         └── Fallback: P5-05 workflowOrchestrator (rule-based)
+         │
+         ▼
+[Bước 2] P5-02 specGenerator — tạo thông số kỹ thuật cho từng hạng mục
+         │
+         ▼
+[Bước 3] P5-03 legalReviewer — rà soát pháp lý (CRITICAL / HIGH / MEDIUM / LOW)
+         │
+         ▼
+[Bước 4] P5-04 legalKnowledgeBase — tra cứu 21 KB entries liên quan
+         │
+         ▼
+[Bước 5] Hiển thị kết quả: ProcurementPackage, findings, KB results, selectedDocumentIds
+         │
+         ├── Nút "Áp dụng vào biểu mẫu" → copy dữ liệu vào biểu mẫu chính (Bước 1–7)
+         └── Nút "Tải ZIP" → xuất hồ sơ ZIP (chỉ khi không có lỗi CRITICAL)
+```
+
+**Điều kiện xuất ZIP:** `readyForExport = true` — không có finding nào có `severity === 'CRITICAL'`.
+
+**Nguồn dữ liệu hiển thị:**
+- `data-source="planner-agent"`: qua P6-01 PlannerAgent (có `traceId`)
+- `data-source="workflow"`: qua P5-05 fallback (không có agent trace)
+
+---
+
+## Hệ thống đa tác nhân — Agent Panels (Phase 7–8)
+
+App.tsx cung cấp 6 panel có thể bật/tắt qua toggle nút ở header:
+
+| Panel | Toggle | Nội dung |
+|---|---|---|
+| Trợ lý AI | "Trợ lý AI" | AI one-click workflow (mô tả ở trên) |
+| Tác nhân chuyên biệt | "Tác nhân chuyên biệt" | AgentOutputPanel: chạy 4 agent (Planner, Spec, Risk, Autonomous) với packageContext hiện tại |
+| Tra cứu pháp lý | "Tra cứu pháp lý" | LegalKBPanel: tìm kiếm BM25-lite trong 21 KB entries |
+| Kiểm tra pháp lý | "Kiểm tra pháp lý" | PackageLegalReviewPanel: P5-03 legal review findings cho package hiện tại |
+| Hội thoại AI | "Chat" | ChatInterfacePanel: chat với ChatAgent (hỏi đáp về quy trình mua sắm) |
+| Dashboard Phase 8 | "Dashboard Phase 8" | Phase8DashboardPanel: 9 audit sections (xem bên dưới) |
+
+### Phase8DashboardPanel — 9 sections
+
+| # | Section | Nội dung |
+|---|---|---|
+| 1 | AgentOutputPanel | Chạy 4 agent chuyên biệt, hiển thị output |
+| 2 | LegalKBPanel | Live KB search |
+| 3 | PackageLegalReviewPanel | Legal findings |
+| 4 | Audit Report | `overallRisk`, `auditReadiness`, cảnh báo lỗi |
+| 5 | AgentTracePanel | Trace chronological từng message theo `traceId` |
+| 6 | AgentRegistryPanel | Tổng quan tất cả trace: message count, agent usage |
+| 7 | AgentFlowPanel | Ma trận routing: số lần (from agent → to agent) |
+| 8 | AgentLegalCitationPanel | Tần suất trích dẫn pháp lý trong toàn bộ trace |
+| 9 | AgentErrorPanel | Lọc tất cả message có `type === 'error'` cross-trace |
+
+### AutonomousWorkflowPanel
+
+Chạy `AutonomousAgent` (P6-06) theo state machine:
+
+```
+IDLE → PLANNING → SPECIFYING → REVIEWING → AWAITING_APPROVAL → EXECUTING → DONE
+                                                     ↓
+                                              ASK_USER (khi cần xác nhận người dùng)
+```
+
+Agent sẽ tự động:
+1. Phân tích yêu cầu (PlannerAgent)
+2. Tạo thông số kỹ thuật (SpecificationAgent)
+3. Rà soát pháp lý (LegalReviewerAgent)
+4. Đánh giá rủi ro (RiskAgent)
+5. Chờ người dùng phê duyệt trước khi xuất hồ sơ
+
+Mọi message đều có `traceId` — có thể xem lại trong AgentTracePanel.
