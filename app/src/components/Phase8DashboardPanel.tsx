@@ -28,6 +28,7 @@
 
 import AgentOutputPanel from './AgentOutputPanel';
 import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
+import { type TracePanelProps } from './TracePanel';
 import LegalKBPanel from './LegalKBPanel';
 import PackageLegalReviewPanel from './PackageLegalReviewPanel';
 import AgentTracePanel from './AgentTracePanel';
@@ -88,6 +89,8 @@ export interface Phase8DashboardPanelProps {
   legalMetadata?:     LegalSummaryPanelProps | null;
   /** Legal v2.2: AgentMessage.legalBasis — threaded to AgentOutputPanel CitationCardPanel. */
   legalCitations?:    string[] | null;
+  /** Legal v2.3: pipeline trace metadata — threaded to AgentOutputPanel TracePanel. */
+  legalTrace?:        TracePanelProps | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -106,6 +109,7 @@ export default function Phase8DashboardPanel({
   loading       = false,
   legalMetadata,
   legalCitations,
+  legalTrace,
 }: Phase8DashboardPanelProps) {
   if (loading) {
     return (
@@ -140,6 +144,7 @@ export default function Phase8DashboardPanel({
               risk={agentBundle.risk}
               legalSummary={legalMetadata}
               citations={legalCitations}
+              legalTrace={legalTrace}
             />
           ) : (
             <>

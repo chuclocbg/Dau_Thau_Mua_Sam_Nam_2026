@@ -20,6 +20,7 @@ import type {
 } from '../agents';
 import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
 import CitationCardPanel from './CitationCardPanel';
+import TracePanel, { type TracePanelProps } from './TracePanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,8 @@ export interface AgentOutputPanelProps {
   legalSummary?: LegalSummaryPanelProps | null;
   /** Legal v2.2: AgentMessage.legalBasis — grouped citation cards rendered below legalSummary. */
   citations?:    string[] | null;
+  /** Legal v2.3: pipeline trace metadata — renders stage flow below CitationCardPanel. */
+  legalTrace?:   TracePanelProps | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -62,6 +65,7 @@ export default function AgentOutputPanel({
   loading     = false,
   legalSummary,
   citations,
+  legalTrace,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -84,6 +88,8 @@ export default function AgentOutputPanel({
       {legalSummary != null && <LegalSummaryPanel {...legalSummary} />}
       {/* Legal v2.2: render citation card panel below legal summary */}
       <CitationCardPanel legalBasis={citations ?? []} />
+      {/* Legal v2.3: render pipeline trace below citation cards */}
+      {legalTrace != null && <TracePanel {...legalTrace} />}
     </div>
   );
 }
