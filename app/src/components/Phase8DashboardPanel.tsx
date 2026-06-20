@@ -31,6 +31,7 @@ import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPa
 import { type TracePanelProps } from './TracePanel';
 import { type ChecklistPanelProps } from './ChecklistPanel';
 import { type RiskPanelProps } from './RiskPanel';
+import { type RecommendationPanelProps } from './RecommendationPanel';
 import LegalKBPanel from './LegalKBPanel';
 import PackageLegalReviewPanel from './PackageLegalReviewPanel';
 import AgentTracePanel from './AgentTracePanel';
@@ -96,7 +97,9 @@ export interface Phase8DashboardPanelProps {
   /** Legal v2.4: checklist metadata — threaded to AgentOutputPanel ChecklistPanel. */
   legalChecklist?:    ChecklistPanelProps | null;
   /** Legal v2.5: risk metadata — threaded to AgentOutputPanel RiskPanel. */
-  legalRisk?:         RiskPanelProps | null;
+  legalRisk?:              RiskPanelProps | null;
+  /** Legal v2.6: severity-grouped recommendations — threaded to AgentOutputPanel RecommendationPanel. */
+  legalRecommendations?:   RecommendationPanelProps | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -112,12 +115,13 @@ export default function Phase8DashboardPanel({
   registry,
   traceIds,
   collapsed,
-  loading       = false,
+  loading              = false,
   legalMetadata,
   legalCitations,
   legalTrace,
   legalChecklist,
   legalRisk,
+  legalRecommendations,
 }: Phase8DashboardPanelProps) {
   if (loading) {
     return (
@@ -155,6 +159,7 @@ export default function Phase8DashboardPanel({
               legalTrace={legalTrace}
               legalChecklist={legalChecklist}
               legalRisk={legalRisk}
+              legalRecommendations={legalRecommendations}
             />
           ) : (
             <>

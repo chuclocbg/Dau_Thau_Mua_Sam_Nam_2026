@@ -23,25 +23,28 @@ import CitationCardPanel from './CitationCardPanel';
 import TracePanel, { type TracePanelProps } from './TracePanel';
 import ChecklistPanel, { type ChecklistPanelProps } from './ChecklistPanel';
 import RiskPanel, { type RiskPanelProps } from './RiskPanel';
+import RecommendationPanel, { type RecommendationPanelProps } from './RecommendationPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AgentOutputPanelProps {
-  planner:          PlannerAgent;
-  spec:             SpecificationAgent;
-  legal:            LegalReviewerAgent;
-  risk:             RiskAgent;
-  loading?:         boolean;
+  planner:               PlannerAgent;
+  spec:                  SpecificationAgent;
+  legal:                 LegalReviewerAgent;
+  risk:                  RiskAgent;
+  loading?:              boolean;
   /** Legal v2.1: optional pipeline metadata to display below the agent list. */
-  legalSummary?:    LegalSummaryPanelProps | null;
+  legalSummary?:         LegalSummaryPanelProps | null;
   /** Legal v2.2: AgentMessage.legalBasis — grouped citation cards rendered below legalSummary. */
-  citations?:       string[] | null;
+  citations?:            string[] | null;
   /** Legal v2.3: pipeline trace metadata — renders stage flow below CitationCardPanel. */
-  legalTrace?:      TracePanelProps | null;
+  legalTrace?:           TracePanelProps | null;
   /** Legal v2.4: checklist metadata — renders document completeness below TracePanel. */
-  legalChecklist?:  ChecklistPanelProps | null;
+  legalChecklist?:       ChecklistPanelProps | null;
   /** Legal v2.5: risk metadata — renders risk badge, score, recommendations, warnings below ChecklistPanel. */
-  legalRisk?:       RiskPanelProps | null;
+  legalRisk?:            RiskPanelProps | null;
+  /** Legal v2.6: severity-grouped recommendations — renders below RiskPanel. */
+  legalRecommendations?: RecommendationPanelProps | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -68,12 +71,13 @@ export default function AgentOutputPanel({
   spec,
   legal,
   risk,
-  loading        = false,
+  loading              = false,
   legalSummary,
   citations,
   legalTrace,
   legalChecklist,
   legalRisk,
+  legalRecommendations,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -102,6 +106,8 @@ export default function AgentOutputPanel({
       {legalChecklist != null && <ChecklistPanel {...legalChecklist} />}
       {/* Legal v2.5: render risk panel below checklist */}
       {legalRisk != null && <RiskPanel {...legalRisk} />}
+      {/* Legal v2.6: render severity-grouped recommendations below risk panel */}
+      {legalRecommendations != null && <RecommendationPanel {...legalRecommendations} />}
     </div>
   );
 }
