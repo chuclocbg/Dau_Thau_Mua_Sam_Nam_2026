@@ -14,7 +14,7 @@
 ```
 Tên gói thầu: Mua sắm bàn ghế làm việc trang bị [tên phòng/ban]
 Nguồn vốn: [Quỹ phát triển HDSN / NSNN]
-Đơn vị đề xuất: [Phòng Quản trị đời sống]
+Đơn vị đề xuất: [Phòng Tổ chức Hành chính - Quản trị]
 ```
 
 ## Yêu cầu kỹ thuật mẫu

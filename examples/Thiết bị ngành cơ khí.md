@@ -13,7 +13,7 @@
 ```
 Tên gói thầu: Mua sắm thiết bị thực hành [tên ngành/xưởng]
 Nguồn vốn: [Quỹ phát triển HDSN / Dự án đầu tư]
-Đơn vị đề xuất: [Khoa Cơ khí / Phòng Quản trị đời sống]
+Đơn vị đề xuất: [Khoa Cơ khí / Phòng Tổ chức Hành chính - Quản trị]
 ```
 
 ## Yêu cầu kỹ thuật mẫu

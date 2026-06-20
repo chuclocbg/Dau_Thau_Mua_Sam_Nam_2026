@@ -11,7 +11,7 @@
 ```
 Tên gói thầu: Mua sắm máy tính để bàn phục vụ phòng thực hành [tên khoa/phòng]
 Nguồn vốn: Quỹ phát triển hoạt động sự nghiệp
-Đơn vị đề xuất: [Phòng Quản trị đời sống]
+Đơn vị đề xuất: [Phòng Tổ chức Hành chính - Quản trị]
 ```
 
 ## Yêu cầu kỹ thuật mẫu (không khóa thương hiệu)

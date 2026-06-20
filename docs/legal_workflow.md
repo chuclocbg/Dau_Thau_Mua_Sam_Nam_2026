@@ -47,7 +47,7 @@
 
 ### 1.2 Khảo sát giá thị trường
 
-**Người thực hiện:** Tổ khảo sát (Phòng QTDS + Phòng TC-KH)
+**Người thực hiện:** Tổ khảo sát (Phòng TCHC-QT + Phòng KH-TC)
 
 **Tài liệu tạo ra:**
 - **[Doc 5] Biên bản khảo sát giá thị trường** — ghi nhận phương pháp, thành phần tổ khảo sát, kết quả
@@ -61,7 +61,7 @@
 
 ### 1.3 Phê duyệt dự toán
 
-**Người thực hiện:** Phòng TC-KH trình → Hiệu trưởng phê duyệt
+**Người thực hiện:** Phòng KH-TC trình → Hiệu trưởng phê duyệt
 
 **Tài liệu tạo ra:**
 - **[Doc 4] Quyết định phê duyệt dự toán kinh phí** — do Hiệu trưởng ký
@@ -80,7 +80,7 @@
 
 ### 2.1 Soạn thảo và trình KHLCNT
 
-**Người thực hiện:** Phòng Tài chính - Kế hoạch
+**Người thực hiện:** Phòng Kế hoạch - Tài chính
 
 **Tài liệu tạo ra:**
 - **[Doc 10] Tờ trình phê duyệt KHLCNT** — trình Hiệu trưởng xem xét
@@ -127,7 +127,7 @@
 - Không có lợi ích tài chính liên quan đến kết quả lựa chọn nhà thầu
 - Các thành viên phải ký **Tuyên bố xung đột lợi ích** — *tài liệu này hệ thống chưa tạo*
 
-> **Lưu ý quan trọng:** Tổ thẩm định (Phòng TC-KH) và Tổ chuyên gia phải **độc lập** với nhau. Không được có thành viên chung giữa hai tổ.
+> **Lưu ý quan trọng:** Tổ thẩm định (Phòng KH-TC) và Tổ chuyên gia phải **độc lập** với nhau. Không được có thành viên chung giữa hai tổ.
 
 ### 3.2 Lập và phát hành Hồ sơ yêu cầu / Hồ sơ mời thầu
 
@@ -178,7 +178,7 @@
 
 ### 5.1 Thẩm định kết quả LCNT
 
-**Người thực hiện:** Phòng Tài chính - Kế hoạch (độc lập với Tổ chuyên gia)
+**Người thực hiện:** Phòng Kế hoạch - Tài chính (độc lập với Tổ chuyên gia)
 
 **Tài liệu tạo ra:**
 - **[Doc 15] Báo cáo thẩm định kết quả LCNT**
@@ -190,7 +190,7 @@
 
 ### 5.2 Trình và phê duyệt kết quả
 
-**Người thực hiện:** Phòng QTDS trình → Hiệu trưởng phê duyệt
+**Người thực hiện:** Phòng TCHC-QT trình → Hiệu trưởng phê duyệt
 
 **Tài liệu tạo ra:**
 - **[Doc 16] Tờ trình phê duyệt kết quả LCNT**
@@ -282,10 +282,10 @@ Theo Thông tư 79/2025/TT-BTC, bắt buộc đăng tải lên Hệ thống mạ
 
 | Thông tin | Thời hạn đăng tải | Trách nhiệm |
 |---|---|---|
-| KHLCNT đã được phê duyệt | 5 ngày làm việc từ ngày ban hành QĐ | Phòng TC-KH |
+| KHLCNT đã được phê duyệt | 5 ngày làm việc từ ngày ban hành QĐ | Phòng KH-TC |
 | HSYC / HSMT | Cùng ngày với thông báo mời thầu | Tổ chuyên gia |
-| Kết quả LCNT trúng thầu | 5 ngày làm việc từ ngày ban hành QĐ | Phòng QTDS |
-| Thông tin thực hiện hợp đồng | Định kỳ hàng quý hoặc sau thanh lý | Phòng QTDS |
+| Kết quả LCNT trúng thầu | 5 ngày làm việc từ ngày ban hành QĐ | Phòng TCHC-QT |
+| Thông tin thực hiện hợp đồng | Định kỳ hàng quý hoặc sau thanh lý | Phòng TCHC-QT |
 
 **Mức xử phạt vi phạm hành chính:**
 - Đăng tải chậm hoặc không đăng tải: phạt tiền từ 5 đến 50 triệu VND tùy mức vi phạm (Nghị định xử phạt VPHC trong lĩnh vực đấu thầu)

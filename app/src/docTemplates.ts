@@ -720,18 +720,18 @@ export const documentTemplates: DocumentConfig[] = [
           <p>Căn cứ Luật Quản lý, sử dụng tài sản công năm 2017 (sửa đổi bởi Luật số 90/2025/QH15);</p>
           <p>Căn cứ Quyết định số 541/QĐ-BCT ngày 25/3/2026 của Bộ Công Thương về giao quyền tự chủ tài chính giai đoạn 2026-2030;</p>
           <p>Căn cứ Thông tư số 13/2026/TT-BCT ngày 20/3/2026 của Bộ Công Thương về phân cấp thẩm quyền quản lý ngân sách, tài sản công;</p>
-          <p>Xét đề nghị của Trưởng phòng Tài chính - Kế hoạch và Trưởng phòng Quản trị đời sống,</p>
+          <p>Xét đề nghị của Phòng Kế hoạch - Tài chính và Phòng Tổ chức Hành chính - Quản trị,</p>
           <p style="text-align: center; font-weight: bold;">QUYẾT ĐỊNH:</p>
           <p><b>Điều 1.</b> Phê duyệt dự toán gói thầu: <b>"${pkg.packageName}"</b>.</p>
           <p>- Tổng kinh phí dự toán: <b>${formatVND(total)}</b> (Bằng chữ: ${numberToWords(total)}).</p>
           <p>- Nguồn kinh phí: ${pkg.fundingSourceName}.</p>
-          <p><b>Điều 2.</b> Giao Phòng Quản trị đời sống chủ trì, phối hợp với các đơn vị liên quan triển khai các bước mua sắm tiếp theo đúng quy định hiện hành.</p>
+          <p><b>Điều 2.</b> Giao Phòng Tổ chức Hành chính - Quản trị chủ trì, phối hợp với các đơn vị liên quan triển khai các bước mua sắm tiếp theo đúng quy định hiện hành.</p>
         </div>
         <div class="doc-signatures" style="margin-top: 20px;">
           <div style="text-align: left;">
             <b><i>Nơi nhận:</i></b><br>
             - Như Điều 2;<br>
-            - Lưu VT, TC-KH.
+            - Lưu VT, KH-TC.
           </div>
           <div style="text-align: center;">
             <b>HIỆU TRƯỞNG</b><br>
@@ -761,7 +761,7 @@ export const documentTemplates: DocumentConfig[] = [
             docxParagraph("Căn cứ Luật Quản lý, sử dụng tài sản công năm 2017 (sửa đổi bởi Luật số 90/2025/QH15);", { indent: 500 }),
             docxParagraph("Căn cứ Quyết định số 541/QĐ-BCT ngày 25/3/2026 của Bộ Công Thương về giao quyền tự chủ tài chính giai đoạn 2026-2030 cho trường;", { indent: 500 }),
             docxParagraph("Căn cứ Thông tư số 13/2026/TT-BCT ngày 20/3/2026 của Bộ Công Thương về phân cấp quản lý ngân sách, tài sản công của Bộ Công Thương;", { indent: 500 }),
-            docxParagraph("Xét đề nghị của Trưởng phòng Tài chính - Kế hoạch và Trưởng phòng Quản trị đời sống,", { indent: 500 }),
+            docxParagraph("Xét đề nghị của Phòng Kế hoạch - Tài chính và Phòng Tổ chức Hành chính - Quản trị,", { indent: 500 }),
             new Paragraph({
               alignment: AlignmentType.CENTER,
               spacing: { before: 100, after: 100 },
@@ -772,7 +772,7 @@ export const documentTemplates: DocumentConfig[] = [
             docxParagraph(`- Nguồn kinh phí: ${pkg.fundingSourceName}.`, { indent: 500 }),
             docxParagraph("Điều 2. Giao các phòng ban nghiệp vụ triển khai các bước mua sắm tiếp theo đúng quy định hiện hành.", { bold: true }),
             new Paragraph({ text: "\n", spacing: { after: 100 } }),
-            docxSignatureTable("Nơi nhận:\n- Như Điều 2;\n- Lưu VT, TC-KH.", "", "HIỆU TRƯỞNG", pkg.rectorName)
+            docxSignatureTable("Nơi nhận:\n- Như Điều 2;\n- Lưu VT, KH-TC.", "", "HIỆU TRƯỞNG", pkg.rectorName)
           ]
         }]
       });
@@ -806,8 +806,8 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-content">
           <p>Hôm nay, ngày ${formatDateVietnamese(pkg.dateSurvey)}, tại Trường Cao đẳng Kỹ thuật Công nghiệp, Tổ khảo sát giá gồm:</p>
-          <p>1. ${pkg.expertTeamLeader.split(' (')[0]} - Trưởng phòng QTDS - Tổ trưởng.</p>
-          <p>2. ${pkg.appraisalLeader.split(' (')[0]} - Trưởng phòng TC-KH - Thành viên.</p>
+          <p>1. ${pkg.expertTeamLeader.split(' (')[0]} - Trưởng phòng TCHC-QT - Tổ trưởng.</p>
+          <p>2. ${pkg.appraisalLeader.split(' (')[0]} - Trưởng phòng KH-TC - Thành viên.</p>
           <p>Đã tiến hành khảo sát giá thị trường của các trang thiết bị phục vụ gói thầu: <b>"${pkg.packageName}"</b>.</p>
           <p><b>Hình thức khảo sát:</b> Gửi thư yêu cầu báo giá đến các đơn vị cung ứng uy tín trên thị trường, tra cứu giá trúng thầu của các đơn vị tương tự trên Hệ thống mạng đấu thầu quốc gia.</p>
           <p><b>Kết quả thu nhận:</b> Thu thập được 03 báo giá hợp lệ từ 03 nhà cung cấp có đủ năng lực pháp lý hoạt động trong lĩnh vực cung cấp hàng hóa/dịch vụ này.</p>
@@ -1228,7 +1228,7 @@ export const documentTemplates: DocumentConfig[] = [
     name: "Kế hoạch lựa chọn nhà thầu",
     getCategory: (m) => m === 'DIRECT_50' ? 'not_applicable' : 'required',
     getCategoryLabel: (m) => m === 'DIRECT_50' ? 'Không áp dụng' : 'Bắt buộc',
-    getSigner: (pkg) => `Phòng TC-KH trình Hiệu trưởng`,
+    getSigner: (pkg) => `Phòng KH-TC trình Hiệu trưởng`,
     getSignDate: (pkg) => pkg.dateKhlcnt,
     getAuditRisk: (pkg) => "Giá gói thầu không ghi rõ căn cứ pháp lý phê duyệt hoặc phân chia gói thầu sai quy định để áp dụng chỉ định thầu.",
     getHtml: (pkg, methodCode) => {
@@ -1253,7 +1253,7 @@ export const documentTemplates: DocumentConfig[] = [
           <p>Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp</p>
           <p>Căn cứ Luật Đấu thầu số 22/2023/QH15 và Nghị định số 214/2025/NĐ-CP của Chính phủ;</p>
           <p>Căn cứ Quyết định phê duyệt dự toán kinh phí số .../QĐ-CĐKTCN ngày ${formatDateVietnamese(pkg.dateProposal)} của Hiệu trưởng;</p>
-          <p>Phòng Tài chính - Kế hoạch trình Hiệu trưởng xem xét, phê duyệt KHLCNT gói thầu với các nội dung sau:</p>
+          <p>Phòng Kế hoạch - Tài chính trình Hiệu trưởng xem xét, phê duyệt KHLCNT gói thầu với các nội dung sau:</p>
           <table class="doc-table">
             <thead>
               <tr>
@@ -1340,7 +1340,7 @@ export const documentTemplates: DocumentConfig[] = [
               ]
             }),
             docxParagraph("Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp", { bold: true, align: AlignmentType.CENTER }),
-            docxParagraph("Phòng Tài chính - Kế hoạch kính trình Hiệu trưởng xem xét, phê duyệt Kế hoạch lựa chọn nhà thầu với các thông tin chi tiết như sau:", { indent: 500 }),
+            docxParagraph("Phòng Kế hoạch - Tài chính kính trình Hiệu trưởng xem xét, phê duyệt Kế hoạch lựa chọn nhà thầu với các thông tin chi tiết như sau:", { indent: 500 }),
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               rows: rows
@@ -1386,7 +1386,7 @@ export const documentTemplates: DocumentConfig[] = [
           <p><b>HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP</b></p>
           <p>Căn cứ các Luật Đấu thầu hiện hành và Nghị định số 214/2025/NĐ-CP của Chính phủ;</p>
           <p>Căn cứ Quyết định phân cấp thẩm quyền của Bộ Công Thương;</p>
-          <p>Xét đề nghị của Trưởng phòng Tài chính - Kế hoạch,</p>
+          <p>Xét đề nghị của Phòng Kế hoạch - Tài chính,</p>
           <p style="text-align: center; font-weight: bold;">QUYẾT ĐỊNH:</p>
           <p><b>Điều 1.</b> Phê duyệt Kế hoạch lựa chọn nhà thầu gói thầu: <b>"${pkg.packageName}"</b> với tổng giá trị gói thầu là <b>${formatVND(total)}</b>.</p>
           <p>- Hình thức lựa chọn nhà thầu: ${pm.name}.</p>
@@ -1398,7 +1398,7 @@ export const documentTemplates: DocumentConfig[] = [
         <div class="doc-signatures" style="margin-top: 20px;">
           <div style="text-align: left;">
             <b><i>Nơi nhận:</i></b><br>
-            - Phòng QTDS, TC-KH;<br>
+            - Phòng TCHC-QT, KH-TC;<br>
             - Lưu VT.
           </div>
           <div style="text-align: center;">
@@ -1428,7 +1428,7 @@ export const documentTemplates: DocumentConfig[] = [
             docxParagraph("HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP", { bold: true, align: AlignmentType.CENTER }),
             docxParagraph("Căn cứ Luật Đấu thầu số 22/2023/QH15 và Luật số 90/2025/QH15 sửa đổi bổ sung;", { indent: 500 }),
             docxParagraph("Căn cứ Nghị định số 214/2025/NĐ-CP của Chính phủ hướng dẫn Luật Đấu thầu;", { indent: 500 }),
-            docxParagraph(`Xét đề nghị của Trưởng phòng Tài chính - Kế hoạch trình ngày ${formatDateVietnamese(pkg.dateKhlcnt)},`, { indent: 500 }),
+            docxParagraph(`Xét đề nghị của Phòng Kế hoạch - Tài chính trình ngày ${formatDateVietnamese(pkg.dateKhlcnt)},`, { indent: 500 }),
             new Paragraph({
               alignment: AlignmentType.CENTER,
               spacing: { before: 100, after: 100 },
@@ -1682,7 +1682,7 @@ export const documentTemplates: DocumentConfig[] = [
     name: "Báo cáo thẩm định",
     getCategory: (m) => m === 'DIRECT_50' ? 'not_applicable' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'recommended' : 'required'),
     getCategoryLabel: (m) => m === 'DIRECT_50' ? 'Không áp dụng' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'Khuyến nghị' : 'Bắt buộc'),
-    getSigner: (pkg) => `Tổ thẩm định độc lập (Phòng TC-KH)`,
+    getSigner: (pkg) => `Tổ thẩm định độc lập (Phòng KH-TC)`,
     getSignDate: (pkg) => pkg.dateAppraise,
     getAuditRisk: (pkg) => "Không thực hiện thẩm định hoặc báo cáo thẩm định sao chép nguyên văn báo cáo đánh giá của tổ chuyên gia.",
     getHtml: (pkg, methodCode) => {
@@ -1704,7 +1704,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-content">
           <p>Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp</p>
-          <p>Phòng Tài chính - Kế hoạch (Bộ phận thẩm định) đã tiến hành thẩm định độc lập quá trình đánh giá của Tổ chuyên gia.</p>
+          <p>Phòng Kế hoạch - Tài chính (Bộ phận thẩm định) đã tiến hành thẩm định độc lập quá trình đánh giá của Tổ chuyên gia.</p>
           <p><b>Kết quả thẩm định:</b></p>
           <p>- Quy trình thực hiện: Tuân thủ đầy đủ các quy định của Luật Đấu thầu 2023 và Nghị định số 214/2025/NĐ-CP.</p>
           <p>- Hồ sơ pháp lý: Đầy đủ tờ trình, quyết định phê duyệt KHLCNT, biên bản khảo sát giá thị trường.</p>
@@ -1735,7 +1735,7 @@ export const documentTemplates: DocumentConfig[] = [
               ]
             }),
             docxParagraph("Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp", { bold: true, align: AlignmentType.CENTER }),
-            docxParagraph(`Tổ thẩm định (Phòng Tài chính - Kế hoạch) báo cáo thẩm định hồ sơ kết quả lựa chọn nhà thầu:`, { indent: 500 }),
+            docxParagraph(`Tổ thẩm định (Phòng Kế hoạch - Tài chính) báo cáo thẩm định hồ sơ kết quả lựa chọn nhà thầu:`, { indent: 500 }),
             docxParagraph("1. Về quy trình và hồ sơ: Thực hiện đầy đủ trình tự theo quy định pháp lý hiện hành.", { indent: 500 }),
             docxParagraph(`2. Về kết quả: Đề xuất phê duyệt kết quả trúng thầu đối với nhà thầu ${winner.name} là đúng quy định.`, { indent: 500 }),
             new Paragraph({ text: "\n", spacing: { after: 100 } }),
@@ -1775,8 +1775,8 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-content">
           <p>Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp</p>
-          <p>Căn cứ Báo cáo đánh giá của Tổ chuyên gia và Báo cáo thẩm định của Phòng Tài chính - Kế hoạch;</p>
-          <p>Phòng Quản trị đời sống đề xuất Hiệu trưởng phê duyệt kết quả lựa chọn nhà thầu gói thầu với nội dung sau:</p>
+          <p>Căn cứ Báo cáo đánh giá của Tổ chuyên gia và Báo cáo thẩm định của Phòng Kế hoạch - Tài chính;</p>
+          <p>Phòng Tổ chức Hành chính - Quản trị đề xuất Hiệu trưởng phê duyệt kết quả lựa chọn nhà thầu gói thầu với nội dung sau:</p>
           <p>- Tên nhà thầu trúng thầu: <b>${winner.name}</b>.</p>
           <p>- Giá đề nghị trúng thầu: <b>${formatVND(winner.total)}</b>.</p>
           <p>- Loại hợp đồng: ${pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'}.</p>
@@ -1798,7 +1798,7 @@ export const documentTemplates: DocumentConfig[] = [
         sections: [{
           properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 850 } } },
           children: [
-            docxHeaderTable(pkg, `.../TTr-QTDS`, pkg.dateResultProposal),
+            docxHeaderTable(pkg, `.../TTr-TCHC-QT`, pkg.dateResultProposal),
             new Paragraph({ text: "\n", spacing: { after: 100 } }),
             new Paragraph({
               alignment: AlignmentType.CENTER,
@@ -1851,20 +1851,20 @@ export const documentTemplates: DocumentConfig[] = [
         <div class="doc-content">
           <p><b>HIỆU TRƯỞNG TRƯỜNG CAO ĐẲNG KỸ THUẬT CÔNG NGHIỆP</b></p>
           <p>Căn cứ các Luật Đấu thầu hiện hành và Nghị định số 214/2025/NĐ-CP;</p>
-          <p>Xét đề nghị của Trưởng phòng Quản trị đời sống và Báo cáo thẩm định của Trưởng phòng Tài chính - Kế hoạch,</p>
+          <p>Xét đề nghị của Phòng Tổ chức Hành chính - Quản trị và Báo cáo thẩm định của Phòng Kế hoạch - Tài chính,</p>
           <p style="text-align: center; font-weight: bold;">QUYẾT ĐỊNH:</p>
           <p><b>Điều 1.</b> Phê duyệt kết quả lựa chọn nhà thầu gói thầu: <b>"${pkg.packageName}"</b> với thông tin sau:</p>
           <p>- Đơn vị trúng thầu: <b>${winner.name}</b>.</p>
           <p>- Giá trúng thầu: <b>${formatVND(winner.total)}</b> (Bằng chữ: ${numberToWords(winner.total)}).</p>
           <p>- Loại hợp đồng: ${pkg.contractType === 'unit_price' ? 'Hợp đồng theo đơn giá' : 'Hợp đồng trọn gói'}.</p>
           <p>- Thời gian thực hiện: ${pkg.contractDurationDays} ngày.</p>
-          <p><b>Điều 2.</b> Phòng Quản trị đời sống tiến hành ký kết hợp đồng và giám sát thực hiện theo đúng quy định pháp luật.</p>
+          <p><b>Điều 2.</b> Phòng Tổ chức Hành chính - Quản trị tiến hành ký kết hợp đồng và giám sát thực hiện theo đúng quy định pháp luật.</p>
         </div>
         <div class="doc-signatures" style="margin-top: 20px;">
           <div style="text-align: left;">
             <b><i>Nơi nhận:</i></b><br>
             - Đơn vị trúng thầu;<br>
-            - Lưu VT, TC-KH.
+            - Lưu VT, KH-TC.
           </div>
           <div style="text-align: center;">
             <b>HIỆU TRƯỞNG</b><br><br><br>
@@ -2040,7 +2040,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-content">
           <p>Hôm nay, ngày ${formatDateVietnamese(pkg.dateDelivery)}, tại Trường Cao đẳng Kỹ thuật Công nghiệp, hai bên tiến hành bàn giao thiết bị:</p>
-          <p><b>Đại diện tiếp nhận (Bên A):</b> Ông Trần Văn Nam - Trưởng phòng Quản trị đời sống.</p>
+          <p><b>Đại diện tiếp nhận (Bên A):</b> Ông Trần Văn Nam - Phòng Tổ chức Hành chính - Quản trị.</p>
           <p><b>Đại diện bàn giao (Bên B):</b> Ông ${pkg.supplier1Representative} - Giám đốc.</p>
           <p><b>Nội dung bàn giao:</b> Bên B bàn giao đầy đủ số lượng và chủng loại thiết bị theo hợp đồng, kèm theo tài liệu kỹ thuật và phiếu bảo hành chính hãng.</p>
         </div>
@@ -2109,7 +2109,7 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-content">
           <p>Hôm nay, ngày ${formatDateVietnamese(pkg.dateAcceptance)}, Hội đồng nghiệm thu tiến hành kiểm tra chạy thử và nghiệm thu:</p>
-          <p><b>Đại diện nhà trường (Bên A):</b> Ông Trần Văn Nam (Trưởng phòng QTDS) và đại diện bộ phận chuyên môn sử dụng.</p>
+          <p><b>Đại diện nhà trường (Bên A):</b> Ông Trần Văn Nam (Trưởng phòng TCHC-QT) và đại diện bộ phận chuyên môn sử dụng.</p>
           <p><b>Đại diện đơn vị cung cấp (Bên B):</b> Ông ${pkg.supplier1Representative}.</p>
           <p><b>Đánh giá kết quả:</b></p>
           <p>- Số lượng, thông số kỹ thuật: Đạt yêu cầu theo đúng hợp đồng đã ký kết.</p>
@@ -2259,12 +2259,12 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-title" style="margin-top: 15px;">
           PHIẾU ĐỀ NGHỊ GHI TĂNG TÀI SẢN CÔNG<br>
-          <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Kính gửi Bộ phận Kế toán tài sản - Phòng TC-KH)</span>
+          <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Kính gửi Bộ phận Kế toán tài sản - Phòng KH-TC)</span>
         </div>
         <div class="doc-content">
           <p>Căn cứ Luật Quản lý, sử dụng tài sản công năm 2017 và Nghị định số 186/2025/NĐ-CP của Chính phủ;</p>
           <p>Căn cứ Biên bản nghiệm thu đưa vào sử dụng ngày ${formatDateVietnamese(pkg.dateAcceptance)};</p>
-          <p>Phòng Quản trị đời sống đề nghị Phòng Tài chính - Kế hoạch ghi tăng tài sản công đối với danh mục hàng hóa thuộc gói thầu <b>"${pkg.packageName}"</b> vào hệ thống sổ sách theo dõi tài sản của trường.</p>
+          <p>Phòng Tổ chức Hành chính - Quản trị đề nghị Phòng Kế hoạch - Tài chính ghi tăng tài sản công đối với danh mục hàng hóa thuộc gói thầu <b>"${pkg.packageName}"</b> vào hệ thống sổ sách theo dõi tài sản của trường.</p>
         </div>
         <div class="doc-signatures" style="margin-top: 30px;">
           <div style="text-align: center;">
@@ -2272,7 +2272,7 @@ export const documentTemplates: DocumentConfig[] = [
             <b>${pkg.appraisalLeader.split(' (')[0]}</b>
           </div>
           <div style="text-align: center;">
-            <b>Đại diện phòng QTDS</b><br><br><br>
+            <b>Đại diện phòng TCHC-QT</b><br><br><br>
             <b>${pkg.expertTeamLeader.split(' (')[0]}</b>
           </div>
         </div>
@@ -2293,7 +2293,7 @@ export const documentTemplates: DocumentConfig[] = [
               ]
             }),
             docxParagraph("Căn cứ Luật Quản lý sử dụng tài sản công 2017 (sửa đổi bởi Luật 90/2025) và các Nghị định hướng dẫn;", { indent: 500 }),
-            docxParagraph(`Phòng Quản trị đời sống bàn giao và đề nghị ghi tăng tài sản công phục vụ gói thầu: "${pkg.packageName}" vào sổ sách kế toán kể từ ngày ${formatDateVietnamese(pkg.dateAssetIncrease)}.`, { indent: 500 }),
+            docxParagraph(`Phòng Tổ chức Hành chính - Quản trị bàn giao và đề nghị ghi tăng tài sản công phục vụ gói thầu: "${pkg.packageName}" vào sổ sách kế toán kể từ ngày ${formatDateVietnamese(pkg.dateAssetIncrease)}.`, { indent: 500 }),
             new Paragraph({ text: "\n", spacing: { after: 100 } }),
             docxSignatureTable("Kế toán trưởng", pkg.appraisalLeader.split(' (')[0], "Đại diện bộ phận sử dụng", pkg.expertTeamLeader.split(' (')[0])
           ]
@@ -2410,7 +2410,7 @@ export const documentTemplates: DocumentConfig[] = [
                 <td style="text-align:center;">1</td>
                 <td>Kế hoạch lựa chọn nhà thầu được duyệt</td>
                 <td>Trong vòng <b>05 ngày làm việc</b> kể từ ngày ban hành quyết định phê duyệt</td>
-                <td>Cán bộ Phòng TC-KH</td>
+                <td>Cán bộ Phòng KH-TC</td>
               </tr>
               <tr>
                 <td style="text-align:center;">2</td>
@@ -2422,13 +2422,13 @@ export const documentTemplates: DocumentConfig[] = [
                 <td style="text-align:center;">3</td>
                 <td>Kết quả lựa chọn nhà thầu trúng thầu</td>
                 <td>Trong vòng <b>05 ngày làm việc</b> kể từ ngày ban hành quyết định phê duyệt trúng thầu</td>
-                <td>Cán bộ Phòng QTDS</td>
+                <td>Cán bộ Phòng TCHC-QT</td>
               </tr>
               <tr>
                 <td style="text-align:center;">4</td>
                 <td>Thông tin về thực hiện hợp đồng chủ chốt</td>
                 <td>Định kỳ hàng quý hoặc khi hoàn thành thanh lý hợp đồng</td>
-                <td>Cán bộ Phòng QTDS</td>
+                <td>Cán bộ Phòng TCHC-QT</td>
               </tr>
             </tbody>
           </table>

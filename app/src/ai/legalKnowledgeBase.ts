@@ -130,7 +130,7 @@ Ví dụ sai: "Card đồ họa NVIDIA GTX 1650" → Đúng: "Card đồ họa r
 
 • Trước khi thực hiện nhiệm vụ, mỗi thành viên Tổ CG phải ký "Bản cam kết không có xung đột lợi ích" (Doc 25).
 
-⚠ Vi phạm thường gặp: Phòng Tài chính - Kế hoạch vừa lập KHLCNT vừa thẩm định kết quả → Báo cáo thẩm định không hợp lệ.`,
+⚠ Vi phạm thường gặp: Phòng Kế hoạch - Tài chính vừa lập KHLCNT vừa thẩm định kết quả → Báo cáo thẩm định không hợp lệ.`,
     appliesTo: ['expert-team', 'appraisal-team', 'legal-review'],
   },
   {

@@ -57,8 +57,8 @@ Tab **"Thông tin chung"** — các trường cần điền:
 | Mã gói thầu | Mã tra cứu nội bộ | MS-2026-MT01 |
 | Năm ngân sách | Năm kế hoạch ngân sách | 2026 |
 | Nguồn vốn | Chọn 1 trong 3 loại (xem bảng dưới) | Quỹ phát triển SN |
-| Tên phòng/khoa đề xuất | Đơn vị có nhu cầu mua sắm | Phòng Quản trị đời sống |
-| Mã viết tắt phòng | Dùng cho số hiệu văn bản | QTDS |
+| Tên phòng/khoa đề xuất | Đơn vị có nhu cầu mua sắm | Phòng Tổ chức Hành chính - Quản trị |
+| Mã viết tắt phòng | Dùng cho số hiệu văn bản | TCHC-QT |
 | Hiệu trưởng | Họ tên người ký phê duyệt | ThS. Đào Đức Quảng |
 | Thời gian thực hiện (ngày) | Thời hạn hợp đồng | 15 |
 
@@ -243,7 +243,7 @@ Các bước bắt buộc sau khi tải file:
 | 13 | Quyết định thành lập Tổ chuyên gia | Hiệu trưởng | dateExpertEstablish |
 | 14 | Báo cáo đánh giá hồ sơ dự thầu | Tổ chuyên gia | dateEvaluate |
 | 15 | Báo cáo thẩm định kết quả LCNT | Trưởng phòng TC-KH | dateAppraise |
-| 16 | Tờ trình phê duyệt kết quả | Trưởng phòng QTDS | dateResultProposal |
+| 16 | Tờ trình phê duyệt kết quả | Trưởng phòng TCHC-QT | dateResultProposal |
 | 17 | Quyết định phê duyệt kết quả LCNT | Hiệu trưởng | dateResultApprove |
 | 18 | Hợp đồng kinh tế | Hiệu trưởng + Nhà thầu | dateContractSign |
 | 19 | Biên bản bàn giao thiết bị | Đại diện 2 bên | dateDelivery |

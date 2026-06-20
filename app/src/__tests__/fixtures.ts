@@ -39,13 +39,13 @@ const baseDates = {
 
 const baseIdentity = {
   rectorName: 'ThS. Đào Đức Quảng',
-  departmentName: 'Phòng Quản trị đời sống',
-  departmentCode: 'QTDS',
-  expertTeamLeader: 'Ông Trần Văn Nam (Trưởng phòng QTDS - Tổ trưởng)',
+  departmentName: 'Phòng Tổ chức Hành chính - Quản trị',
+  departmentCode: 'TCHC-QT',
+  expertTeamLeader: 'Ông Trần Văn Nam (Trưởng phòng TCHC-QT - Tổ trưởng)',
   expertTeamMember1: 'Bà Nguyễn Thị Mai (Chuyên viên - Thành viên)',
   expertTeamMember2: 'Ông Lê Hoàng Hải (Giảng viên - Thành viên)',
-  appraisalLeader: 'Bà Phạm Thị Dung (Trưởng phòng TC-KH - Tổ trưởng)',
-  appraisalMember: 'Ông Vũ Minh Tuấn (Chuyên viên TC-KH - Thành viên)',
+  appraisalLeader: 'Bà Phạm Thị Dung (Trưởng phòng Kế hoạch - Tài chính - Tổ trưởng)',
+  appraisalMember: 'Ông Vũ Minh Tuấn (Chuyên viên Phòng Kế hoạch - Tài chính - Thành viên)',
   supplier1Address: 'Số 1, Đường A, Bắc Giang',
   supplier1TaxCode: '2400000001',
   supplier1Representative: 'Ông Nguyễn Văn A',

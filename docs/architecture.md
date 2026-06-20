@@ -330,28 +330,28 @@ App.tsx
 | # | Tên văn bản | Bắt buộc / Khuyến nghị | Ký bởi |
 |---|---|---|---|
 | 1 | Tờ trình đề xuất mua sắm | Bắt buộc (CHCT+) | Trưởng phòng/Khoa |
-| 2 | Dự toán chi tiết | Bắt buộc | Phòng TC-KH |
+| 2 | Dự toán chi tiết | Bắt buộc | Phòng KH-TC |
 | 3 | Thuyết minh kỹ thuật | Bắt buộc | Phòng kỹ thuật |
 | 4 | QĐ phê duyệt dự toán | Bắt buộc | Hiệu trưởng |
 | 5 | Biên bản khảo sát giá | Bắt buộc | Tổ khảo sát |
-| 6 | Bảng so sánh báo giá | Bắt buộc | Tổ khảo sát + TC-KH |
+| 6 | Bảng so sánh báo giá | Bắt buộc | Tổ khảo sát + KH-TC |
 | 7 | Danh mục hàng hóa | Bắt buộc | Phòng chuyên môn |
 | 8 | Yêu cầu kỹ thuật | Bắt buộc (CHCT+) | Phòng chuyên môn |
 | 9 | Tiêu chuẩn đánh giá | Bắt buộc (CHCT+) | Tổ chuyên gia |
-| 10 | Tờ trình KHLCNT | Bắt buộc | Phòng TC-KH |
+| 10 | Tờ trình KHLCNT | Bắt buộc | Phòng KH-TC |
 | 11 | QĐ phê duyệt KHLCNT | Bắt buộc | Hiệu trưởng |
 | 12 | Hồ sơ yêu cầu (HSYC) | Bắt buộc (CHCT+) | Tổ chuyên gia |
 | 13 | QĐ thành lập Tổ chuyên gia | Bắt buộc (CHCT+) | Hiệu trưởng |
 | 14 | Báo cáo đánh giá | Bắt buộc (CHCT) / KN (CDTRG) | Tổ chuyên gia |
-| 15 | Báo cáo thẩm định | Bắt buộc (CHCT) / KN (CDTRG) | Phòng TC-KH |
-| 16 | Tờ trình phê duyệt kết quả | Bắt buộc (CHCT) / KN (CDTRG) | Phòng QTDS |
+| 15 | Báo cáo thẩm định | Bắt buộc (CHCT) / KN (CDTRG) | Phòng KH-TC |
+| 16 | Tờ trình phê duyệt kết quả | Bắt buộc (CHCT) / KN (CDTRG) | Phòng TCHC-QT |
 | 17 | QĐ phê duyệt kết quả LCNT | Bắt buộc (CHCT) / KN (CDTRG) | Hiệu trưởng |
 | 18 | Hợp đồng kinh tế | Bắt buộc (CHCT+) | Hiệu trưởng + Nhà thầu |
 | 19 | Biên bản bàn giao | Bắt buộc | Hai bên |
 | 20 | Biên bản nghiệm thu | Bắt buộc | Hội đồng nghiệm thu |
 | 21 | Biên bản thanh lý | Bắt buộc | Hai bên |
-| 22 | Phiếu ghi tăng tài sản | Khuyến nghị (Bắt buộc cho TSCD) | Phòng TC-KH |
-| 23 | Checklist hồ sơ kiểm toán | Khuyến nghị | Phòng TC-KH |
+| 22 | Phiếu ghi tăng tài sản | Khuyến nghị (Bắt buộc cho TSCD) | Phòng KH-TC |
+| 23 | Checklist hồ sơ kiểm toán | Khuyến nghị | Phòng KH-TC |
 | 24 | Checklist đăng tải thông tin | Khuyến nghị | Cán bộ đăng tải |
 
 ---
