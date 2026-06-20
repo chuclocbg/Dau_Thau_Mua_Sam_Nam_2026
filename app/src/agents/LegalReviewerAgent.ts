@@ -114,6 +114,7 @@ export const REVIEWER_LEGAL_BASIS: readonly string[] = [
   'Điều 62 Luật Đấu thầu 22/2023/QH15 — loại hợp đồng và điều khoản bảo hành',
   'Điều 81 Nghị định 214/2025/NĐ-CP — khoảng cách thời gian tối thiểu giữa các bước LCNT',
   'Khoản 1 Điều 10 Luật Đấu thầu 22/2023/QH15 — nguyên tắc cạnh tranh, công bằng, minh bạch',
+  'Điều 12 Luật Đấu thầu 22/2023/QH15; Thông tư 79/2025/TT-BTC — nghĩa vụ đăng tải thông tin.',
 ];
 
 // ─── Internal helpers (unexported) ───────────────────────────────────────────

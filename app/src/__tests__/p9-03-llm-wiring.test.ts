@@ -113,8 +113,8 @@ function makePkg(overrides: Partial<ProcurementPackage> = {}): ProcurementPackag
     packageType: 'goods_consumable',
     items: [{
       id: 'item-1', name: 'Vật tư văn phòng', unit: 'hộp', quantity: 2,
-      unitPrice: 50_000_000, specs: 'Đạt tiêu chuẩn chất lượng tối thiểu.',
-      supplier1Price: 50_000_000, supplier2Price: 0, supplier3Price: 0,
+      unitPrice: 20_000_000, specs: 'Đạt tiêu chuẩn chất lượng tối thiểu.',
+      supplier1Price: 20_000_000, supplier2Price: 0, supplier3Price: 0,
     }],
     ...overrides,
   };

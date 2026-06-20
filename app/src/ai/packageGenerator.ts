@@ -123,7 +123,7 @@ const CATEGORY_RULES: CategoryRule[] = [
     estimatedUnitPrice: 600_000,
     defaultDurationDays: 60,
     packageNameTemplate: 'Dịch vụ bảo trì, bảo dưỡng {qty} điều hòa không khí',
-    codePrefix: 'DV',
+    codePrefix: 'DVDH',
   },
   {
     id: 'hvac_new',
@@ -221,7 +221,7 @@ const CATEGORY_RULES: CategoryRule[] = [
     estimatedUnitPrice: 5_000_000,
     defaultDurationDays: 30,
     packageNameTemplate: 'Dịch vụ sửa chữa, bảo trì trang thiết bị',
-    codePrefix: 'DV',
+    codePrefix: 'DVSC',
   },
   {
     id: 'cleaning',
@@ -232,7 +232,7 @@ const CATEGORY_RULES: CategoryRule[] = [
     estimatedUnitPrice: 50_000_000,
     defaultDurationDays: 365,
     packageNameTemplate: 'Dịch vụ vệ sinh môi trường khuôn viên',
-    codePrefix: 'DV',
+    codePrefix: 'DVVS',
   },
 ];
 

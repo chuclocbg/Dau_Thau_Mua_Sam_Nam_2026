@@ -87,8 +87,8 @@ function makePkg(): ProcurementPackage {
     contractType: 'lump_sum', packageType: 'goods_consumable',
     items: [{
       id: 'item-1', name: 'Vật tư văn phòng', unit: 'hộp', quantity: 2,
-      unitPrice: 50_000_000, specs: 'Đạt tiêu chuẩn tối thiểu.',
-      supplier1Price: 50_000_000, supplier2Price: 0, supplier3Price: 0,
+      unitPrice: 20_000_000, specs: 'Đạt tiêu chuẩn tối thiểu.',
+      supplier1Price: 20_000_000, supplier2Price: 0, supplier3Price: 0,
     }],
   };
 }

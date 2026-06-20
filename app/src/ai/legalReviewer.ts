@@ -127,15 +127,15 @@ function checkPublicationObligations(pkg: ProcurementPackage): LegalFinding[] {
   const findings: LegalFinding[] = [];
   const methodTotal = pkg.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
 
-  // Packages >200M must publish on national e-procurement system
-  if (methodTotal > 200_000_000) {
+  // Packages ≥50M must publish KHLCNT on national e-procurement system (Điều 12 Luật ĐT 22/2023)
+  if (methodTotal >= 50_000_000) {
     const hasPublishDate = (pkg as Record<string, unknown>)['datePublishKhlcnt'] as string | undefined;
     if (!hasPublishDate) {
       findings.push({
         severity: 'MEDIUM',
         code: 'LR-006',
         category: 'publication',
-        message: 'Gói thầu có giá trị >200 triệu đồng: chưa ghi nhận ngày đăng tải KHLCNT lên hệ thống mạng đấu thầu quốc gia.',
+        message: 'Gói thầu có giá trị ≥50 triệu đồng: chưa ghi nhận ngày đăng tải KHLCNT lên hệ thống mạng đấu thầu quốc gia.',
         legalBasis: 'Điều 12 Luật Đấu thầu 22/2023/QH15; Thông tư 79/2025/TT-BTC — nghĩa vụ đăng tải thông tin.',
         recommendation: 'Điền ngày đăng tải vào field datePublishKhlcnt sau khi hoàn thành đăng tải.',
       });

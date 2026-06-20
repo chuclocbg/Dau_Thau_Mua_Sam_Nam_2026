@@ -7,7 +7,7 @@
 
 Đây là ứng dụng **frontend thuần túy** (pure client-side SPA — Single Page Application) được xây dựng bằng React + TypeScript + Vite. Không có backend, không có cơ sở dữ liệu, không có API server, không có xác thực người dùng. Toàn bộ logic xử lý, tính toán và tạo văn bản chạy trong trình duyệt.
 
-Ứng dụng phục vụ **Trường Cao đẳng Kỹ thuật Công nghiệp** (ĐVSNCL trực thuộc Bộ Công Thương), đơn vị tự chủ tài chính nhóm 2 theo QĐ 541/QĐ-BCT ngày 25/3/2026, trong việc tự động soạn thảo bộ **24 văn bản pháp lý** cho quy trình mua sắm tài sản công.
+Ứng dụng phục vụ **Trường Cao đẳng Kỹ thuật Công nghiệp** (ĐVSNCL trực thuộc Bộ Công Thương), đơn vị tự chủ tài chính nhóm 2 theo QĐ 541/QĐ-BCT ngày 25/3/2026, trong việc tự động soạn thảo bộ **28 văn bản pháp lý** cho quy trình mua sắm tài sản công.
 
 **Nguyên tắc chủ đạo (từ CLAUDE.md):**
 - Audit-first: mọi hồ sơ được xây dựng với giả định sẽ bị Kiểm toán Nhà nước, Thanh tra BTC và Thanh tra BCT kiểm tra
@@ -325,7 +325,7 @@ App.tsx
 
 ---
 
-## Danh sách 24 văn bản
+## Danh sách 28 văn bản
 
 | # | Tên văn bản | Bắt buộc / Khuyến nghị | Ký bởi |
 |---|---|---|---|
@@ -353,6 +353,10 @@ App.tsx
 | 22 | Phiếu ghi tăng tài sản | Khuyến nghị (Bắt buộc cho TSCD) | Phòng KH-TC |
 | 23 | Checklist hồ sơ kiểm toán | Khuyến nghị | Phòng KH-TC |
 | 24 | Checklist đăng tải thông tin | Khuyến nghị | Cán bộ đăng tải |
+| 25 | Bản cam kết không xung đột lợi ích | Bắt buộc (CHCT+) / Khuyến nghị (CDTRG) | Tổ chuyên gia |
+| 26 | Phiếu yêu cầu báo giá (RFQ) | Bắt buộc (CDTRG, CHCT, ĐTRR) | Tổ chuyên gia |
+| 27 | Thông báo mời chào hàng | Bắt buộc (CHCT, ĐTRR) / Khuyến nghị (CDTRG) | Tổ chuyên gia |
+| 28 | Biên bản mở thầu (chào hàng cạnh tranh) | Bắt buộc (CHCT, ĐTRR) | Tổ chuyên gia + Nhà thầu |
 
 ---
 

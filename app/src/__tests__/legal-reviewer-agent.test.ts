@@ -95,9 +95,9 @@ function makePkg(overrides: Partial<ProcurementPackage> = {}): ProcurementPackag
       name:           'Vật tư tiêu hao phục vụ đào tạo',
       unit:           'Bộ',
       quantity:       1,
-      unitPrice:      100_000_000,
+      unitPrice:      40_000_000,
       specs:          'Đạt tiêu chuẩn chất lượng tối thiểu theo yêu cầu kỹ thuật.',
-      supplier1Price: 100_000_000,
+      supplier1Price: 40_000_000,
       supplier2Price: 0,
       supplier3Price: 0,
     }],
@@ -157,8 +157,8 @@ function createTestRegistry(): AgentRegistry {
 // ─── Group 0: Module constants and capabilities ───────────────────────────────
 
 describe('LegalReviewerAgent — module constants and capabilities', () => {
-  it('MC-01: REVIEWER_LEGAL_BASIS contains exactly 5 citations', () => {
-    expect(REVIEWER_LEGAL_BASIS).toHaveLength(5);
+  it('MC-01: REVIEWER_LEGAL_BASIS contains exactly 6 citations', () => {
+    expect(REVIEWER_LEGAL_BASIS).toHaveLength(6);
   });
 
   it('MC-02: REVIEWER_LEGAL_BASIS includes Điều 38-41 KHLCNT foundation reference', () => {

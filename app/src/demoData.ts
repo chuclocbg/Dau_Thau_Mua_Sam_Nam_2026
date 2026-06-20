@@ -230,7 +230,7 @@ export const demoPackages: ProcurementPackage[] = [
       },
       {
         id: 'item-2-4',
-        name: 'Nạp gas bổ sung điều hòa (Gas R410A nhập khẩu Ấn Độ)',
+        name: 'Nạp gas bổ sung điều hòa (Gas R410A môi chất lạnh)',
         unit: 'Kg',
         quantity: 30,
         unitPrice: 300000,

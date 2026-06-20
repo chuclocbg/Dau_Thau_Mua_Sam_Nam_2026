@@ -6,7 +6,7 @@
 
 ## Mục đích
 
-- Sinh tự động 24 văn bản mua sắm đầy đủ (tờ trình, kế hoạch LCNT, HSMT/HSYC, biên bản, quyết định, hợp đồng, nghiệm thu, thanh lý tài sản)
+- Sinh tự động 28 văn bản mua sắm đầy đủ (tờ trình, kế hoạch LCNT, HSMT/HSYC, biên bản, quyết định, hợp đồng, nghiệm thu, cam kết độc lập, báo giá, thanh lý tài sản)
 - Đảm bảo tuân thủ pháp lý, khả năng kiểm toán và truy vết
 - Hỗ trợ xuất file Word (.docx) và ZIP toàn bộ hồ sơ
 
