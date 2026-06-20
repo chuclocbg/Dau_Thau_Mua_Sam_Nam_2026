@@ -22,6 +22,7 @@ import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPa
 import CitationCardPanel from './CitationCardPanel';
 import TracePanel, { type TracePanelProps } from './TracePanel';
 import ChecklistPanel, { type ChecklistPanelProps } from './ChecklistPanel';
+import RiskPanel, { type RiskPanelProps } from './RiskPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,8 @@ export interface AgentOutputPanelProps {
   legalTrace?:      TracePanelProps | null;
   /** Legal v2.4: checklist metadata — renders document completeness below TracePanel. */
   legalChecklist?:  ChecklistPanelProps | null;
+  /** Legal v2.5: risk metadata — renders risk badge, score, recommendations, warnings below ChecklistPanel. */
+  legalRisk?:       RiskPanelProps | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -70,6 +73,7 @@ export default function AgentOutputPanel({
   citations,
   legalTrace,
   legalChecklist,
+  legalRisk,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -96,6 +100,8 @@ export default function AgentOutputPanel({
       {legalTrace != null && <TracePanel {...legalTrace} />}
       {/* Legal v2.4: render checklist below trace */}
       {legalChecklist != null && <ChecklistPanel {...legalChecklist} />}
+      {/* Legal v2.5: render risk panel below checklist */}
+      {legalRisk != null && <RiskPanel {...legalRisk} />}
     </div>
   );
 }
