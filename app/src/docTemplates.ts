@@ -78,7 +78,7 @@ export const numberToWords = (total: number): string => {
 };
 
 // Date formatter
-export const formatDateVietnamese = (dateStr: string) => {
+const formatDateVietnamese = (dateStr: string) => {
   if (!dateStr) return 'ngày... tháng... năm 2026';
   const parts = dateStr.split('-');
   if (parts.length === 3) {
@@ -393,7 +393,7 @@ const docxCompareTable = (pkg: ProcurementPackage) => {
 // ----------------------------------------------------
 // 24 DOCUMENT DEFINITIONS
 // ----------------------------------------------------
-export interface DocumentConfig {
+interface DocumentConfig {
   id: number;
   name: string;
   getCategory: (method: string, pkg?: ProcurementPackage) => 'required' | 'recommended' | 'not_applicable';
