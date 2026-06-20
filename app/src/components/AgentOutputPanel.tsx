@@ -10,6 +10,7 @@
  * Pure functional — no hooks, no browser globals, SSR-compatible.
  */
 
+import React from 'react';
 import type {
   PlannerAgent,
   SpecificationAgent,
@@ -17,15 +18,18 @@ import type {
   RiskAgent,
   IAgent,
 } from '../agents';
+import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AgentOutputPanelProps {
-  planner:  PlannerAgent;
-  spec:     SpecificationAgent;
-  legal:    LegalReviewerAgent;
-  risk:     RiskAgent;
-  loading?: boolean;
+  planner:       PlannerAgent;
+  spec:          SpecificationAgent;
+  legal:         LegalReviewerAgent;
+  risk:          RiskAgent;
+  loading?:      boolean;
+  /** Legal v2.1: optional pipeline metadata to display below the agent list. */
+  legalSummary?: LegalSummaryPanelProps | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -52,7 +56,8 @@ export default function AgentOutputPanel({
   spec,
   legal,
   risk,
-  loading = false,
+  loading     = false,
+  legalSummary,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -71,6 +76,8 @@ export default function AgentOutputPanel({
         <AgentSection agent={legal} />
         <AgentSection agent={risk} />
       </ul>
+      {/* Legal v2.1: render pipeline metadata summary when provided */}
+      {legalSummary != null && <LegalSummaryPanel {...legalSummary} />}
     </div>
   );
 }

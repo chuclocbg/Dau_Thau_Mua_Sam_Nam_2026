@@ -27,6 +27,7 @@
  */
 
 import AgentOutputPanel from './AgentOutputPanel';
+import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
 import LegalKBPanel from './LegalKBPanel';
 import PackageLegalReviewPanel from './PackageLegalReviewPanel';
 import AgentTracePanel from './AgentTracePanel';
@@ -83,6 +84,8 @@ export interface Phase8DashboardPanelProps {
   collapsed?:         SectionCollapseState | null;
   /** When true the panel renders a loading skeleton instead of sections. */
   loading?:           boolean;
+  /** Legal v2.1: optional pipeline metadata for LegalSummaryPanel. */
+  legalMetadata?:     LegalSummaryPanelProps | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -98,7 +101,8 @@ export default function Phase8DashboardPanel({
   registry,
   traceIds,
   collapsed,
-  loading = false,
+  loading       = false,
+  legalMetadata,
 }: Phase8DashboardPanelProps) {
   if (loading) {
     return (
@@ -131,11 +135,15 @@ export default function Phase8DashboardPanel({
               spec={agentBundle.spec}
               legal={agentBundle.legal}
               risk={agentBundle.risk}
+              legalSummary={legalMetadata}
             />
           ) : (
-            <div data-field="fallback" data-section-fallback="agent-output">
-              Hệ thống Agent chưa sẵn sàng.
-            </div>
+            <>
+              <div data-field="fallback" data-section-fallback="agent-output">
+                Hệ thống Agent chưa sẵn sàng.
+              </div>
+              {legalMetadata != null && <LegalSummaryPanel {...legalMetadata} />}
+            </>
           )
         )}
       </section>
