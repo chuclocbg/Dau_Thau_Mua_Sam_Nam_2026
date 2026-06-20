@@ -86,6 +86,8 @@ export interface Phase8DashboardPanelProps {
   loading?:           boolean;
   /** Legal v2.1: optional pipeline metadata for LegalSummaryPanel. */
   legalMetadata?:     LegalSummaryPanelProps | null;
+  /** Legal v2.2: AgentMessage.legalBasis — threaded to AgentOutputPanel CitationCardPanel. */
+  legalCitations?:    string[] | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -103,6 +105,7 @@ export default function Phase8DashboardPanel({
   collapsed,
   loading       = false,
   legalMetadata,
+  legalCitations,
 }: Phase8DashboardPanelProps) {
   if (loading) {
     return (
@@ -136,6 +139,7 @@ export default function Phase8DashboardPanel({
               legal={agentBundle.legal}
               risk={agentBundle.risk}
               legalSummary={legalMetadata}
+              citations={legalCitations}
             />
           ) : (
             <>

@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CC-06 · Render structure and snapshot > CC-06-03: snapshot of multi-doc render matches 1`] = `"<div data-panel="citation-card"><h3 data-field="title">Trích dẫn pháp lý</h3><div data-field="citation-group" data-doc-name="Luật Đấu thầu 22/2023/QH15"><h4 data-field="doc-name">Luật Đấu thầu 22/2023/QH15</h4><ul data-field="article-list"><li data-field="article">Điều 38-41</li><li data-field="article">Khoản 1 Điều 10</li></ul></div><div data-field="citation-group" data-doc-name="Nghị định 214/2025/NĐ-CP"><h4 data-field="doc-name">Nghị định 214/2025/NĐ-CP</h4><ul data-field="article-list"><li data-field="article">Điều 81</li></ul></div></div>"`;

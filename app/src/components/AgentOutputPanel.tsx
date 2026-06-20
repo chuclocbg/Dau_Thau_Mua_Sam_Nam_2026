@@ -19,6 +19,7 @@ import type {
   IAgent,
 } from '../agents';
 import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
+import CitationCardPanel from './CitationCardPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,8 @@ export interface AgentOutputPanelProps {
   loading?:      boolean;
   /** Legal v2.1: optional pipeline metadata to display below the agent list. */
   legalSummary?: LegalSummaryPanelProps | null;
+  /** Legal v2.2: AgentMessage.legalBasis — grouped citation cards rendered below legalSummary. */
+  citations?:    string[] | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -58,6 +61,7 @@ export default function AgentOutputPanel({
   risk,
   loading     = false,
   legalSummary,
+  citations,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -78,6 +82,8 @@ export default function AgentOutputPanel({
       </ul>
       {/* Legal v2.1: render pipeline metadata summary when provided */}
       {legalSummary != null && <LegalSummaryPanel {...legalSummary} />}
+      {/* Legal v2.2: render citation card panel below legal summary */}
+      <CitationCardPanel legalBasis={citations ?? []} />
     </div>
   );
 }
