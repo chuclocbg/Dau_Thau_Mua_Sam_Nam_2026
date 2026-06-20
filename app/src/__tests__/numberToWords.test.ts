@@ -156,3 +156,55 @@ describe('numberToWords — scale boundaries', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task-3 required output examples
+// ---------------------------------------------------------------------------
+describe('numberToWords — task-3 output examples', () => {
+  it('0 → "Không đồng"', () => {
+    expect(numberToWords(0)).toBe('Không đồng');
+  });
+
+  it('80,000,000 → "Tám mươi triệu đồng chẵn"', () => {
+    expect(numberToWords(80_000_000)).toBe('Tám mươi triệu đồng chẵn');
+  });
+
+  it('320,000,000 → "Ba trăm hai mươi triệu đồng chẵn"', () => {
+    expect(numberToWords(320_000_000)).toBe('Ba trăm hai mươi triệu đồng chẵn');
+  });
+
+  it('1,256,000,000 → "Một tỷ hai trăm năm mươi sáu triệu đồng chẵn"', () => {
+    expect(numberToWords(1_256_000_000)).toBe('Một tỷ hai trăm năm mươi sáu triệu đồng chẵn');
+  });
+
+  it('9,987,654,321 → full mixed output', () => {
+    expect(numberToWords(9_987_654_321)).toBe(
+      'Chín tỷ chín trăm tám mươi bảy triệu sáu trăm năm mươi bốn nghìn ba trăm hai mươi mốt đồng chẵn'
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Trillion support (nghìn tỷ)
+// ---------------------------------------------------------------------------
+describe('numberToWords — trillion support', () => {
+  it('1,000,000,000,000 → "Một nghìn tỷ đồng chẵn"', () => {
+    expect(numberToWords(1_000_000_000_000)).toBe('Một nghìn tỷ đồng chẵn');
+  });
+
+  it('2,500,000,000,000 → "Hai nghìn năm trăm tỷ đồng chẵn"', () => {
+    expect(numberToWords(2_500_000_000_000)).toBe('Hai nghìn năm trăm tỷ đồng chẵn');
+  });
+
+  it('1,001,000,000,000 → "Một nghìn một tỷ đồng chẵn"', () => {
+    expect(numberToWords(1_001_000_000_000)).toBe('Một nghìn một tỷ đồng chẵn');
+  });
+
+  it('trillion result starts with uppercase', () => {
+    expect(numberToWords(1_000_000_000_000)[0]).toBe('M');
+  });
+
+  it('trillion result ends with "đồng chẵn"', () => {
+    expect(numberToWords(5_000_000_000_000)).toMatch(/đồng chẵn$/);
+  });
+});

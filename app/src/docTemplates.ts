@@ -10,11 +10,13 @@ export const formatVND = (value: number) => {
 };
 
 // Convert number to words — full Vietnamese implementation
-// Handles 0 to 999,999,999,999 VND.
-// Verified outputs (matches previous hardcoded values):
-//   320,000,000 → "Ba trăm hai mươi triệu đồng chẵn"
-//   80,000,000  → "Tám mươi triệu đồng chẵn"
-//   45,000,000  → "Bốn mươi lăm triệu đồng chẵn"
+// Handles 0 to 999,999,999,999,999 VND (up to 999 nghìn tỷ).
+// Verified outputs:
+//   80,000,000        → "Tám mươi triệu đồng chẵn"
+//   320,000,000       → "Ba trăm hai mươi triệu đồng chẵn"
+//   1,256,000,000     → "Một tỷ hai trăm năm mươi sáu triệu đồng chẵn"
+//   9,987,654,321     → "Chín tỷ chín trăm tám mươi bảy triệu sáu trăm năm mươi bốn nghìn ba trăm hai mươi mốt đồng chẵn"
+//   1,000,000,000,000 → "Một nghìn tỷ đồng chẵn"
 export const numberToWords = (total: number): string => {
   if (total === 0) return 'Không đồng';
   if (!Number.isFinite(total) || total < 0) return 'Giá trị không hợp lệ';
@@ -49,13 +51,24 @@ export const numberToWords = (total: number): string => {
     return result;
   };
 
-  const ty     = Math.floor(total / 1_000_000_000);
-  const trieu  = Math.floor((total % 1_000_000_000) / 1_000_000);
-  const nghin  = Math.floor((total % 1_000_000) / 1_000);
-  const donvi  = total % 1_000;
+  // Reads up to 6-digit group (0–999,999) for tỷ counts above 999.
+  // e.g. 2500 → 'hai nghìn năm trăm'
+  const readLargeGroup = (n: number): string => {
+    const thousands = Math.floor(n / 1_000);
+    const remainder = n % 1_000;
+    const p: string[] = [];
+    if (thousands > 0) p.push(readGroup(thousands) + ' nghìn');
+    if (remainder > 0) p.push(readGroup(remainder));
+    return p.join(' ');
+  };
+
+  const total_ty = Math.floor(total / 1_000_000_000);
+  const trieu    = Math.floor((total % 1_000_000_000) / 1_000_000);
+  const nghin    = Math.floor((total % 1_000_000) / 1_000);
+  const donvi    = total % 1_000;
 
   const parts: string[] = [];
-  if (ty    > 0) parts.push(readGroup(ty)    + ' tỷ');
+  if (total_ty > 0) parts.push(readLargeGroup(total_ty) + ' tỷ');
   if (trieu > 0) parts.push(readGroup(trieu) + ' triệu');
   if (nghin > 0) parts.push(readGroup(nghin) + ' nghìn');
   if (donvi > 0) parts.push(readGroup(donvi));
