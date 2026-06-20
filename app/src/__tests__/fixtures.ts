@@ -38,7 +38,7 @@ const baseDates = {
 };
 
 const baseIdentity = {
-  rectorName: 'TS. Nguyễn Hồng Giang',
+  rectorName: 'ThS. Đào Đức Quảng',
   departmentName: 'Phòng Quản trị đời sống',
   departmentCode: 'QTDS',
   expertTeamLeader: 'Ông Trần Văn Nam (Trưởng phòng QTDS - Tổ trưởng)',

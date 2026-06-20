@@ -59,7 +59,7 @@ Tab **"Thông tin chung"** — các trường cần điền:
 | Nguồn vốn | Chọn 1 trong 3 loại (xem bảng dưới) | Quỹ phát triển SN |
 | Tên phòng/khoa đề xuất | Đơn vị có nhu cầu mua sắm | Phòng Quản trị đời sống |
 | Mã viết tắt phòng | Dùng cho số hiệu văn bản | QTDS |
-| Hiệu trưởng | Họ tên người ký phê duyệt | TS. Nguyễn Hồng Giang |
+| Hiệu trưởng | Họ tên người ký phê duyệt | ThS. Đào Đức Quảng |
 | Thời gian thực hiện (ngày) | Thời hạn hợp đồng | 15 |
 
 **Ba loại nguồn vốn và ý nghĩa pháp lý:**
