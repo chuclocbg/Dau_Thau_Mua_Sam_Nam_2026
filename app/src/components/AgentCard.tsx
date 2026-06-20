@@ -1,4 +1,5 @@
 import type { AgentId } from '../agents/types';
+import { formatTimestampLocale } from '../utils/agentFormatters';
 
 export interface AgentCardProps {
   agentId:       AgentId;
@@ -10,10 +11,6 @@ export interface AgentCardProps {
   traceId?:      string;
   lastUpdated?:  number;
   error?:        string;
-}
-
-function formatTimestamp(ts: number): string {
-  return new Date(ts).toLocaleString('vi-VN');
 }
 
 export default function AgentCard({
@@ -41,7 +38,7 @@ export default function AgentCard({
         <span data-field="error">{error}</span>
       )}
       {displayTime !== undefined && (
-        <span data-field="last-updated">{formatTimestamp(displayTime)}</span>
+        <span data-field="last-updated">{formatTimestampLocale(displayTime)}</span>
       )}
     </div>
   );

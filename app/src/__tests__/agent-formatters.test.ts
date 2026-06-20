@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatTimestamp, formatPayload } from '../utils/agentFormatters';
+import { formatTimestamp, formatTimestampLocale, formatPayload } from '../utils/agentFormatters';
 
 // ─── AF-01: formatTimestamp — basic UTC conversion ────────────────────────────
 
@@ -162,5 +162,26 @@ describe('AF-04 · formatPayload — boundary and edge cases', () => {
 
   it('AF-04-07: empty string "" → \'""\'', () => {
     expect(formatPayload('')).toBe('""');
+  });
+});
+
+// ─── AF-05: formatTimestampLocale — vi-VN display format ─────────────────────
+
+describe('AF-05 · formatTimestampLocale — vi-VN display format', () => {
+  it('AF-05-01: formatTimestampLocale is a function', () => {
+    expect(typeof formatTimestampLocale).toBe('function');
+  });
+
+  it('AF-05-02: returns a string', () => {
+    expect(typeof formatTimestampLocale(1_750_000_000_000)).toBe('string');
+  });
+
+  it('AF-05-03: returns a non-empty string', () => {
+    expect(formatTimestampLocale(1_750_000_000_000).length).toBeGreaterThan(0);
+  });
+
+  it('AF-05-04: two calls with same ts return equal strings', () => {
+    const ts = 1_750_000_000_000;
+    expect(formatTimestampLocale(ts)).toBe(formatTimestampLocale(ts));
   });
 });
