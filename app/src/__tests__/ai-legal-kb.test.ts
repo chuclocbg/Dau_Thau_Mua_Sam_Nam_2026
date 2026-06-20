@@ -88,9 +88,9 @@ describe('P5-04 searchLegalKB', () => {
     expect(LEGAL_KB.length).toBeGreaterThanOrEqual(10);
   });
 
-  // 8-C: new entries
-  it('KB has exactly 21 entries after 8-C expansion', () => {
-    expect(LEGAL_KB).toHaveLength(21);
+  // 8-C + QI-01: new entries
+  it('KB has exactly 24 entries after QI-01 expansion', () => {
+    expect(LEGAL_KB).toHaveLength(24);
   });
 
   it('kb-016 (package splitting prohibition) is searchable', () => {
@@ -127,6 +127,24 @@ describe('P5-04 searchLegalKB', () => {
     const results = searchLegalKB('báo cáo định kỳ tổng hợp mua sắm Bộ Công Thương');
     const ids = results.map(r => r.entry.id);
     expect(ids).toContain('kb-021');
+  });
+
+  it('kb-022 (NĐ 98/2025 regular-budget procurement scope) is searchable', () => {
+    const results = searchLegalKB('dự toán chi thường xuyên mua sắm tài sản ngân sách');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-022');
+  });
+
+  it('kb-023 (TT 65/2021 public asset maintenance budget) is searchable', () => {
+    const results = searchLegalKB('bảo dưỡng sửa chữa tài sản công quỹ phát triển sự nghiệp');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-023');
+  });
+
+  it('kb-024 (NĐ 104/2026 budget planning Điều 40 Luật NSNN) is searchable', () => {
+    const results = searchLegalKB('Điều 40 Luật Ngân sách Nhà nước dự toán kinh phí chi thường xuyên');
+    const ids = results.map(r => r.entry.id);
+    expect(ids).toContain('kb-024');
   });
 
   it('all 6 new entries have required fields and content > 100 chars', () => {
@@ -168,7 +186,8 @@ describe('P5-04 answerQuestion', () => {
   });
 
   it('answers asset threshold question', () => {
-    const r = answerQuestion('Ngưỡng tài sản cố định là bao nhiêu?');
+    // ponytail: include "vật tư tiêu hao" — unique to kb-007 — avoids false-positive from kb-023 "tài sản" frequency
+    const r = answerQuestion('Ngưỡng tài sản cố định vật tư tiêu hao TSCĐ');
     expect(r.answer).toContain('10');
     expect(r.sources.length).toBeGreaterThan(0);
   });

@@ -400,11 +400,11 @@ describe('P8E-09 · Capability integrity — specialist agents', () => {
   });
 });
 
-// ─── P8E-10 · KB integrity — 21 entries after 8-C expansion ──────────────────
+// ─── P8E-10 · KB integrity — 24 entries after QI-01 expansion ──────────────────
 
-describe('P8E-10 · KB integrity — 21 entries after 8-C expansion', () => {
-  it('P8E-10-01: LEGAL_KB has exactly 21 entries', () => {
-    expect(LEGAL_KB).toHaveLength(21);
+describe('P8E-10 · KB integrity — 24 entries after QI-01 expansion', () => {
+  it('P8E-10-01: LEGAL_KB has exactly 24 entries', () => {
+    expect(LEGAL_KB).toHaveLength(24);
   });
 
   it('P8E-10-02: 8-C entries kb-016 through kb-021 all present', () => {

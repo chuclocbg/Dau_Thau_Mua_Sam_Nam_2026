@@ -5,10 +5,13 @@
  * Sources: Luật ĐT 22/2023/QH15 (VBHN 74/VBHN-VPQH 25/3/2026),
  *          NĐ 214/2025/NĐ-CP, TT 79/2025/TT-BTC, TT 80/2025/TT-BTC,
  *          TT 45/2018/TT-BTC, NĐ 186/2025/NĐ-CP, NĐ 52/2026/NĐ-CP,
- *          NĐ 60/2021/NĐ-CP, TT 13/2026/TT-BCT.
+ *          NĐ 60/2021/NĐ-CP, TT 13/2026/TT-BCT,
+ *          NĐ 98/2025/NĐ-CP, TT 65/2021/TT-BTC, NĐ 104/2026/NĐ-CP.
  *
  * 8-C additions (kb-016 – kb-021): expand coverage for regulations listed in
  * CLAUDE.md that were absent or underrepresented in the original 15 entries.
+ * QI-01 additions (kb-022 – kb-024): budget-planning regulations for regular
+ * expenditure procurement/repair (NĐ 98/2025, TT 65/2021, NĐ 104/2026).
  *
  * Search: BM25-lite (keyword frequency + IDF weight).
  * No external API. No fabricated content.
@@ -520,6 +523,94 @@ Hình thức nộp báo cáo:
 
 ⚠ Không nộp báo cáo đúng hạn hoặc nộp báo cáo thiếu nội dung → vi phạm kỷ luật tài chính → Bộ CT có thể đình chỉ thẩm quyền phê duyệt KHLCNT của đơn vị.`,
     appliesTo: ['khlcnt', 'authority', 'publication'],
+  },
+
+  // ── QI-01 additions — kb-022 through kb-024 ──────────────────────────────────
+
+  {
+    id: 'kb-022',
+    title: 'Phạm vi chi thường xuyên ngân sách nhà nước để mua sắm, sửa chữa tài sản',
+    source: 'NĐ 98/2025/NĐ-CP Điều 1 — lập dự toán chi thường xuyên mua sắm sửa chữa (06/05/2025)',
+    keywords: [
+      'dự toán chi thường xuyên', 'mua sắm tài sản ngân sách', 'sửa chữa cải tạo nâng cấp',
+      'thuê hàng hóa dịch vụ ngân sách', 'NĐ 98 2025', 'chi thường xuyên mua sắm',
+      'quản lý sử dụng quyết toán chi thường xuyên',
+    ],
+    content: `NĐ 98/2025/NĐ-CP (06/05/2025) quy định việc lập dự toán, quản lý, sử dụng và quyết toán chi thường xuyên ngân sách nhà nước để:
+
+a) Mua sắm, sửa chữa, cải tạo, nâng cấp tài sản, trang thiết bị theo quy định về quản lý, sử dụng tài sản công.
+b) Sửa chữa, cải tạo, nâng cấp, mở rộng, xây dựng mới hạng mục công trình trong các dự án đã đầu tư xây dựng.
+c) Thuê hàng hóa, dịch vụ phục vụ hoạt động thường xuyên của cơ quan, đơn vị.
+d) Các nhiệm vụ chi cần thiết khác theo quy định của pháp luật.
+
+Nghị định này áp dụng cho các cơ quan nhà nước, đơn vị sự nghiệp công lập (bao gồm Trường Cao đẳng Kỹ thuật Công nghiệp) được giao dự toán chi thường xuyên từ ngân sách nhà nước.
+
+Yêu cầu dự toán:
+• Lập dự toán hàng năm theo định mức, tiêu chuẩn, chế độ hiện hành.
+• Phải phê duyệt KHLCNT trước khi thực hiện mua sắm, sửa chữa.
+• Quyết toán theo đúng nội dung dự toán được duyệt và quy định về đấu thầu.
+
+⚠ Rủi ro kiểm toán: Chi thường xuyên vượt dự toán, thực hiện không đúng nội dung dự toán, hoặc mua sắm không qua đấu thầu đúng quy định → vi phạm kỷ luật tài chính.`,
+    appliesTo: ['budget-planning', 'procurement', 'khlcnt'],
+  },
+
+  {
+    id: 'kb-023',
+    title: 'Kinh phí bảo dưỡng, sửa chữa tài sản công tại đơn vị sự nghiệp công lập',
+    source: 'TT 65/2021/TT-BTC Điều 1–4 — bảo dưỡng sửa chữa tài sản công (29/07/2021)',
+    keywords: [
+      'bảo dưỡng sửa chữa tài sản công', 'quỹ phát triển hoạt động sự nghiệp',
+      'TT 65 2021', 'kinh phí bảo trì tài sản', 'đơn vị sự nghiệp công lập bảo dưỡng',
+      'dự toán kinh phí bảo dưỡng', 'bảo dưỡng định kỳ tài sản',
+    ],
+    content: `TT 65/2021/TT-BTC (29/07/2021) quy định lập, quản lý và sử dụng kinh phí bảo dưỡng, sửa chữa tài sản công.
+
+Đối tượng áp dụng (Điều 1): Cơ quan nhà nước, đơn vị sự nghiệp công lập, tổ chức chính trị-xã hội được giao quản lý tài sản công — bao gồm Trường Cao đẳng Kỹ thuật Công nghiệp.
+
+Nguồn kinh phí bảo dưỡng (Điều 2):
+a) Chi thường xuyên ngân sách nhà nước được giao.
+b) Phí để lại chi thường xuyên (nếu có).
+c) Quỹ phát triển hoạt động sự nghiệp của đơn vị.
+d) Kinh phí hợp pháp khác.
+
+Nguyên tắc bảo dưỡng (Điều 3):
+• Bảo dưỡng tài sản đúng tiêu chuẩn kỹ thuật ban đầu; không làm thay đổi chức năng, quy mô, công suất.
+• Không được dùng kinh phí bảo dưỡng để nâng cấp, mở rộng (phải chuyển sang chi đầu tư).
+
+Lập dự toán kinh phí bảo dưỡng (Điều 4):
+• Lập hàng năm, trình cấp có thẩm quyền phê duyệt.
+• Hồ sơ dự toán gồm: tên tài sản, thời gian bảo dưỡng gần nhất, lý do bảo dưỡng, mục tiêu, khối lượng công việc, dự kiến chi phí.
+• Căn cứ định mức bảo dưỡng theo quy định của cơ quan chuyên ngành (Bộ Tài chính, Bộ chủ quản).
+
+⚠ Rủi ro kiểm toán: Dùng kinh phí bảo dưỡng để nâng cấp, mở rộng tài sản; không có hồ sơ dự toán; thực hiện mà không qua đấu thầu đúng quy định.`,
+    appliesTo: ['asset-recording', 'budget-planning', 'repair-service'],
+  },
+
+  {
+    id: 'kb-024',
+    title: 'Lập dự toán kinh phí chi thường xuyên theo Điều 40 Luật Ngân sách Nhà nước',
+    source: 'NĐ 104/2026/NĐ-CP Điều 1 — dự toán chi thường xuyên Điều 40 Luật NSNN (31/03/2026)',
+    keywords: [
+      'Điều 40 Luật Ngân sách Nhà nước', 'dự toán kinh phí chi thường xuyên 2026',
+      'NĐ 104 2026', 'mua sắm sửa chữa chi thường xuyên Luật NSNN',
+      'thuê hàng hóa dịch vụ chi thường xuyên', 'phân bổ giao dự toán chi thường xuyên',
+    ],
+    content: `NĐ 104/2026/NĐ-CP (31/03/2026) quy định lập dự toán, phân bổ, giao dự toán, quản lý, sử dụng và quyết toán kinh phí chi thường xuyên để thực hiện các nhiệm vụ tại Điều 40 Luật Ngân sách Nhà nước (Luật NSNN số 89/2025/QH15, Luật Đấu thầu số 22/2023/QH15).
+
+Phạm vi điều chỉnh (Điều 1) — bao gồm:
+a) Bồi thường, hỗ trợ, tái định cư khi Nhà nước thu hồi đất.
+b) Chi phí chuẩn bị dự án đầu tư công ODA.
+c) Lập, thẩm định, phê duyệt báo cáo nghiên cứu tiền khả thi.
+d) Mua sắm, sửa chữa, cải tạo, nâng cấp tài sản, trang thiết bị; thuê hàng hóa, dịch vụ; sửa chữa, cải tạo, nâng cấp, mở rộng, xây dựng mới hạng mục công trình trong dự án đã đầu tư.
+e) Hoạt động quy hoạch.
+f) Các nhiệm vụ cần thiết khác.
+
+Áp dụng cho Trường Cao đẳng Kỹ thuật Công nghiệp: Khoản d — mua sắm, sửa chữa, cải tạo, nâng cấp tài sản, trang thiết bị; thuê hàng hóa, dịch vụ.
+
+Nghị định này là văn bản pháp lý mới nhất (2026) quy định về lập dự toán chi thường xuyên cho mua sắm, sửa chữa, có hiệu lực thay thế hoặc bổ sung cho các quy định cũ về cùng phạm vi.
+
+⚠ Rủi ro kiểm toán: Thực hiện mua sắm, sửa chữa không có dự toán được phê duyệt theo NĐ 104/2026; chi vượt dự toán; không thực hiện đấu thầu theo Luật ĐT 22/2023/QH15 được dẫn chiếu tại căn cứ pháp lý của Nghị định.`,
+    appliesTo: ['budget-planning', 'procurement', 'khlcnt'],
   },
 ];
 
