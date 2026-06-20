@@ -61,7 +61,7 @@ export default function App() {
   const handleSelectDemo = (pkgId: string) => {
     const pkg = demoPackages.find(p => p.id === pkgId);
     if (pkg) {
-      setSelectedPackage(structuredClone(pkg));
+      setSelectedPackage(JSON.parse(JSON.stringify(pkg)) as ProcurementPackage);
       setActiveDocIndex(0);
     }
   };
@@ -293,7 +293,7 @@ export default function App() {
       {showAiPanel && (
         <AiAssistantPanel
           onApplyPackage={pkg => {
-            setSelectedPackage(structuredClone(pkg));
+            setSelectedPackage(JSON.parse(JSON.stringify(pkg)) as ProcurementPackage);
             setActiveDocIndex(0);
             setShowAiPanel(false);
           }}
