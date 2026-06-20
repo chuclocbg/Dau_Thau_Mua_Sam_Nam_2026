@@ -38,6 +38,12 @@ import { generateTraceId }                  from './detectPackageSplitting';
 import { paraphraseAnswer }                from '../ai/llmBridge';
 import type { LLMBridgeConfig }            from '../ai/llmBridge';
 import { enrichLegalBasis }               from '../ai/legalSearchAdapter';
+import {
+  runLegalPipeline,
+  type ProcurementMethod,
+  type FundSource,
+  type ChecklistDocType,
+} from '../ai/legalPipelineEnricher';
 
 // ─── Re-export P5-03 types as unified entry point ────────────────────────────
 
@@ -503,6 +509,45 @@ export class LegalReviewerAgent implements IAgent {
     return [...citations];
   }
 
+  // ── Legal v2.0 pipeline helpers ────────────────────────────────────────────
+
+  /** Maps DossierReviewInput.methodCode → ProcurementMethod for the pipeline. */
+  private static mapMethodCode(code: string): ProcurementMethod {
+    if (/OPEN_BIDDING/i.test(code))  return 'dau-thau-rong-rai';
+    if (/COMPETITIVE/i.test(code))   return 'chao-hang-canh-tranh';
+    if (/SIMPLIFIED/i.test(code))    return 'chi-dinh-thau-rut-gon';
+    if (/DIRECT/i.test(code))        return 'chi-dinh-thau';
+    return 'mua-sam-truc-tiep';
+  }
+
+  /** Maps pkg.fundingSourceName (free-form Vietnamese) → FundSource. */
+  private static mapFundSource(name: string): FundSource {
+    const n = name.toLowerCase();
+    if (n.includes('oda') || n.includes('vay ưu đãi') || n.includes('vay uu dai')) return 'von-vay-oda';
+    if (n.includes('tự chủ') || n.includes('tu chu')) return 'von-tu-co';
+    if (
+      n.includes('sự nghiệp') || n.includes('su nghiep') ||
+      n.includes('hoạt động') || n.includes('hoat dong') ||
+      n.includes('phát triển') || n.includes('phat trien')
+    ) return 'von-su-nghiep';
+    return 'ngan-sach-nha-nuoc';
+  }
+
+  /**
+   * Infers which checklist documents are already present by checking date fields.
+   * Used to compute a meaningful completionScore for the contract-signing stage.
+   */
+  private static deriveExistingDocs(pkg: import('../demoData').ProcurementPackage): ChecklistDocType[] {
+    const docs: ChecklistDocType[] = [];
+    // dateKhlcnt present → the tờ trình + KHLCNT must have been filed
+    if (pkg.dateKhlcnt?.trim())        docs.push('to-trinh', 'khlcnt');
+    // dateDocIssue (HSMT/HSYC issued) → HSYC is ready
+    if (pkg.dateDocIssue?.trim())      docs.push('hsyc');
+    // dateResultApprove → the approval decision exists
+    if (pkg.dateResultApprove?.trim()) docs.push('quyet-dinh-phe-duyet');
+    return [...new Set(docs)];
+  }
+
   // ── process ────────────────────────────────────────────────────────────────
 
   async process(msg: AgentMessage): Promise<AgentMessage> {
@@ -558,7 +603,21 @@ export class LegalReviewerAgent implements IAgent {
       // Enrich AgentMessage.legalBasis with index-based citations (Legal v1.5).
       // Kept separate from payload.legalBasis so existing KB-authoritative invariants hold.
       const enrichedLegalBasis = enrichLegalBasis(input.pkg.packageName, kbResponse.legalBasis ?? []);
-      const enrichedResponse: AgentMessage = { ...kbResponse, legalBasis: enrichedLegalBasis };
+
+      // Run full legal pipeline (Legal v2.0) and inject enrichment fields.
+      // documentType='hop-dong': checks completion of all 4 contract prerequisites.
+      const pipelineResult = runLegalPipeline({
+        procurementMethod: LegalReviewerAgent.mapMethodCode(input.methodCode),
+        sourceOfFunds:     LegalReviewerAgent.mapFundSource(input.pkg.fundingSourceName),
+        documentType:      'hop-dong',
+        existingDocuments: LegalReviewerAgent.deriveExistingDocs(input.pkg),
+      });
+
+      const enrichedResponse: AgentMessage = {
+        ...kbResponse,
+        legalBasis: enrichedLegalBasis,
+        ...pipelineResult,
+      };
 
       this.registry.log(enrichedResponse);
       this.state          = 'idle';

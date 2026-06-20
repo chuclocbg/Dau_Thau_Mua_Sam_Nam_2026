@@ -45,6 +45,7 @@ import { searchWithFallback }              from '../ai/legalSearchAdapter';
 import { reviewPackage as p5ReviewPackage } from '../ai/legalReviewer';
 import { paraphraseAnswer }                from '../ai/llmBridge';
 import type { LLMBridgeConfig }            from '../ai/llmBridge';
+import { runLegalPipeline }               from '../ai/legalPipelineEnricher';
 
 // ─── ChatMessage ─────────────────────────────────────────────────────────────
 
@@ -487,14 +488,21 @@ export class ChatAgent implements IAgent {
       this.transition('composing-response', `confidence=${kbOutput.confidence}`);
 
       const kbResponse = this.buildResponse(callerFrom, kbOutput);
-      this.registry.log(kbResponse);
+
+      // Run full legal pipeline (Legal v2.0) and inject enrichment fields.
+      // ChatAgent has no procurement context for method/fund inference — use
+      // neutral defaults so the fields are always present and never undefined.
+      const pipelineResult = runLegalPipeline({});
+      const enrichedResponse: AgentMessage = { ...kbResponse, ...pipelineResult };
+
+      this.registry.log(enrichedResponse);
       this.state          = 'idle';
       this.currentTraceId = null;
 
       // Paraphrase after state reset — safe with concurrent ChatAgent.process() calls
       const bridge = await paraphraseAnswer(kbOutput.answer, this.llmConfig);
-      if (!bridge.usedLLM) return kbResponse;
-      return { ...kbResponse, payload: { ...kbOutput, answer: bridge.answer } };
+      if (!bridge.usedLLM) return enrichedResponse;
+      return { ...enrichedResponse, payload: { ...kbOutput, answer: bridge.answer } };
 
     } catch (err) {
       return this.buildErrorResponse(

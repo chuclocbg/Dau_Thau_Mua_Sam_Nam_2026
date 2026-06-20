@@ -25,6 +25,16 @@ export interface AgentMessage {
   timestamp:     number;              // Date.now()
   legalBasis?:   string[];            // legal citations emitted by this message
   parentTraceId?: string;             // for child / sub-traces
+
+  // Legal v2.0 pipeline enrichment — injected by legalPipelineEnricher.runLegalPipeline().
+  // All fields are optional and default to [] / 100 / 'LOW' / 0 when the pipeline is skipped.
+  applicableDocuments?: unknown[];    // ApplicableDocument[] from legalApplicabilityEngine
+  missingDocuments?:    unknown[];    // RequiredDocument[] from legalChecklistEngine
+  warnings?:            string[];     // checklist warnings ([CRITICAL]/[HIGH]/[MEDIUM])
+  completionScore?:     number;       // 0–100 dossier completion percentage
+  riskLevel?:           string;       // 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  riskScore?:           number;       // raw risk score from legalRiskEngine
+  recommendations?:     string[];     // actionable recommendations from legalRiskEngine
 }
 
 /** Contract every P6 agent must implement. */
