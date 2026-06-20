@@ -31,7 +31,7 @@ export interface DocFile {
 export interface DocumentMetadata {
   id: string;
   title: string;
-  category: string;    // Laws | Decrees | Circulars | VBHN | Forms | SchoolRegulations | ProcurementExamples | root
+  category: string;    // Laws | Decrees | Circulars | VBHN | Forms | School_Regulations | Procurement_Examples | root
   sourceFile: string;  // relPath
   keywords: string[];
   effectiveDate: string;
@@ -75,8 +75,8 @@ const CATEGORY_APPLIESTO: Record<string, string[]> = {
   Circulars:             ['publication', 'payment', 'khlcnt'],
   VBHN:                  ['legal-review', 'khlcnt', 'authority'],
   Forms:                 ['documentation'],
-  SchoolRegulations:     ['authority', 'budget-planning'],
-  ProcurementExamples:   ['procurement'],
+  School_Regulations:    ['authority', 'budget-planning'],
+  Procurement_Examples:  ['procurement'],
   root:                  ['legal-review'],
 };
 
