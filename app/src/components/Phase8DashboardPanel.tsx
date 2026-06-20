@@ -33,6 +33,7 @@ import { type ChecklistPanelProps } from './ChecklistPanel';
 import { type RiskPanelProps } from './RiskPanel';
 import { type RecommendationPanelProps } from './RecommendationPanel';
 import { type TimelinePanelProps } from './TimelinePanel';
+import { type LegalDashboardProps } from './LegalDashboard';
 import LegalKBPanel from './LegalKBPanel';
 import PackageLegalReviewPanel from './PackageLegalReviewPanel';
 import AgentTracePanel from './AgentTracePanel';
@@ -103,6 +104,8 @@ export interface Phase8DashboardPanelProps {
   legalRecommendations?:   RecommendationPanelProps | null;
   /** Legal v2.7: procurement lifecycle timeline — threaded to AgentOutputPanel TimelinePanel. */
   legalTimeline?:          TimelinePanelProps | null;
+  /** Legal v3.0: unified dashboard — threaded to AgentOutputPanel LegalDashboard. */
+  legalDashboard?:         LegalDashboardProps | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -126,6 +129,7 @@ export default function Phase8DashboardPanel({
   legalRisk,
   legalRecommendations,
   legalTimeline,
+  legalDashboard,
 }: Phase8DashboardPanelProps) {
   if (loading) {
     return (
@@ -165,6 +169,7 @@ export default function Phase8DashboardPanel({
               legalRisk={legalRisk}
               legalRecommendations={legalRecommendations}
               legalTimeline={legalTimeline}
+              legalDashboard={legalDashboard}
             />
           ) : (
             <>

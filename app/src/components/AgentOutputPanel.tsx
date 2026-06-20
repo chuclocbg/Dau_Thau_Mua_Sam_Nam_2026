@@ -25,6 +25,7 @@ import ChecklistPanel, { type ChecklistPanelProps } from './ChecklistPanel';
 import RiskPanel, { type RiskPanelProps } from './RiskPanel';
 import RecommendationPanel, { type RecommendationPanelProps } from './RecommendationPanel';
 import TimelinePanel, { type TimelinePanelProps } from './TimelinePanel';
+import LegalDashboard, { type LegalDashboardProps } from './LegalDashboard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,10 @@ export interface AgentOutputPanelProps {
   legalRecommendations?: RecommendationPanelProps | null;
   /** Legal v2.7: procurement lifecycle timeline — renders below RecommendationPanel. */
   legalTimeline?:        TimelinePanelProps | null;
+  /** Legal v3.0: unified dashboard — when provided, renders LegalDashboard instead of
+   *  individual legal panels; legalSummary/citations/legalTrace/legalChecklist/legalRisk/
+   *  legalRecommendations/legalTimeline are ignored to prevent duplicate rendering. */
+  legalDashboard?:       LegalDashboardProps | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -82,6 +87,7 @@ export default function AgentOutputPanel({
   legalRisk,
   legalRecommendations,
   legalTimeline,
+  legalDashboard,
 }: AgentOutputPanelProps) {
   if (loading) {
     return (
@@ -100,20 +106,28 @@ export default function AgentOutputPanel({
         <AgentSection agent={legal} />
         <AgentSection agent={risk} />
       </ul>
-      {/* Legal v2.1: render pipeline metadata summary when provided */}
-      {legalSummary != null && <LegalSummaryPanel {...legalSummary} />}
-      {/* Legal v2.2: render citation card panel below legal summary */}
-      <CitationCardPanel legalBasis={citations ?? []} />
-      {/* Legal v2.3: render pipeline trace below citation cards */}
-      {legalTrace != null && <TracePanel {...legalTrace} />}
-      {/* Legal v2.4: render checklist below trace */}
-      {legalChecklist != null && <ChecklistPanel {...legalChecklist} />}
-      {/* Legal v2.5: render risk panel below checklist */}
-      {legalRisk != null && <RiskPanel {...legalRisk} />}
-      {/* Legal v2.6: render severity-grouped recommendations below risk panel */}
-      {legalRecommendations != null && <RecommendationPanel {...legalRecommendations} />}
-      {/* Legal v2.7: render procurement lifecycle timeline below recommendations */}
-      {legalTimeline != null && <TimelinePanel {...legalTimeline} />}
+      {/* Legal v3.0: unified dashboard takes precedence over individual panel props */}
+      {legalDashboard != null
+        ? <LegalDashboard {...legalDashboard} />
+        : (
+          <>
+            {/* Legal v2.1 */}
+            {legalSummary != null && <LegalSummaryPanel {...legalSummary} />}
+            {/* Legal v2.2 */}
+            <CitationCardPanel legalBasis={citations ?? []} />
+            {/* Legal v2.3 */}
+            {legalTrace != null && <TracePanel {...legalTrace} />}
+            {/* Legal v2.4 */}
+            {legalChecklist != null && <ChecklistPanel {...legalChecklist} />}
+            {/* Legal v2.5 */}
+            {legalRisk != null && <RiskPanel {...legalRisk} />}
+            {/* Legal v2.6 */}
+            {legalRecommendations != null && <RecommendationPanel {...legalRecommendations} />}
+            {/* Legal v2.7 */}
+            {legalTimeline != null && <TimelinePanel {...legalTimeline} />}
+          </>
+        )
+      }
     </div>
   );
 }
