@@ -29,6 +29,7 @@
 import AgentOutputPanel from './AgentOutputPanel';
 import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
 import { type TracePanelProps } from './TracePanel';
+import { type ChecklistPanelProps } from './ChecklistPanel';
 import LegalKBPanel from './LegalKBPanel';
 import PackageLegalReviewPanel from './PackageLegalReviewPanel';
 import AgentTracePanel from './AgentTracePanel';
@@ -91,6 +92,8 @@ export interface Phase8DashboardPanelProps {
   legalCitations?:    string[] | null;
   /** Legal v2.3: pipeline trace metadata — threaded to AgentOutputPanel TracePanel. */
   legalTrace?:        TracePanelProps | null;
+  /** Legal v2.4: checklist metadata — threaded to AgentOutputPanel ChecklistPanel. */
+  legalChecklist?:    ChecklistPanelProps | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -110,6 +113,7 @@ export default function Phase8DashboardPanel({
   legalMetadata,
   legalCitations,
   legalTrace,
+  legalChecklist,
 }: Phase8DashboardPanelProps) {
   if (loading) {
     return (
@@ -145,6 +149,7 @@ export default function Phase8DashboardPanel({
               legalSummary={legalMetadata}
               citations={legalCitations}
               legalTrace={legalTrace}
+              legalChecklist={legalChecklist}
             />
           ) : (
             <>
