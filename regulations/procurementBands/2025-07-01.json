@@ -1,0 +1,30 @@
+[
+  {
+    "code": "DIRECT_50",
+    "recommendedMethod": "chi-dinh-thau-rut-gon",
+    "valueMin": 0,
+    "valueMax": 50000000,
+    "source": "Khoản 4 Điều 80 Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "code": "DIRECT_SELECTION_SIMPLIFIED",
+    "recommendedMethod": "chi-dinh-thau-rut-gon",
+    "valueMin": 50000001,
+    "valueMax": 500000000,
+    "source": "Khoản 2 và 3 Điều 80 Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "code": "COMPETITIVE_SHOPPING",
+    "recommendedMethod": "chao-hang-canh-tranh",
+    "valueMin": 500000001,
+    "valueMax": 5000000000,
+    "source": "Điều 81 Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "code": "OPEN_BIDDING",
+    "recommendedMethod": "dau-thau-rong-rai",
+    "valueMin": 5000000001,
+    "valueMax": 9007199254740991,
+    "source": "Luật Đấu thầu số 22/2023/QH15; Nghị định 214/2025/NĐ-CP; Thông tư 79/2025/TT-BTC"
+  }
+]

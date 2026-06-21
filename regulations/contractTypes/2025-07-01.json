@@ -1,0 +1,61 @@
+[
+  {
+    "contractType": "tron-goi",
+    "maxDurationDays": 365,
+    "mandatoryClauses": [
+      "doi-tuong", "gia-tri", "thoi-han", "thanh-toan",
+      "nghiem-thu", "phat-vi-pham", "bat-kha-khang", "tranh-chap",
+      "bao-hanh"
+    ],
+    "compatibleMethods": [
+      "dau-thau-rong-rai", "chao-hang-canh-tranh", "mua-sam-truc-tiep",
+      "chi-dinh-thau", "chi-dinh-thau-rut-gon"
+    ],
+    "source": "Nghị định 214/2025/NĐ-CP; Luật Đấu thầu số 22/2023/QH15"
+  },
+  {
+    "contractType": "theo-don-gia-dinh-truoc",
+    "maxDurationDays": 730,
+    "mandatoryClauses": [
+      "doi-tuong", "gia-tri", "thoi-han", "thanh-toan",
+      "nghiem-thu", "phat-vi-pham", "bat-kha-khang", "tranh-chap",
+      "bao-hanh", "bao-dam-thuc-hien"
+    ],
+    "compatibleMethods": [
+      "dau-thau-rong-rai", "chao-hang-canh-tranh", "mua-sam-truc-tiep", "chi-dinh-thau"
+    ],
+    "source": "Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "contractType": "theo-don-gia-dieu-chinh",
+    "maxDurationDays": 1825,
+    "mandatoryClauses": [
+      "doi-tuong", "gia-tri", "thoi-han", "thanh-toan",
+      "nghiem-thu", "phat-vi-pham", "bat-kha-khang", "tranh-chap",
+      "bao-hanh", "bao-dam-thuc-hien", "dieu-chinh-gia"
+    ],
+    "compatibleMethods": ["dau-thau-rong-rai"],
+    "source": "Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "contractType": "theo-thoi-gian",
+    "maxDurationDays": 365,
+    "mandatoryClauses": [
+      "doi-tuong", "gia-tri", "thoi-han", "thanh-toan",
+      "nghiem-thu", "phat-vi-pham", "bat-kha-khang", "tranh-chap"
+    ],
+    "compatibleMethods": ["dau-thau-rong-rai", "chi-dinh-thau"],
+    "source": "Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "contractType": "ket-hop",
+    "maxDurationDays": 1095,
+    "mandatoryClauses": [
+      "doi-tuong", "gia-tri", "thoi-han", "thanh-toan",
+      "nghiem-thu", "phat-vi-pham", "bat-kha-khang", "tranh-chap",
+      "bao-hanh"
+    ],
+    "compatibleMethods": ["dau-thau-rong-rai"],
+    "source": "Nghị định 214/2025/NĐ-CP"
+  }
+]

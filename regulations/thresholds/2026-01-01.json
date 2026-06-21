@@ -1,0 +1,50 @@
+[
+  {
+    "code": "DIRECT_50_LIMIT",
+    "value": 50000000,
+    "currency": "VND",
+    "source": "Điểm m Khoản 1 Điều 23 Luật Đấu thầu số 22/2023/QH15; Khoản 4 Điều 80 Nghị định 214/2025/NĐ-CP; Thông tư 13/2026/TT-BCT",
+    "effectiveDate": "2025-07-01",
+    "description": "Giá trị tối đa để áp dụng chỉ định thầu không qua quy trình (≤50 triệu đồng)"
+  },
+  {
+    "code": "DIRECT_SELECTION_SIMPLIFIED_LIMIT",
+    "value": 500000000,
+    "currency": "VND",
+    "source": "Điểm m Khoản 1 Điều 23 Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15); Khoản 2 và 3 Điều 80 Nghị định 214/2025/NĐ-CP",
+    "effectiveDate": "2025-07-01",
+    "description": "Giá trị tối đa để áp dụng chỉ định thầu rút gọn (≤500 triệu đồng)"
+  },
+  {
+    "code": "COMPETITIVE_SHOPPING_LIMIT",
+    "value": 5000000000,
+    "currency": "VND",
+    "source": "Điều 24 Luật Đấu thầu số 22/2023/QH15 (sửa đổi bởi Luật số 90/2025/QH15); Điều 81 Nghị định 214/2025/NĐ-CP; Thông tư 79/2025/TT-BTC",
+    "effectiveDate": "2025-07-01",
+    "description": "Giá trị tối đa để áp dụng chào hàng cạnh tranh (≤5 tỷ đồng)"
+  },
+  {
+    "code": "PERFORMANCE_SECURITY_THRESHOLD",
+    "value": 50000000,
+    "currency": "VND",
+    "source": "Luật Đấu thầu số 22/2023/QH15; Nghị định 214/2025/NĐ-CP",
+    "effectiveDate": "2025-07-01",
+    "description": "Giá trị gói thầu tối thiểu bắt buộc có điều khoản bảo đảm thực hiện hợp đồng"
+  },
+  {
+    "code": "DIRECT_APPOINTMENT_LIMIT",
+    "value": 100000000,
+    "currency": "VND",
+    "source": "Nghị định 214/2025/NĐ-CP",
+    "effectiveDate": "2025-07-01",
+    "description": "Ngưỡng giá trị chỉ định thầu rút gọn trên mức này có rủi ro kiểm toán cao"
+  },
+  {
+    "code": "E_PROCUREMENT_MANDATORY_THRESHOLD",
+    "value": 200000000,
+    "currency": "VND",
+    "source": "Thông tư 80/2025/TT-BTC hướng dẫn đăng tải thông tin và mẫu hồ sơ đấu thầu qua mạng; Nghị định 52/2026/NĐ-CP",
+    "effectiveDate": "2026-01-01",
+    "description": "Giá trị tối thiểu gói thầu bắt buộc áp dụng đấu thầu qua mạng (e-procurement) kể từ ngày 01/01/2026"
+  }
+]

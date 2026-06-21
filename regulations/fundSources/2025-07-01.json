@@ -1,0 +1,22 @@
+[
+  {
+    "fundSource": "ngan-sach-nha-nuoc",
+    "mandatoryClauses": ["bao-dam-thuc-hien"],
+    "source": "Luật Đấu thầu số 22/2023/QH15; Nghị định 214/2025/NĐ-CP"
+  },
+  {
+    "fundSource": "von-su-nghiep",
+    "mandatoryClauses": [],
+    "source": "Luật Ngân sách Nhà nước; Nghị định 60/2021/NĐ-CP"
+  },
+  {
+    "fundSource": "von-tu-co",
+    "mandatoryClauses": [],
+    "source": "Luật Quản lý, sử dụng tài sản công số 15/2017/QH14"
+  },
+  {
+    "fundSource": "von-vay-oda",
+    "mandatoryClauses": ["tuan-thu-nha-tai-tro"],
+    "source": "Nghị định 52/2026/NĐ-CP về quản lý và sử dụng vốn ODA"
+  }
+]

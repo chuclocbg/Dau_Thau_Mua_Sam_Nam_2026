@@ -1,0 +1,6 @@
+[
+  { "minScore": 40, "riskLevel": "CRITICAL" },
+  { "minScore": 25, "riskLevel": "HIGH"     },
+  { "minScore": 15, "riskLevel": "MEDIUM"   },
+  { "minScore": 0,  "riskLevel": "LOW"      }
+]
