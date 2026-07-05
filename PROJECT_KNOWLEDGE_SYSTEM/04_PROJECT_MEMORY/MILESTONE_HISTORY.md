@@ -7,10 +7,24 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.3.1 — Knowledge Resolution: Pure Mapping — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.3.2 — Knowledge Resolution: Retrieval & Wiring — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.3.1 — Knowledge Resolution: Pure Mapping — declared 2026-07-05 (superseded by X.3.2)
+
+**Evidence:** 425 test files, 13,928 tests, 0 failures at freeze time; architecture guard (4
+tests) confirmed zero imports from Knowledge Platform/MCP/financial/conversation/providers.
+
+**Summary:** Implemented `KnowledgeReference`/`KnowledgeReferenceLegalBasis`/
+`KnowledgeReferenceEffectivePeriod` (a structural mirror of the real `KnowledgeItem`/
+`LegalBasis`, defined independently) and `toLegalBasisRef()`/`toKnowledgeItemRef()` (ADR-022
+Decisions 3-4) — pure mapping, zero repository queries. Confirmed in X.3.2 that the structural-
+typing bet paid off: real `KnowledgeItem`/`LegalBasis` objects satisfy these shapes with zero
+cast needed.
 
 ---
 

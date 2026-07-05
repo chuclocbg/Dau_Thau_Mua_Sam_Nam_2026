@@ -19,59 +19,63 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.3.1 - Knowledge Resolution: Pure Mapping - FROZEN"
+current_milestone: "Phase X.3.2 - Knowledge Resolution: Retrieval & Wiring - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-05
 milestone_evidence:
-  scope: "src/reasoning/domain/knowledgeReferenceTypes.ts (KnowledgeReference,
-         KnowledgeReferenceLegalBasis, KnowledgeReferenceEffectivePeriod — a structural mirror
-         of the real KnowledgeItem/LegalBasis, defined independently, zero import from
-         src/knowledge/ or src/shared/financial/); src/reasoning/application/
-         knowledgeReferenceMapper.ts (toLegalBasisRef(), toKnowledgeItemRef() — per ADR-022
-         Decisions 3-4). Pure mapping only — no retrieval, search, ranking, conflict
-         resolution, effectivePeriod filtering, or repository queries."
-  scope_exclusion: "This is X.3.1 only, not all of X.3. Deferred to later X.3.x sub-milestones:
-                    the actual IKnowledgePlatform wiring/searchKnowledge()/resolveX() calls,
-                    the intent-driven resolution strategy, the caseItems scoping decision
-                    (PHASE_X3_ARCHITECTURE_REVIEW.md §1.6), and ADR-022 Decision 5's rule/
-                    threshold metadata JSON parsing."
+  scope: "src/reasoning/domain/knowledgeRepositoryTypes.ts (IKnowledgeRepository,
+         KnowledgeRetrievalResult — pure interface, zero import from src/knowledge/);
+         src/reasoning/infrastructure/knowledgePlatformRepository.ts
+         (KnowledgePlatformRepository, buildKnowledgePlatformRepository() — the sole file
+         permitted to import IKnowledgePlatform, per Constraint C-06). resolveKnowledge()
+         wraps platform.resolveApplicableDocuments(domain, asOfDate, context); searchKnowledge()
+         wraps platform.searchKnowledge(text, domains, context, limit), per ADR-022 Decision 1."
+  scope_exclusion: "This is X.3.2 only. Deferred to later X.3.x sub-milestones: the intent-
+                    driven resolution strategy (which domains to call for which IntentType),
+                    the caseItems scoping wiring (PHASE_X3_ARCHITECTURE_REVIEW.md §1.6), and
+                    ADR-022 Decision 5's rule/threshold metadata JSON parsing. No ranking,
+                    scoring, conflict resolution, citation generation, or evidence selection —
+                    confirmed absent by architecture guard, not just by design intent."
   files_added: "2 implementation files + 2 test files (15 tests)"
-  full_suite_result: "425 test files, 13928 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 423 files / 13913 tests at the X.4 baseline"
-  exit_criteria_met: "toLegalBasisRef()/toKnowledgeItemRef() proven correct: document->
-                      documentSymbol rename, extra LegalBasis fields dropped, effectivePeriod
-                      present vs. absent (createdAt-fallback, flagged via
-                      effectivePeriodAssumedFromCreation, never a fabricated date), metadata
-                      passthrough, empty-array handling. Architecture guard (4 tests) confirms
-                      zero imports from Knowledge Platform/MCP/financial/conversation/providers,
-                      zero IKnowledgePlatform references, and that Conversation Core/Reasoning
-                      Core/AI Context/Prompt Builder/Prompt Renderer/LLM Adapter/Output
-                      Validation all still carry their own frozen-milestone markers unmodified."
-  frozen_interfaces_touched: "None. legalReasoningEngine.ts and reasoningTypes.ts (Batch A)
-                              consumed read-only (KnowledgeItemRef/LegalBasisRef are the mapping
-                              targets, never redefined) — verified by git diff."
+  full_suite_result: "427 test files, 13943 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 425 files / 13928 tests at the X.3.1 baseline"
+  exit_criteria_met: "Repository tests prove correct end-to-end mapping against a REAL memory-
+                      backed IKnowledgePlatform (buildMemoryKnowledgeRepositories + LegalProvider
+                      — the same pattern Phase N's own integration tests use, not a fixture
+                      standing in for it): real KnowledgeItem/LegalBasis objects satisfy X.3.1's
+                      KnowledgeReference shapes with zero cast; the platform's own temporal
+                      filtering (isEffectiveOn) is relied upon, never reimplemented;
+                      searchKnowledge results are mapped without re-ranking; dependency
+                      injection is real (same class, different injected platform instances,
+                      different results). Architecture guard (7 tests) confirms the interface/
+                      adapter import boundary and zero MCP/provider/Anthropic/PromptBuilder
+                      references."
+  frozen_interfaces_touched: "None. IKnowledgePlatform (Phase N) consumed read-only via its
+                              existing resolveApplicableDocuments()/searchKnowledge() methods —
+                              zero modification, zero new methods. knowledgeReferenceMapper.ts
+                              (X.3.1) consumed, not modified — verified by git diff."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.3.2 - Knowledge Resolution: Retrieval & Wiring (or any other
-                        later milestone)"
-next_milestone_status: "NOT AUTHORIZED. X.3.1's exit criteria confirmed met and frozen this
-                         session. Phase X.3 as a whole is NOT complete — X.3.1 is its first
-                         sub-milestone only. X.3.2+ (the actual IKnowledgePlatform wiring) has
-                         not been started."
-next_milestone_blocker: "None technical — ADR-022 is ratified and this milestone's mapping
-                         layer is proven. Requires explicit human approval to begin X.3.2, per
+next_active_milestone: "Phase X.3.3 - Knowledge Resolution: Intent-Driven Orchestration (or any
+                        other later milestone)"
+next_milestone_status: "NOT AUTHORIZED. X.3.2's exit criteria confirmed met and frozen this
+                         session. Phase X.3 as a whole is NOT complete — X.3.1 and X.3.2 are its
+                         first two sub-milestones only. The intent-driven resolution strategy
+                         tying resolveKnowledge()/searchKnowledge() to IntentType, the caseItems
+                         wiring, and ADR-022 Decision 5's metadata parsing all remain."
+next_milestone_blocker: "None technical. Requires explicit human approval to begin X.3.3, per
                          this project's approval-gated milestone discipline."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.3.2 (or any other later milestone)."
+                        to begin Phase X.3.3 (or any other later milestone)."
 
 do_not:
-  - "Do not begin X.3.2 (Knowledge Resolution retrieval/wiring), X.3.3+, Tool Calling, MCP, or
-     Multi-Agent without explicit approval."
+  - "Do not begin X.3.3 (intent-driven orchestration), X.3.4+, Tool Calling, MCP, or Multi-Agent
+     without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
-     application,testing}/ (X.2 Batch A + X.3.1, frozen), src/ai/{domain,application,
-     infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen) outside of a
-     newly-approved milestone."
+     application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2, frozen), src/ai/{domain,
+     application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen)
+     outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -145,7 +149,11 @@ historical_sequence_to_reach_here:
      frozen-code changes needed for it"
   - "Phase X.3.1 (Knowledge Resolution: Pure Mapping) implemented: knowledgeReferenceTypes,
      toLegalBasisRef(), toKnowledgeItemRef(), architecture guard — full repo suite green
-     (13928 tests) — FROZEN — you are here"
+     (13928 tests) — FROZEN"
+  - "Phase X.3.2 (Knowledge Resolution: Retrieval & Wiring) implemented:
+     IKnowledgeRepository, KnowledgePlatformRepository (the sole IKnowledgePlatform importer),
+     architecture guard — proven against a real memory-backed platform + LegalProvider, not
+     just fixtures — full repo suite green (13943 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
