@@ -15,4 +15,20 @@ minute/documentation requirements.
   correct legal basis per acceptance type until the underlying code debt is resolved via a
   bridge layer.
 
+## Boundaries
+
+Documents the *correct* legal basis per type even where the frozen code (TD-01) currently
+applies the wrong one — this folder is allowed to state a fact more precisely than the code
+currently implements it, as long as the discrepancy itself is flagged, never silently ignored.
+
+## Ownership
+
+Owned by whoever maintains `src/acceptance/` and the `checklists` provider. Per
+[`../../KNOWLEDGE_BASE_EDITOR_GUIDE.md`](../../KNOWLEDGE_BASE_EDITOR_GUIDE.md).
+
+## Update Policy
+
+Additive, per [`../../DOCUMENTATION_CHANGE_POLICY.md`](../../DOCUMENTATION_CHANGE_POLICY.md).
+Update when TD-01 is resolved (remove the caveat) or when committee/minute rules change.
+
 **Related:** [`../checklists/README.md`](../checklists/README.md) · [`../../02_AI_CONTEXT/TECHNICAL_DEBT.md`](../../02_AI_CONTEXT/TECHNICAL_DEBT.md)

@@ -15,4 +15,19 @@ should eventually be reconciled with [`../../04_PROJECT_MEMORY/DECISION_HISTORY.
 - This folder is **append-only** — never edit a past entry to "correct" history; add a new
   entry noting the correction instead, per the project's own "never rewrite history" principle.
 
+## Boundaries
+
+Chronological pointers only — full narrative reasoning lives in
+[`../../04_PROJECT_MEMORY/DECISION_HISTORY.md`](../../04_PROJECT_MEMORY/DECISION_HISTORY.md);
+this folder never repeats that reasoning, only dates and links to it.
+
+## Ownership
+
+Owned by whoever maintains `app/.memory/decision-log.md`. This folder mirrors it, never leads it.
+
+## Update Policy
+
+Append-only, per Constitution Article III. A new entry per significant decision, dated, never
+edited after the fact.
+
 **Related:** [`../adr/README.md`](../adr/README.md) · [`../../04_PROJECT_MEMORY/DECISION_HISTORY.md`](../../04_PROJECT_MEMORY/DECISION_HISTORY.md)

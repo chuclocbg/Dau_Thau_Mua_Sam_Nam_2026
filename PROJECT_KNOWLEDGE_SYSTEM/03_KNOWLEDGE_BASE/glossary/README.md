@@ -15,4 +15,20 @@ the Project Docs glossary must never be expanded to duplicate this folder's even
   hand-maintained list, to avoid the two drifting apart.
 - Vietnamese-English pairs for every procurement/legal term used anywhere in the system.
 
+## Boundaries
+
+Exhaustive scope, sourced from `GlossaryProvider` data — this is the **only** folder allowed
+to hold the full term list; `01_PROJECT_DOCS/GLOSSARY.md` stays a curated ~50-term subset
+forever (per that file's own stated scope) and must never be expanded to compete with this one.
+
+## Ownership
+
+Owned by whoever maintains the `glossary` Knowledge Platform provider (`GlossaryProvider`).
+Per [`../../KNOWLEDGE_BASE_EDITOR_GUIDE.md`](../../KNOWLEDGE_BASE_EDITOR_GUIDE.md).
+
+## Update Policy
+
+Additive, per [`../../DOCUMENTATION_CHANGE_POLICY.md`](../../DOCUMENTATION_CHANGE_POLICY.md).
+Update when a new abbreviation or translation is added to the provider.
+
 **Related:** [`../ontology/README.md`](../ontology/README.md) · [`../../01_PROJECT_DOCS/GLOSSARY.md`](../../01_PROJECT_DOCS/GLOSSARY.md)

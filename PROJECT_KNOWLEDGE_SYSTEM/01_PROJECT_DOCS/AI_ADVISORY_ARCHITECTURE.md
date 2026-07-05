@@ -13,7 +13,9 @@ condensed, canonical summary of a much longer design/review/blueprint cycle — 
 detailed specs this design reconciles with.
 
 **Related:** [`../02_AI_CONTEXT/ARCHITECTURE_CONSTRAINTS.md`](../02_AI_CONTEXT/ARCHITECTURE_CONSTRAINTS.md) ·
-[`../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md`](../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md) · [Roadmap](ROADMAP.md)
+[`../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md`](../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md) · [Roadmap](ROADMAP.md) ·
+[Phase X ADR Draft 001](PHASE_X_ADR_DRAFT_001.md) · [AIContext Schema](AI_CONTEXT_SCHEMA.md) ·
+[Golden Question Methodology](GOLDEN_QUESTION_METHODOLOGY.md)
 
 ## Table of Contents
 
@@ -88,15 +90,19 @@ its own output gets reviewed.
 `AIContext` is the single, `Object.freeze()`-enforced boundary between the Reasoning Engine and
 everything downstream (Prompt Layer, LLM Adapter, Output Validator). No advisor, no LLM
 adapter, bypasses it. New fields must be optional and additive only — this contract, once
-implemented, is frozen the same way Knowledge Platform's core is frozen.
+implemented, is frozen the same way Knowledge Platform's core is frozen. Full field-by-field
+schema and the field-ownership registry (which pipeline stage populates which field):
+[`AI_CONTEXT_SCHEMA.md`](AI_CONTEXT_SCHEMA.md).
 
 ## Outstanding Design Issue (Must Resolve First)
 
 The pre-existing design docs assume `platform.resolveCases(question, context, limit)` — a
-signature that doesn't exist on the frozen `IKnowledgePlatform`. **Resolution (ADR-DRAFT-X01,
-not yet ratified):** use the platform's existing `searchKnowledge(text, domains, context,
-limit)` method instead — it already covers this exact need. **Zero changes to the frozen
-platform are required.** This must be ratified before Phase X.2 (Reasoning Engine) begins.
+signature that doesn't exist on the frozen `IKnowledgePlatform`. **Resolution (formalized in
+[Phase X ADR Draft 001](PHASE_X_ADR_DRAFT_001.md), decided but not yet ratified into
+`app/.memory/decision-index.md`):** use the platform's existing `searchKnowledge(text, domains,
+context, limit)` method instead — it already covers this exact need. **Zero changes to the
+frozen platform are required.** This must be ratified before Phase X.2 (Reasoning Engine)
+begins. Full Context/Decision/Alternatives/Consequences: [`PHASE_X_ADR_DRAFT_001.md`](PHASE_X_ADR_DRAFT_001.md).
 
 ## MCP and Multi-Agent — Gated, Not Built
 
@@ -128,6 +134,10 @@ Hallucination prevention (structural, via frozen `AIContext` + non-removable for
 clause) · citation enforcement (auto-redaction of any citation not traceable to context) ·
 pre-LLM confidence/human-review computation · prompt injection protection (retrieved content is
 always inert data, delimited, never treated as instructions) · session isolation (fresh
-`contextId` per turn, no cross-session leakage). Full detail and the complete risk register:
-see the Phase X Implementation Blueprint discussion preserved in
-[`../04_PROJECT_MEMORY/DECISION_HISTORY.md`](../04_PROJECT_MEMORY/DECISION_HISTORY.md).
+`contextId` per turn, no cross-session leakage). The reasoning behind each of these choices,
+and the alternatives rejected, is in [`../04_PROJECT_MEMORY/DECISION_HISTORY.md`](../04_PROJECT_MEMORY/DECISION_HISTORY.md)
+and [`../04_PROJECT_MEMORY/REJECTED_DESIGNS.md`](../04_PROJECT_MEMORY/REJECTED_DESIGNS.md).
+**Note:** a full itemized risk register (the "top 30 risks" produced during the original Phase X
+review cycle) was not persisted into this system as a standalone artifact — this is a known,
+tracked gap, not a claim that one exists here. Treat the safety mechanisms listed above as the
+current complete set of *decided* safeguards, not as an index into a longer risk list.

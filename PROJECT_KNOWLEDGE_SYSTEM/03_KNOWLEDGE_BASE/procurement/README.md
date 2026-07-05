@@ -15,4 +15,19 @@ Knowledge Platform provider (structured rule data).
 - Package-type-specific procurement guidance (goods, construction, consulting).
 - Cross-reference to [`legal/`](../legal/README.md) for the legal basis behind each rule.
 
+## Boundaries
+
+Rule *values* (thresholds) live only in the `procurement` Knowledge Platform provider as
+`KnowledgeItem` data — never hardcode them here; reference them.
+
+## Ownership
+
+Owned by whoever maintains `src/procurement/` and the `procurement`/`legal` providers. Per
+[`../../KNOWLEDGE_BASE_EDITOR_GUIDE.md`](../../KNOWLEDGE_BASE_EDITOR_GUIDE.md).
+
+## Update Policy
+
+Additive, per [`../../DOCUMENTATION_CHANGE_POLICY.md`](../../DOCUMENTATION_CHANGE_POLICY.md).
+Update when a procurement method or threshold rule changes in the provider data.
+
 **Related:** [`../../01_PROJECT_DOCS/BUSINESS_ARCHITECTURE.md`](../../01_PROJECT_DOCS/BUSINESS_ARCHITECTURE.md) · [`../legal/README.md`](../legal/README.md)

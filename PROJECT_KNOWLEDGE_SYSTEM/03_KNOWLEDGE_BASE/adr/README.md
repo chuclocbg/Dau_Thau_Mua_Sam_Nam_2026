@@ -17,11 +17,29 @@ mean two unrelated things. **Do not add a third ADR sequence here** — this fol
 ever link to `app/.memory/decision-index.md` as the single point of disambiguation, and to
 `app/docs/adr/` and `app/.memory/decisions/` for full text.
 
+## A Third, Deliberately Separate Sequence: Phase X ADR Drafts
+
+Since v1.0, Phase X ADR drafts have begun being persisted under
+[`../../01_PROJECT_DOCS/`](../../01_PROJECT_DOCS/) (e.g.
+[`PHASE_X_ADR_DRAFT_001.md`](../../01_PROJECT_DOCS/PHASE_X_ADR_DRAFT_001.md)), numbered `X01`,
+`X02`, etc. — **deliberately not** `ADR-00X`, specifically to avoid becoming a third instance
+of the numbering collision described above. These are DRAFT/DECIDED-but-unratified; formal
+ratification into `app/.memory/decision-index.md` is a separate, explicit action.
+
 ## Future Contents
 
-Once the numbering is reconciled (a tracked, low-effort fix — see
-[`../../02_AI_CONTEXT/TECHNICAL_DEBT.md`](../../02_AI_CONTEXT/TECHNICAL_DEBT.md)), this folder
-can hold a genuine unified index. Until then, treat `app/.memory/decision-index.md` as
-authoritative.
+Once the `docs/adr/` vs `.memory/decisions/` numbering is reconciled (a tracked, low-effort fix
+— see [`../../02_AI_CONTEXT/TECHNICAL_DEBT.md`](../../02_AI_CONTEXT/TECHNICAL_DEBT.md)), this
+folder can hold a genuine unified index. Until then, treat `app/.memory/decision-index.md` as
+authoritative for ratified ADRs, and `01_PROJECT_DOCS/PHASE_X_ADR_DRAFT_*.md` for pending ones.
+
+## Ownership
+
+Owned by whoever maintains `app/.memory/decision-index.md` (ratified ADRs) and whoever drafts
+new Phase X ADRs (drafts). This folder itself owns nothing — it is a pure index.
+
+## Update Policy
+
+Additive only. Add a link here when a new Phase X ADR draft is written; never restate its content.
 
 **Related:** [`../decision-log/README.md`](../decision-log/README.md) · [`../../04_PROJECT_MEMORY/DECISION_HISTORY.md`](../../04_PROJECT_MEMORY/DECISION_HISTORY.md)

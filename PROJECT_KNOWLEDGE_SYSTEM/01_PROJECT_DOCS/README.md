@@ -27,11 +27,14 @@ exists, rather than duplicating it.
 | 6 | [Domain Model](DOMAIN_MODEL.md) | Core entities, value objects, aggregates, bounded contexts |
 | 7 | [Knowledge Platform](KNOWLEDGE_PLATFORM.md) | The 16-provider Phase N platform, frozen v1.0 |
 | 8 | [AI Advisory Architecture](AI_ADVISORY_ARCHITECTURE.md) | The approved (not yet built) Phase X design |
-| 9 | [Development Guide](DEVELOPMENT_GUIDE.md) | How to build in this codebase without breaking it |
-| 10 | [Constitution](CONSTITUTION.md) | The non-negotiable rules governing every line of code |
-| 11 | [Roadmap](ROADMAP.md) | What's built, what's next, in what order, and why |
-| 12 | [Release History](RELEASE_HISTORY.md) | Every tagged release, what it contains |
-| 13 | [Glossary](GLOSSARY.md) | Every domain term, Vietnamese and English |
+| 9 | [Phase X ADR Draft 001](PHASE_X_ADR_DRAFT_001.md) | Knowledge retrieval strategy decision (formalized v1.1) |
+| 10 | [AIContext Schema](AI_CONTEXT_SCHEMA.md) | Phase X's frozen context contract, field-by-field (added v1.1) |
+| 11 | [Golden Question Methodology](GOLDEN_QUESTION_METHODOLOGY.md) | Phase X evaluation methodology across 10 domains (added v1.1) |
+| 12 | [Development Guide](DEVELOPMENT_GUIDE.md) | How to build in this codebase without breaking it |
+| 13 | [Constitution](CONSTITUTION.md) | The non-negotiable rules governing every line of code |
+| 14 | [Roadmap](ROADMAP.md) | What's built, what's next, in what order, and why |
+| 15 | [Release History](RELEASE_HISTORY.md) | Every tagged release, what it contains |
+| 16 | [Glossary](GLOSSARY.md) | Every domain term, Vietnamese and English |
 
 ---
 

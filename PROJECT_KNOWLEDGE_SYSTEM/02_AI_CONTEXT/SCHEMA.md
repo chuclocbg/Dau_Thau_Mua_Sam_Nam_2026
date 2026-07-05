@@ -45,15 +45,25 @@ heading in every file.
 
 ```yaml
 owns:
-  CURRENT_RELEASE.md:      [test_file_count, test_count, pass_rate, release_tag, tag_commit]
-  CURRENT_MILESTONE.md:    [current_milestone_name, next_milestone_name, milestone_blockers]
-  REPOSITORY_CONTEXT.md:   [naming_collisions, directory_layout, git_facts]
-  FREEZE_STATUS.md:        [frozen_module_list, extension_mechanism_rules]
-  TECHNICAL_DEBT.md:       [open_debt_items_snapshot]     # historical narrative lives in
-                                                            # ../04_PROJECT_MEMORY/KNOWN_TECHNICAL_DEBT.md
-  KNOWN_RISKS.md:          [current_risk_register]
-  NEXT_APPROVED_PHASE.md:  [phase_x_status, approved_scope]
+  SYSTEM_CONTEXT.md:            [system_name, tech_stack, repository_layout, git_state]
+  REPOSITORY_CONTEXT.md:        [naming_collisions, directory_layout, git_facts]
+  FREEZE_STATUS.md:             [frozen_module_list, extension_mechanism_rules]
+  CURRENT_MILESTONE.md:         [current_milestone_name, next_milestone_name, milestone_blockers]
+  CURRENT_RELEASE.md:           [test_file_count, test_count, pass_rate, release_tag, tag_commit]
+  ARCHITECTURE_CONSTRAINTS.md:  [load_bearing_architectural_rulings, constraint_ids_C01_C10]
+  CODING_RULES.md:              [naming_conventions, test_location, known_eslint_gap]
+  REPOSITORY_RULES.md:          [branching_model, commit_conventions, tagging_format]
+  DEPENDENCY_RULES.md:          [layer_order, import_direction_rules]
+  DDD_RULES.md:                 [bounded_contexts, aggregate_roots, value_objects]
+  TECHNICAL_DEBT.md:            [open_debt_items_snapshot]     # historical narrative lives in
+                                                                 # ../04_PROJECT_MEMORY/KNOWN_TECHNICAL_DEBT.md
+  KNOWN_RISKS.md:                [current_risk_register]
+  NEXT_APPROVED_PHASE.md:        [phase_x_status, approved_scope]
 ```
+
+*(Completeness check: this map must list all 13 named files in this folder — verified 13/13
+present as of this update. Previously incomplete (7/13); found and fixed during the
+Documentation Completion Sprint following the Zero-Knowledge Validation audit.)*
 
 Any file that needs one of these facts **links to the owner**, using `owner_file:` in its own
 Machine Context block, rather than restating the value.
