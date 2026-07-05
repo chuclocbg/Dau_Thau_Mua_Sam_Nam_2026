@@ -19,74 +19,59 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.4 - Output Validation - FROZEN"
+current_milestone: "Phase X.3.1 - Knowledge Resolution: Pure Mapping - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-05
-milestone_numbering_note: "Requested this round as 'Phase X.3 - Output Validation', but
-                           PHASE_X_EXECUTION_PLAN.md and this file both consistently number
-                           Output Validation as X.4 — X.3 is Knowledge Resolution, blocked on
-                           ADR-DRAFT-X01 ratification. The requested scope (sits after the LLM
-                           Adapter, before the final answer; explicitly excludes Knowledge
-                           Platform integration) is unambiguously X.4's content, not X.3's —
-                           implemented as X.4, flagged transparently, not treated as blocking."
 milestone_evidence:
-  scope: "src/ai/validation/ — validationTypes (AIValidationResult + 13 issue types),
-         CitationValidator, ConfidenceValidator, LegalConsistencyValidator, OutputValidator
-         (orchestrator + structural checks: malformed output, missing sections, formatting,
-         language, completeness, forbidden patterns), ResponseFormatter, ValidationPipeline"
-  scope_exclusion: "No Tool Calling, no MCP, no Multi-Agent, no Knowledge Platform integration,
-                    no X.3 Knowledge Resolution. Internal validation only — no external services."
-  files_added: "7 implementation files + 7 test files (58 tests)"
-  full_suite_result: "423 test files, 13913 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 416 files / 13855 tests at the Batch B baseline"
-  exit_criteria_met: "100% catch rate against a 6-case adversarial fixture set (hallucinated
-                      citation, numeric drift, decision contradiction, truncated response,
-                      forbidden pattern, malformed output), zero exceptions; a regression test
-                      confirms a clean, well-grounded answer is not over-triggered. Architecture
-                      guard suite (8 tests) confirms dependency direction and zero imports from
-                      Knowledge Platform/MCP/Conversation/providers/Reasoning."
-  frozen_interfaces_touched: "None. AIContext (Batch B) consumed read-only. AIContextBuilder,
-                              PromptBuilder, PromptRenderer, ClaudeLLMAdapter untouched — verified
-                              by git diff and by architecture-guard marker checks."
-  naming_collisions_avoided: "AIValidationResult (vs FOUR unrelated pre-existing ValidationResult
-                              types in src/framework/, src/orchestrator/, src/shared/financial/,
-                              src/procurement/workflow/) — the most collision-prone name found in
-                              this project so far, per the grep-first naming rule."
-  real_bugs_found_and_fixed: "(1) Keyword extraction used JS's ASCII-only \\W, which shredded
-                              Vietnamese diacritic words apart at every accented vowel — fixed
-                              with \\p{L}/\\p{N} Unicode property escapes. (2) NUMERIC_INCONSISTENCY
-                              (HIGH severity) never triggered humanReviewRequired or any visible
-                              flag at all, silently letting a wrong legal percentage reach the
-                              user — fixed by requiring review on any CRITICAL or HIGH issue, per
-                              validation.md's own 'flag as humanReviewRecommended' guidance for
-                              this exact check."
+  scope: "src/reasoning/domain/knowledgeReferenceTypes.ts (KnowledgeReference,
+         KnowledgeReferenceLegalBasis, KnowledgeReferenceEffectivePeriod — a structural mirror
+         of the real KnowledgeItem/LegalBasis, defined independently, zero import from
+         src/knowledge/ or src/shared/financial/); src/reasoning/application/
+         knowledgeReferenceMapper.ts (toLegalBasisRef(), toKnowledgeItemRef() — per ADR-022
+         Decisions 3-4). Pure mapping only — no retrieval, search, ranking, conflict
+         resolution, effectivePeriod filtering, or repository queries."
+  scope_exclusion: "This is X.3.1 only, not all of X.3. Deferred to later X.3.x sub-milestones:
+                    the actual IKnowledgePlatform wiring/searchKnowledge()/resolveX() calls,
+                    the intent-driven resolution strategy, the caseItems scoping decision
+                    (PHASE_X3_ARCHITECTURE_REVIEW.md §1.6), and ADR-022 Decision 5's rule/
+                    threshold metadata JSON parsing."
+  files_added: "2 implementation files + 2 test files (15 tests)"
+  full_suite_result: "425 test files, 13928 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 423 files / 13913 tests at the X.4 baseline"
+  exit_criteria_met: "toLegalBasisRef()/toKnowledgeItemRef() proven correct: document->
+                      documentSymbol rename, extra LegalBasis fields dropped, effectivePeriod
+                      present vs. absent (createdAt-fallback, flagged via
+                      effectivePeriodAssumedFromCreation, never a fabricated date), metadata
+                      passthrough, empty-array handling. Architecture guard (4 tests) confirms
+                      zero imports from Knowledge Platform/MCP/financial/conversation/providers,
+                      zero IKnowledgePlatform references, and that Conversation Core/Reasoning
+                      Core/AI Context/Prompt Builder/Prompt Renderer/LLM Adapter/Output
+                      Validation all still carry their own frozen-milestone markers unmodified."
+  frozen_interfaces_touched: "None. legalReasoningEngine.ts and reasoningTypes.ts (Batch A)
+                              consumed read-only (KnowledgeItemRef/LegalBasisRef are the mapping
+                              targets, never redefined) — verified by git diff."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.3 - Knowledge Resolution (or any other later milestone)"
-next_milestone_status: "NOT AUTHORIZED. X.4's exit criteria confirmed met and frozen this
-                         session. No later milestone (X.3 Knowledge Resolution, Tool Calling,
-                         MCP, Multi-Agent) has been started."
-next_milestone_blocker: "RESOLVED 2026-07-05: ADR-DRAFT-X01 ratified as ADR-022 in
-                         app/.memory/decision-index.md (see PROJECT_KNOWLEDGE_SYSTEM/
-                         01_PROJECT_DOCS/ADR-X01_FINAL.md for the ratified final-draft record,
-                         and PHASE_X3_READINESS_REVIEW.md for the readiness review that found
-                         the three additional integration-shape gaps the ratified ADR closes).
-                         X.3's one named blocker is cleared. Ratification is a governance action
-                         only — it does not itself authorize beginning X.3 implementation, which
-                         still requires its own explicit human approval, per this project's
-                         approval-gated milestone discipline."
+next_active_milestone: "Phase X.3.2 - Knowledge Resolution: Retrieval & Wiring (or any other
+                        later milestone)"
+next_milestone_status: "NOT AUTHORIZED. X.3.1's exit criteria confirmed met and frozen this
+                         session. Phase X.3 as a whole is NOT complete — X.3.1 is its first
+                         sub-milestone only. X.3.2+ (the actual IKnowledgePlatform wiring) has
+                         not been started."
+next_milestone_blocker: "None technical — ADR-022 is ratified and this milestone's mapping
+                         layer is proven. Requires explicit human approval to begin X.3.2, per
+                         this project's approval-gated milestone discipline."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.3 (Knowledge Resolution) implementation — its blocker
-                        is cleared but starting it is a separate authorization."
+                        to begin Phase X.3.2 (or any other later milestone)."
 
 do_not:
-  - "Do not begin X.3 (Knowledge Resolution), Tool Calling, MCP, or Multi-Agent without explicit
-     approval."
+  - "Do not begin X.3.2 (Knowledge Resolution retrieval/wiring), X.3.3+, Tool Calling, MCP, or
+     Multi-Agent without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
-     application,testing}/ (X.2 Batch A, frozen), src/ai/{domain,application,infrastructure}/
-     (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen) outside of a newly-approved
-     milestone."
+     application,testing}/ (X.2 Batch A + X.3.1, frozen), src/ai/{domain,application,
+     infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen) outside of a
+     newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -153,7 +138,14 @@ historical_sequence_to_reach_here:
      temporal-filtering gap in searchKnowledge(), plus 2 field-shape mappings) — GO recommended"
   - "ADR-X01_FINAL ratified 2026-07-05 as ADR-022 in app/.memory/decision-index.md; original
      draft PHASE_X_ADR_DRAFT_001.md marked SUPERSEDED; X.3's one named blocker cleared —
-     governance action only, does not itself authorize starting X.3 — you are here"
+     governance action only, does not itself authorize starting X.3"
+  - "PHASE_X3_ARCHITECTURE_REVIEW.md produced: found ADR-022's 'searchKnowledge() results never
+     PRIMARY_BASIS' guarantee holds by construction (legalReasoningEngine.ts's candidate set
+     reads only legalItems/schoolPolicyItems — a new caseItems field is never seen), zero
+     frozen-code changes needed for it"
+  - "Phase X.3.1 (Knowledge Resolution: Pure Mapping) implemented: knowledgeReferenceTypes,
+     toLegalBasisRef(), toKnowledgeItemRef(), architecture guard — full repo suite green
+     (13928 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

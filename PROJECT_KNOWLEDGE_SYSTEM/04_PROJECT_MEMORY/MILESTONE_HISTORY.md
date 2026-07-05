@@ -7,10 +7,31 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4 — Output Validation — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.3.1 — Knowledge Resolution: Pure Mapping — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4 — Output Validation — declared 2026-07-05 (superseded by Phase X.3.1)
+
+**Evidence:** 423 test files, 13,913 tests, 0 failures at freeze time; 100% adversarial-fixture
+catch rate (hallucinated citation, numeric drift, decision contradiction, truncated response,
+forbidden pattern, malformed output), zero exceptions.
+
+**Summary:** Implemented `CitationValidator`, `ConfidenceValidator`, `LegalConsistencyValidator`,
+`OutputValidator` (orchestrator + structural checks), `ResponseFormatter`, `ValidationPipeline`.
+Requested as "Phase X.3" but numbered X.4 per `PHASE_X_EXECUTION_PLAN.md`'s consistent numbering
+(X.3 is Knowledge Resolution, blocked at the time on ADR ratification) — reconciled
+transparently in `CURRENT_MILESTONE.md`, not treated as a blocker. Two real bugs found and
+fixed: JS's ASCII-only `\W` shredding Vietnamese diacritic words in keyword extraction, and
+`NUMERIC_INCONSISTENCY` (HIGH severity) never triggering any human-review flag at all. Tagged
+`phase-x.4-output-validation`. Followed by: `PHASE_X3_READINESS_REVIEW.md` (NO-GO, sole blocker
+ADR-DRAFT-X01 unratified) → `ADR-X01_FINAL.md` (critical re-review, closed 3 new gaps, GO) →
+ratified 2026-07-05 as ADR-022 → `PHASE_X3_ARCHITECTURE_REVIEW.md` (clarified that ADR-022's
+"never PRIMARY_BASIS" guarantee for `searchKnowledge()`-sourced items holds by construction,
+zero touches to frozen `legalReasoningEngine.ts` needed) → Phase X.3.1 authorized.
 
 ---
 
