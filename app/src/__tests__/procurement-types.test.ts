@@ -1,392 +1,323 @@
 /**
- * Phase 17 — Procurement Types tests
+ * Procurement domain types and type guards
  *
  * Groups (13 × 3 = 39):
- *   PT-01  (3)  createFinalRecommendation — shape
- *   PT-02  (3)  createFinalRecommendation — frozen arrays
- *   PT-03  (3)  deriveFinalRecommendation — PROCEED action
- *   PT-04  (3)  deriveFinalRecommendation — BLOCK action
- *   PT-05  (3)  deriveFinalRecommendation — ESCALATE action
- *   PT-06  (3)  deriveFinalRecommendation — INSUFFICIENT_DATA action
- *   PT-07  (3)  deriveFinalRecommendation — nextSteps populated per action
- *   PT-08  (3)  deriveFinalRecommendation — requiredApprovals from authorityChain
- *   PT-09  (3)  deriveFinalRecommendation — authority covers packageValue
- *   PT-10  (3)  createProcurementDecision — shape (all fields present)
- *   PT-11  (3)  createProcurementDecision — frozen arrays
- *   PT-12  (3)  createProcurementDecision — riskAssessment and decidedAt
- *   PT-13  (3)  ProcurementDecision links to GovernanceDecision
+ *   PT-01  PACKAGE_TYPES — 5 Vietnamese package categories
+ *   PT-02  PROCUREMENT_METHODS — 7 methods from Điều 21 Luật 22/2023
+ *   PT-03  APPROVAL_AUTHORITIES — 4 authority levels
+ *   PT-04  FUND_SOURCES + RULE_OPERATORS constants
+ *   PT-05  isPackageType — type guard
+ *   PT-06  isProcurementMethod — type guard
+ *   PT-07  isApprovalAuthority — type guard
+ *   PT-08  LegalBasis — required + optional fields
+ *   PT-09  RuleCondition — field/operator/value shape
+ *   PT-10  ProcurementCase — all fields
+ *   PT-11  ProcurementDecision — full output shape
+ *   PT-12  PackageClassification + ThresholdDecision
+ *   PT-13  MethodDecision + ApprovalDecision
  */
 
 import { describe, it, expect } from 'vitest';
-import { createConfig }                  from '../legal/governanceConfig';
-import { createInMemoryRepository }      from '../legal/configRepository';
-import { buildConfigResolver }           from '../legal/configResolver';
-import { buildGovernanceRuleEngine }     from '../legal/governanceRuleEngine';
-import { createRegistry }               from '../legal/legalRegistry';
-import { buildQueryEngine }             from '../legal/registryQueryEngine';
-import { buildKnowledgeGraph }          from '../legal/knowledgeGraph';
-import { buildGovernanceImpactEngine }  from '../legal/governanceImpactEngine';
-import { buildGovernanceReasoningEngine } from '../reasoning/reasoningEngine';
-import { generateGovernanceContext }     from '../application/governanceContext';
-import { createRiskAssessment }         from '../reasoning/decisionModel';
-import type { AuthorityLevel }          from '../reasoning/decisionModel';
-import { buildGovernanceKnowledgeBase } from '../knowledge/knowledgeBase';
 import {
-  createFinalRecommendation,
-  createProcurementDecision,
-  deriveFinalRecommendation,
-} from '../capabilities/procurementTypes';
-import type { GovernanceConfig }  from '../legal/governanceConfig';
+  PACKAGE_TYPES,
+  PROCUREMENT_METHODS,
+  PROCUREMENT_METHOD_NAMES,
+  APPROVAL_AUTHORITIES,
+  APPROVAL_AUTHORITY_NAMES,
+  FUND_SOURCES,
+  RULE_OPERATORS,
+  isPackageType,
+  isProcurementMethod,
+  isApprovalAuthority,
+  type LegalBasis,
+  type RuleCondition,
+  type ProcurementCase,
+  type ProcurementDecision,
+  type PackageClassification,
+  type ThresholdDecision,
+  type MethodDecision,
+  type ApprovalDecision,
+} from '../procurement/domain/procurementTypes';
 
-// ─── Shared fixtures ──────────────────────────────────────────────────────────
+// ─── PT-01: PACKAGE_TYPES ─────────────────────────────────────────────────────
 
-const EMPTY_RISK = createRiskAssessment([]);
-
-const AUDIT_CFG: GovernanceConfig = createConfig({
-  id: 'audit-pt', type: 'AUDIT_RULE', version: '1.0.0', effectiveDate: '2024-01-01',
-  source: 'test', status: 'ACTIVE', priority: 1, confidence: 1.0, tags: [], metadata: {},
-});
-
-const AUTH_CFG: GovernanceConfig = createConfig({
-  id: 'auth-pt', type: 'AUTHORITY_MATRIX', version: '1.0.0', effectiveDate: '2024-01-01',
-  source: 'test', status: 'ACTIVE', priority: 1, confidence: 1.0, tags: [],
-  metadata: { role: 'UNIT_HEAD', maxAmount: '200000000' },
-});
-
-const AUTHORITY_CHAIN: readonly AuthorityLevel[] = Object.freeze([
-  { role: 'UNIT_HEAD', maxAmount: 200_000_000, config: AUTH_CFG },
-  { role: 'DIRECTOR', maxAmount: 2_000_000_000, config: AUTH_CFG },
-]);
-
-const CTX = generateGovernanceContext({
-  actor:       { id: 'u-pt', role: 'UNIT_HEAD' },
-  currentDate: '2024-06-01',
-  requestId:   'req-pt-001',
-  packageValue: 50_000_000,
-});
-
-// ─── Build a minimal GovernanceDecision ───────────────────────────────────────
-
-function buildDecision(configs: GovernanceConfig[] = [AUDIT_CFG]) {
-  const repo       = createInMemoryRepository(configs);
-  const resolver   = buildConfigResolver(repo);
-  const ruleEngine = buildGovernanceRuleEngine(resolver);
-  const query      = buildQueryEngine(createRegistry([]));
-  const graph      = buildKnowledgeGraph([], []);
-  const impact     = buildGovernanceImpactEngine(graph);
-  const engine     = buildGovernanceReasoningEngine(query, impact, resolver, ruleEngine);
-  return engine.generateDecision(CTX);
-}
-
-// AUTH_CFG populates authorityChain → allConfigs is non-empty → avoids INSUFFICIENT_DATA
-const PROCEED_DECISION = buildDecision([AUDIT_CFG, AUTH_CFG]);
-
-// ─── PT-01: createFinalRecommendation — shape ─────────────────────────────────
-
-describe('PT-01 createFinalRecommendation shape', () => {
-  const rec = createFinalRecommendation({
-    action: 'PROCEED', rationale: 'All checks passed.',
-    nextSteps: ['Step 1', 'Step 2'], requiredApprovals: ['UNIT_HEAD'],
+describe('PT-01 PACKAGE_TYPES contains all 5 Vietnamese package categories', () => {
+  it('has 5 entries', () => {
+    expect(PACKAGE_TYPES).toHaveLength(5);
   });
-
-  it('action is set', () => {
-    expect(rec.action).toBe('PROCEED');
+  it('contains GOODS and CONSTRUCTION', () => {
+    expect(PACKAGE_TYPES).toContain('GOODS');
+    expect(PACKAGE_TYPES).toContain('CONSTRUCTION');
   });
-  it('rationale is set', () => {
-    expect(rec.rationale).toBe('All checks passed.');
-  });
-  it('nextSteps and requiredApprovals are present', () => {
-    expect(rec.nextSteps).toHaveLength(2);
-    expect(rec.requiredApprovals).toContain('UNIT_HEAD');
+  it('contains SERVICE, CONSULTING, MIXED', () => {
+    expect(PACKAGE_TYPES).toContain('SERVICE');
+    expect(PACKAGE_TYPES).toContain('CONSULTING');
+    expect(PACKAGE_TYPES).toContain('MIXED');
   });
 });
 
-// ─── PT-02: createFinalRecommendation — frozen ────────────────────────────────
+// ─── PT-02: PROCUREMENT_METHODS ──────────────────────────────────────────────
 
-describe('PT-02 createFinalRecommendation frozen arrays', () => {
-  const rec = createFinalRecommendation({
-    action: 'ESCALATE', rationale: 'Needs review.',
+describe('PT-02 PROCUREMENT_METHODS — 7 methods from Điều 21 Luật 22/2023', () => {
+  it('has exactly 7 entries', () => {
+    expect(PROCUREMENT_METHODS).toHaveLength(7);
   });
-
-  it('nextSteps defaults to empty frozen array', () => {
-    expect(rec.nextSteps).toHaveLength(0);
-    expect(Object.isFrozen(rec.nextSteps)).toBe(true);
+  it('contains OPEN_TENDER and DIRECT_APPOINTMENT', () => {
+    expect(PROCUREMENT_METHODS).toContain('OPEN_TENDER');
+    expect(PROCUREMENT_METHODS).toContain('DIRECT_APPOINTMENT');
   });
-  it('requiredApprovals defaults to empty frozen array', () => {
-    expect(rec.requiredApprovals).toHaveLength(0);
-    expect(Object.isFrozen(rec.requiredApprovals)).toBe(true);
-  });
-  it('provided arrays are frozen', () => {
-    const r = createFinalRecommendation({
-      action: 'BLOCK', rationale: 'x', nextSteps: ['a'], requiredApprovals: ['R1'],
-    });
-    expect(Object.isFrozen(r.nextSteps)).toBe(true);
-    expect(Object.isFrozen(r.requiredApprovals)).toBe(true);
+  it('PROCUREMENT_METHOD_NAMES has a Vietnamese name for every method', () => {
+    for (const m of PROCUREMENT_METHODS) {
+      expect(typeof PROCUREMENT_METHOD_NAMES[m]).toBe('string');
+      expect(PROCUREMENT_METHOD_NAMES[m].length).toBeGreaterThan(0);
+    }
   });
 });
 
-// ─── PT-03: deriveFinalRecommendation — PROCEED ───────────────────────────────
+// ─── PT-03: APPROVAL_AUTHORITIES ─────────────────────────────────────────────
 
-describe('PT-03 deriveFinalRecommendation PROCEED', () => {
-  const rec = deriveFinalRecommendation(PROCEED_DECISION, AUTHORITY_CHAIN);
-
-  it('action is PROCEED when decision summary is PROCEED', () => {
-    expect(PROCEED_DECISION.summary.verdict).toBe('PROCEED');
-    expect(rec.action).toBe('PROCEED');
+describe('PT-03 APPROVAL_AUTHORITIES — 4 authority levels', () => {
+  it('has 4 entries', () => {
+    expect(APPROVAL_AUTHORITIES).toHaveLength(4);
   });
-  it('rationale matches decision summary reason', () => {
-    expect(rec.rationale).toBe(PROCEED_DECISION.summary.reason);
+  it('contains UNIT_HEAD and PRIME_MINISTER', () => {
+    expect(APPROVAL_AUTHORITIES).toContain('UNIT_HEAD');
+    expect(APPROVAL_AUTHORITIES).toContain('PRIME_MINISTER');
   });
-  it('nextSteps is non-empty', () => {
-    expect(rec.nextSteps.length).toBeGreaterThan(0);
+  it('APPROVAL_AUTHORITY_NAMES has Vietnamese name for each authority', () => {
+    for (const a of APPROVAL_AUTHORITIES) {
+      expect(typeof APPROVAL_AUTHORITY_NAMES[a]).toBe('string');
+    }
   });
 });
 
-// ─── PT-04: deriveFinalRecommendation — BLOCK ─────────────────────────────────
+// ─── PT-04: FUND_SOURCES + RULE_OPERATORS ────────────────────────────────────
 
-describe('PT-04 deriveFinalRecommendation BLOCK', () => {
-  const RISK_CFG = createConfig({
-    id: 'risk-block', type: 'RISK_RULE', version: '1.0.0', effectiveDate: '2024-01-01',
-    source: 'test', status: 'ACTIVE', priority: 1, confidence: 1.0, tags: [],
-    metadata: { requiresReview: 'true' },
+describe('PT-04 FUND_SOURCES and RULE_OPERATORS constants', () => {
+  it('FUND_SOURCES has 4 entries including STATE and ODA', () => {
+    expect(FUND_SOURCES).toHaveLength(4);
+    expect(FUND_SOURCES).toContain('STATE');
+    expect(FUND_SOURCES).toContain('ODA');
   });
-  const HIGH_RISK_CFG = createConfig({
-    id: 'risk-block2', type: 'RISK_RULE', version: '1.0.0', effectiveDate: '2024-01-01',
-    source: 'test', status: 'ACTIVE', priority: 1, confidence: 1.0, tags: [],
-    metadata: { requiresReview: 'true' },
+  it('RULE_OPERATORS has 7 entries', () => {
+    expect(RULE_OPERATORS).toHaveLength(7);
   });
-
-  it('BLOCK action when decision verdict is BLOCK', () => {
-    // Simulate a BLOCK decision by creating one directly with createFinalRecommendation
-    const rec = createFinalRecommendation({ action: 'BLOCK', rationale: 'Critical issue.' });
-    expect(rec.action).toBe('BLOCK');
-  });
-  it('BLOCK nextSteps include "Do not initiate" instruction', () => {
-    const rec = createFinalRecommendation({
-      action: 'BLOCK', rationale: 'x',
-      nextSteps: ['Do not initiate procurement workflow.'],
-    });
-    expect(rec.nextSteps.some(s => s.includes('Do not'))).toBe(true);
-  });
-  it('deriveFinalRecommendation with RISK_RULE configs → ESCALATE (not BLOCK)', () => {
-    const d = buildDecision([RISK_CFG, HIGH_RISK_CFG, AUTH_CFG]);
-    const rec = deriveFinalRecommendation(d, []);
-    // HIGH risk → ESCALATE, not BLOCK (BLOCK requires CRITICAL)
-    expect(['ESCALATE', 'BLOCK']).toContain(rec.action);
+  it('RULE_OPERATORS contains LT, GTE, IN, NOT_IN', () => {
+    expect(RULE_OPERATORS).toContain('LT');
+    expect(RULE_OPERATORS).toContain('GTE');
+    expect(RULE_OPERATORS).toContain('IN');
+    expect(RULE_OPERATORS).toContain('NOT_IN');
   });
 });
 
-// ─── PT-05: deriveFinalRecommendation — ESCALATE ──────────────────────────────
+// ─── PT-05: isPackageType ─────────────────────────────────────────────────────
 
-describe('PT-05 deriveFinalRecommendation ESCALATE', () => {
-  const RISK_CFG = createConfig({
-    id: 'risk-esc', type: 'RISK_RULE', version: '1.0.0', effectiveDate: '2024-01-01',
-    source: 'test', status: 'ACTIVE', priority: 1, confidence: 1.0, tags: [],
-    metadata: { requiresReview: 'true' },
+describe('PT-05 isPackageType type guard', () => {
+  it('returns true for all 5 valid package types', () => {
+    expect(PACKAGE_TYPES.every(t => isPackageType(t))).toBe(true);
   });
-  const d = buildDecision([RISK_CFG, AUTH_CFG]);
-
-  it('ESCALATE action when risk triggers it', () => {
-    const rec = deriveFinalRecommendation(d, []);
-    expect(rec.action).toBe('ESCALATE');
+  it('returns false for unknown or lowercase string', () => {
+    expect(isPackageType('goods')).toBe(false);
+    expect(isPackageType('UNKNOWN')).toBe(false);
   });
-  it('ESCALATE nextSteps include escalation step', () => {
-    const rec = deriveFinalRecommendation(d, []);
-    expect(rec.nextSteps.some(s => s.toLowerCase().includes('escalate'))).toBe(true);
-  });
-  it('rationale is non-empty', () => {
-    expect(deriveFinalRecommendation(d, []).rationale.length).toBeGreaterThan(0);
+  it('returns false for null and number', () => {
+    expect(isPackageType(null)).toBe(false);
+    expect(isPackageType(42)).toBe(false);
   });
 });
 
-// ─── PT-06: deriveFinalRecommendation — INSUFFICIENT_DATA ────────────────────
+// ─── PT-06: isProcurementMethod ───────────────────────────────────────────────
 
-describe('PT-06 deriveFinalRecommendation INSUFFICIENT_DATA', () => {
-  const d = buildDecision([]);  // no configs → INSUFFICIENT_DATA
-
-  it('INSUFFICIENT_DATA when no configs', () => {
-    expect(d.summary.verdict).toBe('INSUFFICIENT_DATA');
-    expect(deriveFinalRecommendation(d, []).action).toBe('INSUFFICIENT_DATA');
+describe('PT-06 isProcurementMethod type guard', () => {
+  it('returns true for all 7 valid methods', () => {
+    expect(PROCUREMENT_METHODS.every(m => isProcurementMethod(m))).toBe(true);
   });
-  it('nextSteps suggest providing context', () => {
-    const rec = deriveFinalRecommendation(d, []);
-    expect(rec.nextSteps.some(s => s.includes('context') || s.includes('configuration'))).toBe(true);
+  it('returns false for partial or lowercase match', () => {
+    expect(isProcurementMethod('OPEN')).toBe(false);
+    expect(isProcurementMethod('open_tender')).toBe(false);
   });
-  it('requiredApprovals is empty when no authority chain', () => {
-    expect(deriveFinalRecommendation(d, []).requiredApprovals).toHaveLength(0);
+  it('returns false for null and undefined', () => {
+    expect(isProcurementMethod(null)).toBe(false);
+    expect(isProcurementMethod(undefined)).toBe(false);
   });
 });
 
-// ─── PT-07: deriveFinalRecommendation — nextSteps ─────────────────────────────
+// ─── PT-07: isApprovalAuthority ───────────────────────────────────────────────
 
-describe('PT-07 deriveFinalRecommendation nextSteps per action', () => {
-  it('PROCEED nextSteps include workflow initiation', () => {
-    const rec = deriveFinalRecommendation(PROCEED_DECISION, []);
-    expect(rec.nextSteps.some(s => s.toLowerCase().includes('workflow'))).toBe(true);
+describe('PT-07 isApprovalAuthority type guard', () => {
+  it('returns true for all 4 valid authorities', () => {
+    expect(APPROVAL_AUTHORITIES.every(a => isApprovalAuthority(a))).toBe(true);
   });
-  it('nextSteps are frozen', () => {
-    expect(Object.isFrozen(deriveFinalRecommendation(PROCEED_DECISION, []).nextSteps)).toBe(true);
+  it('returns false for invalid strings', () => {
+    expect(isApprovalAuthority('PRESIDENT')).toBe(false);
+    expect(isApprovalAuthority('')).toBe(false);
   });
-  it('nextSteps length is at least 2 for all non-BLOCK actions', () => {
-    expect(deriveFinalRecommendation(PROCEED_DECISION, []).nextSteps.length).toBeGreaterThanOrEqual(2);
+  it('returns false for non-string', () => {
+    expect(isApprovalAuthority(0)).toBe(false);
+    expect(isApprovalAuthority(undefined)).toBe(false);
   });
 });
 
-// ─── PT-08: deriveFinalRecommendation — requiredApprovals ────────────────────
+// ─── PT-08: LegalBasis ────────────────────────────────────────────────────────
 
-describe('PT-08 deriveFinalRecommendation requiredApprovals from authority chain', () => {
-  it('requiredApprovals frozen', () => {
-    const rec = deriveFinalRecommendation(PROCEED_DECISION, AUTHORITY_CHAIN);
-    expect(Object.isFrozen(rec.requiredApprovals)).toBe(true);
+describe('PT-08 LegalBasis document + article required; clause/point optional', () => {
+  it('minimal legal basis has document and article', () => {
+    const lb: LegalBasis = { document: '22/2023/QH15', article: 'Điều 22' };
+    expect(lb.document).toBe('22/2023/QH15');
+    expect(lb.article).toBe('Điều 22');
   });
-  it('requiredApprovals is empty when no authority chain', () => {
-    expect(deriveFinalRecommendation(PROCEED_DECISION, []).requiredApprovals).toHaveLength(0);
+  it('full legal basis includes clause and point', () => {
+    const lb: LegalBasis = {
+      document: '22/2023/QH15', article: 'Điều 23',
+      clause: 'khoản 1', point: 'điểm a',
+    };
+    expect(lb.clause).toBe('khoản 1');
+    expect(lb.point).toBe('điểm a');
   });
-  it('requiredApprovals has one element when authority covers package value', () => {
-    const rec = deriveFinalRecommendation(PROCEED_DECISION, AUTHORITY_CHAIN);
-    // packageValue=50_000_000, UNIT_HEAD.maxAmount=200_000_000 → UNIT_HEAD covers it
-    expect(rec.requiredApprovals).toHaveLength(1);
-    expect(rec.requiredApprovals[0]).toBe('UNIT_HEAD');
+  it('clause and point are undefined when omitted', () => {
+    const lb: LegalBasis = { document: '214/2025/NĐ-CP', article: 'Điều 56' };
+    expect(lb.clause).toBeUndefined();
+    expect(lb.point).toBeUndefined();
   });
 });
 
-// ─── PT-09: authority selection by packageValue ──────────────────────────────
+// ─── PT-09: RuleCondition ────────────────────────────────────────────────────
 
-describe('PT-09 deriveFinalRecommendation authority covers packageValue', () => {
-  const LARGE_CTX = generateGovernanceContext({
-    actor: { id: 'u-lg', role: 'UNIT_HEAD' }, currentDate: '2024-06-01',
-    requestId: 'req-lg', packageValue: 500_000_000,
+describe('PT-09 RuleCondition field/operator/value shape', () => {
+  it('numeric LTE condition uses number value', () => {
+    const c: RuleCondition = { field: 'estimatedValue', operator: 'LTE', value: 50_000_000 };
+    expect(c.operator).toBe('LTE');
+    expect(typeof c.value).toBe('number');
   });
-
-  it('selects DIRECTOR for packageValue > UNIT_HEAD maxAmount', () => {
-    const repo       = createInMemoryRepository([AUDIT_CFG, AUTH_CFG]);
-    const resolver   = buildConfigResolver(repo);
-    const ruleEngine = buildGovernanceRuleEngine(resolver);
-    const engine     = buildGovernanceReasoningEngine(
-      buildQueryEngine(createRegistry([])), buildGovernanceImpactEngine(buildKnowledgeGraph([], [])),
-      resolver, ruleEngine,
-    );
-    const d   = engine.generateDecision(LARGE_CTX);
-    const chain: AuthorityLevel[] = [
-      { role: 'UNIT_HEAD', maxAmount: 200_000_000, config: AUTH_CFG },
-      { role: 'DIRECTOR',  maxAmount: 2_000_000_000, config: AUTH_CFG },
-    ];
-    const rec = deriveFinalRecommendation(d, chain);
-    // 500M > 200M (UNIT_HEAD) → should pick DIRECTOR
-    expect(rec.requiredApprovals[0]).toBe('DIRECTOR');
+  it('IN condition accepts string array value', () => {
+    const c: RuleCondition = { field: 'packageType', operator: 'IN', value: ['GOODS', 'SERVICE'] };
+    expect(Array.isArray(c.value)).toBe(true);
+    expect(c.value).toContain('GOODS');
   });
-  it('UNIT_HEAD is selected for packageValue within UNIT_HEAD limit', () => {
-    const rec = deriveFinalRecommendation(PROCEED_DECISION, AUTHORITY_CHAIN);
-    expect(rec.requiredApprovals[0]).toBe('UNIT_HEAD');
-  });
-  it('requiredApprovals empty when packageValue exceeds all authority limits', () => {
-    const chain: AuthorityLevel[] = [
-      { role: 'UNIT_HEAD', maxAmount: 100_000, config: AUTH_CFG },
-    ];
-    const rec = deriveFinalRecommendation(PROCEED_DECISION, chain);
-    // packageValue=50_000_000 > 100_000 → no approver found
-    expect(rec.requiredApprovals).toHaveLength(0);
+  it('EQ condition can use boolean value', () => {
+    const c: RuleCondition = { field: 'isUrgent', operator: 'EQ', value: true };
+    expect(c.value).toBe(true);
   });
 });
 
-// ─── PT-10: createProcurementDecision — shape ────────────────────────────────
+// ─── PT-10: ProcurementCase ───────────────────────────────────────────────────
 
-describe('PT-10 createProcurementDecision shape', () => {
-  const pd = createProcurementDecision({
-    context:             CTX,
-    applicableLaw:       [],
-    applicableThreshold: [],
-    requiredWorkflow:    [],
-    approvalAuthority:   [],
-    requiredDocuments:   ['PROCUREMENT_NOTICE'],
-    requiredTemplates:   [],
-    requiredChecklists:  [],
-    complianceWarnings:  [],
-    riskAssessment:      EMPTY_RISK,
-    finalRecommendation: createFinalRecommendation({ action: 'PROCEED', rationale: 'ok' }),
-    governanceDecision:  PROCEED_DECISION,
-  });
+describe('PT-10 ProcurementCase has all required fields', () => {
+  const pkg: ProcurementCase = {
+    id: 'case-001', packageType: 'GOODS', estimatedValue: 50_000_000,
+    fundSource: 'STATE', isUrgent: false, isNationalSec: false,
+    isInternational: false, asOfDate: '2026-07-01',
+  };
 
-  it('context is set', () => {
-    expect(pd.context.requestId).toBe('req-pt-001');
+  it('has id, packageType, estimatedValue', () => {
+    expect(pkg.id).toBe('case-001');
+    expect(pkg.packageType).toBe('GOODS');
+    expect(pkg.estimatedValue).toBe(50_000_000);
   });
-  it('requiredDocuments contains the code', () => {
-    expect(pd.requiredDocuments).toContain('PROCUREMENT_NOTICE');
+  it('has fundSource, isUrgent, isNationalSec, isInternational', () => {
+    expect(pkg.fundSource).toBe('STATE');
+    expect(pkg.isUrgent).toBe(false);
+    expect(pkg.isNationalSec).toBe(false);
+    expect(pkg.isInternational).toBe(false);
   });
-  it('governanceDecision links to the original decision', () => {
-    expect(pd.governanceDecision).toBe(PROCEED_DECISION);
+  it('singleSource is optional (undefined by default)', () => {
+    expect(pkg.singleSource).toBeUndefined();
+    const withSingle: ProcurementCase = { ...pkg, singleSource: true };
+    expect(withSingle.singleSource).toBe(true);
   });
 });
 
-// ─── PT-11: createProcurementDecision — frozen arrays ────────────────────────
+// ─── PT-11: ProcurementDecision ───────────────────────────────────────────────
 
-describe('PT-11 createProcurementDecision frozen arrays', () => {
-  const pd = createProcurementDecision({
-    context:             CTX,
-    applicableLaw:       [],
-    applicableThreshold: [AUDIT_CFG],
-    requiredWorkflow:    [],
-    approvalAuthority:   AUTHORITY_CHAIN as AuthorityLevel[],
-    requiredDocuments:   [],
-    requiredTemplates:   [],
-    requiredChecklists:  [],
-    complianceWarnings:  [],
-    riskAssessment:      EMPTY_RISK,
-    finalRecommendation: createFinalRecommendation({ action: 'PROCEED', rationale: 'ok' }),
-    governanceDecision:  PROCEED_DECISION,
-  });
+describe('PT-11 ProcurementDecision has all 9 output fields', () => {
+  const d: ProcurementDecision = {
+    caseId: 'c1',
+    packageClassification: {
+      packageType: 'GOODS', category: 'Hàng hóa', description: 'test',
+      legalBasis: { document: '22/2023/QH15', article: 'Điều 4' },
+    },
+    threshold: {
+      value: 50_000_000, band: 'DIRECT', bandName: 'Mua sắm trực tiếp',
+      currency: 'VND', legalBasis: { document: '22/2023/QH15', article: 'Điều 26' },
+    },
+    method: {
+      method: 'DIRECT_PROCUREMENT', methodName: 'Mua sắm trực tiếp',
+      legalBasis: { document: '22/2023/QH15', article: 'Điều 26' }, exceptions: [],
+    },
+    approval: {
+      authority: 'UNIT_HEAD', authorityName: 'Người đứng đầu',
+      legalBasis: { document: '214/2025/NĐ-CP', article: 'Điều 76' },
+    },
+    legalDocuments: ['22/2023/QH15'], workflow: ['Bước 1'],
+    evaluations: [], asOfDate: '2026-07-01',
+  };
 
-  it('applicableThreshold is frozen', () => {
-    expect(Object.isFrozen(pd.applicableThreshold)).toBe(true);
+  it('caseId and asOfDate are strings', () => {
+    expect(typeof d.caseId).toBe('string');
+    expect(typeof d.asOfDate).toBe('string');
   });
-  it('approvalAuthority is frozen', () => {
-    expect(Object.isFrozen(pd.approvalAuthority)).toBe(true);
+  it('legalDocuments, workflow, evaluations are arrays', () => {
+    expect(Array.isArray(d.legalDocuments)).toBe(true);
+    expect(Array.isArray(d.workflow)).toBe(true);
+    expect(Array.isArray(d.evaluations)).toBe(true);
   });
-  it('requiredDocuments is frozen', () => {
-    expect(Object.isFrozen(pd.requiredDocuments)).toBe(true);
+  it('has all six capability sub-objects', () => {
+    expect(d.packageClassification).toBeTruthy();
+    expect(d.threshold).toBeTruthy();
+    expect(d.method).toBeTruthy();
+    expect(d.approval).toBeTruthy();
   });
 });
 
-// ─── PT-12: riskAssessment and decidedAt ─────────────────────────────────────
+// ─── PT-12: PackageClassification + ThresholdDecision ─────────────────────────
 
-describe('PT-12 createProcurementDecision riskAssessment and decidedAt', () => {
-  const pd = createProcurementDecision({
-    context: CTX, applicableLaw: [], applicableThreshold: [], requiredWorkflow: [],
-    approvalAuthority: [], requiredDocuments: [], requiredTemplates: [],
-    requiredChecklists: [], complianceWarnings: [], riskAssessment: EMPTY_RISK,
-    finalRecommendation: createFinalRecommendation({ action: 'PROCEED', rationale: 'ok' }),
-    governanceDecision: PROCEED_DECISION,
+describe('PT-12 PackageClassification and ThresholdDecision shapes', () => {
+  it('PackageClassification packageType matches PACKAGE_TYPES', () => {
+    const pc: PackageClassification = {
+      packageType: 'CONSTRUCTION', category: 'Xây lắp',
+      description: 'Xây dựng công trình', legalBasis: { document: '22/2023/QH15', article: 'Điều 4' },
+    };
+    expect(isPackageType(pc.packageType)).toBe(true);
   });
-
-  it('riskAssessment.level is present', () => {
-    expect(pd.riskAssessment.level).toBe('NONE');
+  it('ThresholdDecision currency is always "VND"', () => {
+    const td: ThresholdDecision = {
+      value: 200_000_000, band: 'OPEN_TENDER', bandName: 'Đấu thầu rộng rãi',
+      currency: 'VND', legalBasis: { document: '22/2023/QH15', article: 'Điều 22' },
+    };
+    expect(td.currency).toBe('VND');
   });
-  it('decidedAt is an ISO date string', () => {
-    expect(pd.decidedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-  });
-  it('finalRecommendation.action is present', () => {
-    expect(pd.finalRecommendation.action).toBe('PROCEED');
+  it('ThresholdDecision band is a non-empty string', () => {
+    const td: ThresholdDecision = {
+      value: 30_000_000, band: 'DIRECT', bandName: 'Mua sắm trực tiếp',
+      currency: 'VND', legalBasis: { document: '22/2023/QH15', article: 'Điều 26' },
+    };
+    expect(td.band.length).toBeGreaterThan(0);
   });
 });
 
-// ─── PT-13: ProcurementDecision links to GovernanceDecision ──────────────────
+// ─── PT-13: MethodDecision + ApprovalDecision ─────────────────────────────────
 
-describe('PT-13 ProcurementDecision governanceDecision link', () => {
-  const pd = createProcurementDecision({
-    context: CTX, applicableLaw: [], applicableThreshold: [], requiredWorkflow: [],
-    approvalAuthority: [], requiredDocuments: [], requiredTemplates: [],
-    requiredChecklists: [], complianceWarnings: [], riskAssessment: EMPTY_RISK,
-    finalRecommendation: createFinalRecommendation({ action: 'PROCEED', rationale: 'ok' }),
-    governanceDecision: PROCEED_DECISION,
+describe('PT-13 MethodDecision and ApprovalDecision shapes', () => {
+  it('MethodDecision.method is a valid ProcurementMethod', () => {
+    const md: MethodDecision = {
+      method: 'COMPETITIVE_QUOTE', methodName: 'Chào hàng cạnh tranh',
+      legalBasis: { document: '22/2023/QH15', article: 'Điều 25' }, exceptions: [],
+    };
+    expect(isProcurementMethod(md.method)).toBe(true);
   });
-
-  it('governanceDecision.reasoningTrace is accessible', () => {
-    expect(pd.governanceDecision.reasoningTrace).toHaveLength(7);
+  it('MethodDecision.exceptions is an array (empty or with descriptions)', () => {
+    const md: MethodDecision = {
+      method: 'DIRECT_APPOINTMENT', methodName: 'Chỉ định thầu (khẩn cấp)',
+      legalBasis: { document: '22/2023/QH15', article: 'Điều 23' },
+      exceptions: ['Chỉ định thầu (khẩn cấp)'],
+    };
+    expect(md.exceptions).toHaveLength(1);
   });
-  it('governanceDecision.summary matches finalRecommendation action', () => {
-    expect(pd.governanceDecision.summary.verdict).toBe(pd.finalRecommendation.action);
-  });
-  it('governanceDecision.context matches pd.context', () => {
-    expect(pd.governanceDecision.context.requestId).toBe(pd.context.requestId);
+  it('ApprovalDecision.authority is a valid ApprovalAuthority', () => {
+    const ad: ApprovalDecision = {
+      authority: 'MINISTER', authorityName: 'Bộ trưởng',
+      legalBasis: { document: '214/2025/NĐ-CP', article: 'Điều 77' },
+    };
+    expect(isApprovalAuthority(ad.authority)).toBe(true);
   });
 });

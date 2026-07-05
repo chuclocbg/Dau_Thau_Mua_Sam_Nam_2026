@@ -1,668 +1,278 @@
 /**
- * P6-10T: WorkflowEngine test suite — 56 tests across 12 groups (WE1–WE12).
+ * WorkflowEngine — 8 public API functions + full lifecycle
  *
- * Groups:
- *   WE1  (5)  CRUD lifecycle
- *   WE2  (5)  Dependency graph validation
- *   WE3  (5)  Topological ordering
- *   WE4  (5)  Cycle detection
- *   WE5  (6)  Execution
- *   WE6  (4)  Planner integration
- *   WE7  (5)  Runtime integration
- *   WE8  (5)  Memory integration
- *   WE9  (4)  Tool integration
- *   WE10 (5)  Edge cases
- *   WE11 (4)  Immutability
- *   WE12 (3)  Never-throw
+ * Groups (13 × 3 = 39):
+ *   WE-01  createWorkflow — context starts in DRAFT, status=ACTIVE
+ *   WE-02  createWorkflow — history has 1 CREATE entry
+ *   WE-03  startWorkflow — advances to PROCUREMENT_REQUEST
+ *   WE-04  advance — valid transition succeeds and returns new instance
+ *   WE-05  advance — invalid (skip) returns ok=false
+ *   WE-06  rollback — moves one step back
+ *   WE-07  rollback — fails from DRAFT
+ *   WE-08  cancel — sets status=CANCELLED
+ *   WE-09  cancel — fails on COMPLETED workflow
+ *   WE-10  getPendingTasks — returns remaining states
+ *   WE-11  getRequiredDocuments — returns current state docs
+ *   WE-12  getHistory — returns all history entries
+ *   WE-13  getWorkflowResult — returns complete result shape
  */
 
-import { describe, it, expect, vi } from 'vitest';
-
+import { describe, it, expect } from 'vitest';
 import {
-  WorkflowEngine,
-  type WorkflowDefinition,
-  type WorkflowStep,
-} from '../providers/WorkflowEngine';
+  createWorkflow,
+  startWorkflow,
+  advance,
+  rollback,
+  cancel,
+  getPendingTasks,
+  getRequiredDocuments,
+  getHistory,
+  getWorkflowResult,
+} from '../procurement/workflow/workflowEngine';
+import { getEntriesByAction } from '../procurement/workflow/workflowHistory';
+import type { WorkflowInstance } from '../procurement/workflow/workflowEngine';
+import type { WorkflowContext } from '../procurement/workflow/workflowContext';
 
-import { AgentRuntime }   from '../providers/AgentRuntime';
-import { Planner }        from '../providers/Planner';
-import { SessionManager } from '../providers/SessionManager';
-import { MemoryStore }    from '../providers/MemoryStore';
-import type { ToolExecutor } from '../providers/ToolExecutor';
+// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-// ─── Test helpers ─────────────────────────────────────────────────────────────
+const PARAMS = {
+  packageId: 'pkg-001', packageType: 'GOODS', estimatedValue: 100_000_000,
+  procurementMethod: 'COMPETITIVE_QUOTE', approvalAuthority: 'UNIT_HEAD',
+  performedBy: 'nguyen.van.a',
+};
 
-function makeStep(
-  overrides: Partial<WorkflowStep> & Pick<WorkflowStep, 'id'>,
-): WorkflowStep {
+function freshWorkflow(): WorkflowInstance {
+  return createWorkflow(PARAMS);
+}
+
+function atState(stateId: WorkflowContext['currentState'], extra: Partial<WorkflowContext> = {}): WorkflowInstance {
+  const base = freshWorkflow();
   return {
-    title:  `Title-${overrides.id}`,
-    prompt: `Prompt-${overrides.id}`,
-    ...overrides,
+    ...base,
+    context: {
+      ...base.context,
+      currentState: stateId,
+      status: stateId === 'COMPLETED' ? 'COMPLETED' : 'ACTIVE',
+      ...extra,
+    },
   };
 }
 
-function makeWorkflow(
-  id:    string,
-  steps: WorkflowStep[],
-  name?: string,
-): WorkflowDefinition {
-  return { id, name: name ?? `Workflow-${id}`, steps };
-}
+// ─── WE-01: createWorkflow — context in DRAFT ────────────────────────────────
 
-function makeMockRuntime(
-  result: Record<string, unknown> = { ok: true, content: 'done' },
-): AgentRuntime {
-  return {
-    run: vi.fn().mockResolvedValue(result),
-  } as unknown as AgentRuntime;
-}
+describe('WE-01 createWorkflow returns context in DRAFT state with ACTIVE status', () => {
+  const inst = freshWorkflow();
 
-// ─── WE1: CRUD lifecycle (5) ──────────────────────────────────────────────────
-
-describe('WE1 CRUD lifecycle', () => {
-  it('WE1-01: registerWorkflow returns ok:true with the workflow id', () => {
-    const engine = new WorkflowEngine();
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', []));
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value).toBe('wf-1');
+  it('currentState is DRAFT', () => {
+    expect(inst.context.currentState).toBe('DRAFT');
   });
-
-  it('WE1-02: getWorkflow returns the definition after registration', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = engine.getWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.id).toBe('wf-1');
-      expect(result.value.steps).toHaveLength(1);
-    }
+  it('status is ACTIVE', () => {
+    expect(inst.context.status).toBe('ACTIVE');
   });
-
-  it('WE1-03: removeWorkflow returns ok:true', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = engine.removeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-  });
-
-  it('WE1-04: listWorkflows includes all registered workflows', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-a', []));
-    engine.registerWorkflow(makeWorkflow('wf-b', []));
-    const list = engine.listWorkflows();
-    expect(list).toHaveLength(2);
-    expect(list.map(w => w.id).sort()).toEqual(['wf-a', 'wf-b']);
-  });
-
-  it('WE1-05: listWorkflows is empty on a new engine', () => {
-    const engine = new WorkflowEngine();
-    expect(engine.listWorkflows()).toHaveLength(0);
+  it('packageId matches params', () => {
+    expect(inst.context.packageId).toBe('pkg-001');
   });
 });
 
-// ─── WE2: Dependency graph validation (5) ─────────────────────────────────────
+// ─── WE-02: createWorkflow — history ─────────────────────────────────────────
 
-describe('WE2 Dependency graph validation', () => {
-  it('WE2-01: workflow with steps that have no dependsOn registers successfully', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [makeStep({ id: 'a' }), makeStep({ id: 'b' })];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(true);
+describe('WE-02 createWorkflow initialises history with one CREATE entry', () => {
+  const inst = freshWorkflow();
+
+  it('history has exactly 1 entry', () => {
+    expect(inst.history.entries).toHaveLength(1);
   });
-
-  it('WE2-02: workflow with valid inter-step dependencies registers successfully', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'a' }),
-      makeStep({ id: 'b', dependsOn: ['a'] }),
-    ];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(true);
+  it('first entry action is CREATE', () => {
+    expect(inst.history.entries[0]?.action).toBe('CREATE');
   });
-
-  it('WE2-03: INVALID_DEPENDENCY when step references an unknown step id', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [makeStep({ id: 'a', dependsOn: ['ghost'] })];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('INVALID_DEPENDENCY');
-  });
-
-  it('WE2-04: workflow is not stored after INVALID_DEPENDENCY', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [makeStep({ id: 'a', dependsOn: ['ghost'] })];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(engine.listWorkflows()).toHaveLength(0);
-  });
-
-  it('WE2-05: INVALID_DEPENDENCY error message contains the unknown dep id', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [makeStep({ id: 'a', dependsOn: ['missing-step'] })];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.message).toContain('missing-step');
+  it('CREATE entry toState is DRAFT', () => {
+    expect(inst.history.entries[0]?.toState).toBe('DRAFT');
   });
 });
 
-// ─── WE3: Topological ordering (5) ───────────────────────────────────────────
+// ─── WE-03: startWorkflow ────────────────────────────────────────────────────
 
-describe('WE3 Topological ordering', () => {
-  it('WE3-01: single-step workflow executes and completes', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1');
+describe('WE-03 startWorkflow advances to PROCUREMENT_REQUEST', () => {
+  const result = startWorkflow(freshWorkflow(), 'nguyen.van.a');
+
+  it('ok=true', () => {
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value.completedSteps).toContain('s1');
   });
-
-  it('WE3-02: two independent steps both appear in completedSteps', async () => {
-    const engine = new WorkflowEngine();
-    const steps  = [makeStep({ id: 'a' }), makeStep({ id: 'b' })];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.completedSteps).toContain('a');
-      expect(result.value.completedSteps).toContain('b');
-    }
+  it('new context currentState is PROCUREMENT_REQUEST', () => {
+    expect(result.data?.context.currentState).toBe('PROCUREMENT_REQUEST');
   });
-
-  it('WE3-03: dependent step executes after its prerequisite', async () => {
-    const callOrder: string[] = [];
-    const runtime = {
-      run: vi.fn().mockImplementation(async (prompt: string) => {
-        callOrder.push(prompt);
-        return { ok: true, content: 'done' };
-      }),
-    } as unknown as AgentRuntime;
-
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'a', prompt: 'Run-A' }),
-      makeStep({ id: 'b', prompt: 'Run-B', dependsOn: ['a'] }),
-    ];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    await engine.executeWorkflow('wf-1', { agentRuntime: runtime });
-
-    expect(callOrder.indexOf('Run-A')).toBeLessThan(callOrder.indexOf('Run-B'));
-  });
-
-  it('WE3-04: chain A→B→C completes all three steps in order', async () => {
-    const callOrder: string[] = [];
-    const runtime = {
-      run: vi.fn().mockImplementation(async (prompt: string) => {
-        callOrder.push(prompt);
-        return { ok: true, content: 'done' };
-      }),
-    } as unknown as AgentRuntime;
-
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'a', prompt: 'A' }),
-      makeStep({ id: 'b', prompt: 'B', dependsOn: ['a'] }),
-      makeStep({ id: 'c', prompt: 'C', dependsOn: ['b'] }),
-    ];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    const result = await engine.executeWorkflow('wf-1', { agentRuntime: runtime });
-
-    expect(result.ok).toBe(true);
-    expect(callOrder).toEqual(['A', 'B', 'C']);
-  });
-
-  it('WE3-05: completedSteps includes all step ids after diamond execution', async () => {
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'x' }),
-      makeStep({ id: 'y', dependsOn: ['x'] }),
-      makeStep({ id: 'z', dependsOn: ['x'] }),
-    ];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    const result = await engine.executeWorkflow('wf-1');
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect([...result.value.completedSteps].sort()).toEqual(['x', 'y', 'z']);
-    }
+  it('history has 2 entries after start', () => {
+    expect(result.data?.history.entries).toHaveLength(2);
   });
 });
 
-// ─── WE4: Cycle detection (5) ─────────────────────────────────────────────────
+// ─── WE-04: advance — valid transition ───────────────────────────────────────
 
-describe('WE4 Cycle detection', () => {
-  it('WE4-01: self-referential dependsOn → CIRCULAR_DEPENDENCY', () => {
-    const engine = new WorkflowEngine();
-    const result = engine.registerWorkflow(
-      makeWorkflow('wf-1', [makeStep({ id: 'a', dependsOn: ['a'] })]),
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('CIRCULAR_DEPENDENCY');
+describe('WE-04 advance to valid next state succeeds', () => {
+  const r1 = startWorkflow(freshWorkflow(), 'officer');
+  const r2 = advance(r1.data!, 'FUND_CONFIRMED', 'officer');
+
+  it('ok=true for valid transition', () => {
+    expect(r2.ok).toBe(true);
   });
-
-  it('WE4-02: mutual cycle A depends on B, B depends on A → CIRCULAR_DEPENDENCY', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'a', dependsOn: ['b'] }),
-      makeStep({ id: 'b', dependsOn: ['a'] }),
-    ];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('CIRCULAR_DEPENDENCY');
+  it('new state is FUND_CONFIRMED', () => {
+    expect(r2.data?.context.currentState).toBe('FUND_CONFIRMED');
   });
-
-  it('WE4-03: error code is CIRCULAR_DEPENDENCY (not INVALID_DEPENDENCY)', () => {
-    const engine = new WorkflowEngine();
-    const result = engine.registerWorkflow(
-      makeWorkflow('wf-1', [makeStep({ id: 'a', dependsOn: ['a'] })]),
-    );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('CIRCULAR_DEPENDENCY');
-      expect(result.error.code).not.toBe('INVALID_DEPENDENCY');
-    }
-  });
-
-  it('WE4-04: workflow is not stored after cycle detection', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(
-      makeWorkflow('wf-1', [makeStep({ id: 'a', dependsOn: ['a'] })]),
-    );
-    expect(engine.listWorkflows()).toHaveLength(0);
-  });
-
-  it('WE4-05: three-node cycle A→B→C→A → CIRCULAR_DEPENDENCY', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'a', dependsOn: ['c'] }),
-      makeStep({ id: 'b', dependsOn: ['a'] }),
-      makeStep({ id: 'c', dependsOn: ['b'] }),
-    ];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('CIRCULAR_DEPENDENCY');
+  it('original instance state is unchanged (immutable)', () => {
+    expect(r1.data?.context.currentState).toBe('PROCUREMENT_REQUEST');
   });
 });
 
-// ─── WE5: Execution (6) ───────────────────────────────────────────────────────
+// ─── WE-05: advance — invalid transition (skip) ──────────────────────────────
 
-describe('WE5 Execution', () => {
-  it('WE5-01: executeWorkflow returns ok:true for valid workflow', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
+describe('WE-05 advance with skip returns ok=false and non-empty errors', () => {
+  it('DRAFT → FUND_CONFIRMED (skip) → ok=false', () => {
+    expect(advance(freshWorkflow(), 'FUND_CONFIRMED', 'officer').ok).toBe(false);
   });
-
-  it('WE5-02: execution status is COMPLETED on success', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1');
-    if (result.ok) expect(result.value.status).toBe('COMPLETED');
+  it('errors array is non-empty', () => {
+    const r = advance(freshWorkflow(), 'FUND_CONFIRMED', 'officer');
+    expect(r.errors.length).toBeGreaterThan(0);
   });
-
-  it('WE5-03: startedAt is a positive timestamp', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = await engine.executeWorkflow('wf-1');
-    if (result.ok) expect(result.value.startedAt).toBeGreaterThan(0);
+  it('data is undefined on failure', () => {
+    const r = advance(freshWorkflow(), 'COMPLETED', 'officer');
+    expect(r.data).toBeUndefined();
   });
+});
 
-  it('WE5-04: completedAt is set after execution', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = await engine.executeWorkflow('wf-1');
-    if (result.ok) expect(result.value.completedAt).toBeGreaterThan(0);
+// ─── WE-06: rollback — moves one step back ───────────────────────────────────
+
+describe('WE-06 rollback moves one step back', () => {
+  const started = startWorkflow(freshWorkflow(), 'officer').data!;
+  const rb      = rollback(started, 'supervisor', 'Cần bổ sung thông tin');
+
+  it('ok=true', () => {
+    expect(rb.ok).toBe(true);
   });
-
-  it('WE5-05: executionId is a non-empty string', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = await engine.executeWorkflow('wf-1');
-    if (result.ok) {
-      expect(typeof result.value.executionId).toBe('string');
-      expect(result.value.executionId.length).toBeGreaterThan(0);
-    }
+  it('currentState returns to DRAFT', () => {
+    expect(rb.data?.context.currentState).toBe('DRAFT');
   });
+  it('history has a ROLLBACK entry', () => {
+    const rollbacks = getEntriesByAction(rb.data!.history, 'ROLLBACK');
+    expect(rollbacks).toHaveLength(1);
+  });
+});
 
-  it('WE5-06: WORKFLOW_NOT_FOUND for unknown workflow id', async () => {
-    const engine = new WorkflowEngine();
-    const result = await engine.executeWorkflow('ghost');
+// ─── WE-07: rollback — fails from DRAFT ──────────────────────────────────────
+
+describe('WE-07 rollback from DRAFT returns ok=false', () => {
+  const rb = rollback(freshWorkflow(), 'officer');
+
+  it('ok=false', () => {
+    expect(rb.ok).toBe(false);
+  });
+  it('errors array is non-empty', () => {
+    expect(rb.errors.length).toBeGreaterThan(0);
+  });
+  it('data is undefined', () => {
+    expect(rb.data).toBeUndefined();
+  });
+});
+
+// ─── WE-08: cancel — sets status CANCELLED ───────────────────────────────────
+
+describe('WE-08 cancel sets workflow status to CANCELLED', () => {
+  const started   = startWorkflow(freshWorkflow(), 'officer').data!;
+  const cancelled = cancel(started, 'director', 'Thay đổi ngân sách');
+
+  it('ok=true', () => {
+    expect(cancelled.ok).toBe(true);
+  });
+  it('status is CANCELLED', () => {
+    expect(cancelled.data?.context.status).toBe('CANCELLED');
+  });
+  it('currentState unchanged after cancel', () => {
+    expect(cancelled.data?.context.currentState).toBe('PROCUREMENT_REQUEST');
+  });
+});
+
+// ─── WE-09: cancel — fails on COMPLETED ──────────────────────────────────────
+
+describe('WE-09 cancel fails on COMPLETED workflow', () => {
+  const completed = atState('COMPLETED');
+  const result    = cancel(completed, 'officer');
+
+  it('ok=false', () => {
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('WORKFLOW_NOT_FOUND');
+  });
+  it('errors array mentions hoàn thành', () => {
+    expect(result.errors.some(e => e.includes('hoàn thành') || e.toLowerCase().includes('cancel'))).toBe(true);
+  });
+  it('data is undefined', () => {
+    expect(result.data).toBeUndefined();
   });
 });
 
-// ─── WE6: Planner integration (4) ─────────────────────────────────────────────
+// ─── WE-10: getPendingTasks ───────────────────────────────────────────────────
 
-describe('WE6 Planner integration', () => {
-  it('WE6-01: planner.createPlan is called with the workflow name', async () => {
-    const engine  = new WorkflowEngine();
-    const planner = new Planner();
-    const spy     = vi.spyOn(planner, 'createPlan');
-    engine.registerWorkflow(makeWorkflow('wf-1', [], 'My Plan'));
-    await engine.executeWorkflow('wf-1', { planner });
-    expect(spy).toHaveBeenCalledWith('My Plan');
+describe('WE-10 getPendingTasks returns states yet to be completed', () => {
+  it('DRAFT has 16 pending tasks', () => {
+    expect(getPendingTasks(freshWorkflow())).toHaveLength(16);
   });
-
-  it('WE6-02: planner.addStep is called once for each workflow step', async () => {
-    const engine  = new WorkflowEngine();
-    const planner = new Planner();
-    const spy     = vi.spyOn(planner, 'addStep');
-    const steps   = [makeStep({ id: 's1' }), makeStep({ id: 's2' })];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    await engine.executeWorkflow('wf-1', { planner });
-    expect(spy).toHaveBeenCalledTimes(2);
+  it('after startWorkflow, pending tasks is 15', () => {
+    const started = startWorkflow(freshWorkflow(), 'officer').data!;
+    expect(getPendingTasks(started)).toHaveLength(15);
   });
-
-  it('WE6-03: planner.completeStep is called after each step executes', async () => {
-    const engine  = new WorkflowEngine();
-    const planner = new Planner();
-    const spy     = vi.spyOn(planner, 'completeStep');
-    const steps   = [makeStep({ id: 's1' }), makeStep({ id: 's2' })];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    await engine.executeWorkflow('wf-1', { planner });
-    expect(spy).toHaveBeenCalledTimes(2);
-  });
-
-  it('WE6-04: all planner steps are marked completed after execution', async () => {
-    const engine  = new WorkflowEngine();
-    const planner = new Planner();
-    const steps   = [makeStep({ id: 's1' }), makeStep({ id: 's2' })];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    await engine.executeWorkflow('wf-1', { planner });
-    const planSteps = planner.listSteps();
-    expect(planSteps.every(s => s.completed)).toBe(true);
+  it('COMPLETED has 0 pending tasks', () => {
+    expect(getPendingTasks(atState('COMPLETED'))).toHaveLength(0);
   });
 });
 
-// ─── WE7: Runtime integration (5) ─────────────────────────────────────────────
+// ─── WE-11: getRequiredDocuments ─────────────────────────────────────────────
 
-describe('WE7 Runtime integration', () => {
-  it('WE7-01: agentRuntime.run is called once per step', async () => {
-    const engine  = new WorkflowEngine();
-    const runtime = makeMockRuntime();
-    const steps   = [makeStep({ id: 'a' }), makeStep({ id: 'b' })];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    await engine.executeWorkflow('wf-1', { agentRuntime: runtime });
-    expect(runtime.run as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(2);
+describe('WE-11 getRequiredDocuments returns required documents for current state', () => {
+  it('DRAFT requires no documents', () => {
+    expect(getRequiredDocuments(freshWorkflow())).toHaveLength(0);
   });
-
-  it('WE7-02: step.prompt is passed to agentRuntime.run', async () => {
-    const engine  = new WorkflowEngine();
-    const runtime = makeMockRuntime();
-    engine.registerWorkflow(
-      makeWorkflow('wf-1', [makeStep({ id: 's1', prompt: 'Do the thing' })]),
-    );
-    await engine.executeWorkflow('wf-1', { agentRuntime: runtime });
-    expect(runtime.run as ReturnType<typeof vi.fn>).toHaveBeenCalledWith('Do the thing');
+  it('METHOD_SELECTED requires ke-hoach-lua-chon-nha-thau', () => {
+    expect(getRequiredDocuments(atState('METHOD_SELECTED'))).toContain('ke-hoach-lua-chon-nha-thau');
   });
-
-  it('WE7-03: EXECUTION_FAILED when agentRuntime.run returns ok:false', async () => {
-    const engine  = new WorkflowEngine();
-    const runtime = makeMockRuntime({
-      ok:    false,
-      error: { code: 'PROVIDER_ERROR', message: 'API down' },
-    });
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1', { agentRuntime: runtime });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('EXECUTION_FAILED');
-  });
-
-  it('WE7-04: workflowId is correctly set in the execution result', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-alpha', []));
-    const result = await engine.executeWorkflow('wf-alpha');
-    if (result.ok) expect(result.value.workflowId).toBe('wf-alpha');
-  });
-
-  it('WE7-05: no agentRuntime (dry run) still completes execution with all steps', async () => {
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 'a' }),
-      makeStep({ id: 'b', dependsOn: ['a'] }),
-    ];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.status).toBe('COMPLETED');
-      expect(result.value.completedSteps).toHaveLength(2);
-    }
+  it('DOCUMENT_PREPARATION requires ho-so-moi-thau', () => {
+    expect(getRequiredDocuments(atState('DOCUMENT_PREPARATION'))).toContain('ho-so-moi-thau');
   });
 });
 
-// ─── WE8: Memory integration (5) ──────────────────────────────────────────────
+// ─── WE-12: getHistory ────────────────────────────────────────────────────────
 
-describe('WE8 Memory integration', () => {
-  it('WE8-01: memoryStore.saveMemory is called after successful execution', async () => {
-    const engine      = new WorkflowEngine();
-    const memoryStore = new MemoryStore();
-    const spy         = vi.spyOn(memoryStore, 'saveMemory');
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    await engine.executeWorkflow('wf-1', { memoryStore });
-    expect(spy).toHaveBeenCalled();
+describe('WE-12 getHistory returns full audit trail', () => {
+  it('returns WorkflowHistory with workflowId and entries', () => {
+    const h = getHistory(freshWorkflow());
+    expect(h.workflowId).toBeTruthy();
+    expect(Array.isArray(h.entries)).toBe(true);
   });
-
-  it('WE8-02: memoryStore saves under the executionId as the session key', async () => {
-    const engine      = new WorkflowEngine();
-    const memoryStore = new MemoryStore();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = await engine.executeWorkflow('wf-1', { memoryStore });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      const snap = memoryStore.loadMemory(result.value.executionId);
-      expect(snap.ok).toBe(true);
-    }
+  it('after advance, history grows by 1', () => {
+    const started = startWorkflow(freshWorkflow(), 'officer').data!;
+    expect(getHistory(started).entries).toHaveLength(2);
   });
-
-  it('WE8-03: no memoryStore → execution completes normally', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-  });
-
-  it('WE8-04: sessionManager.createSession is called when provided', async () => {
-    const engine         = new WorkflowEngine();
-    const sessionManager = new SessionManager();
-    const spy            = vi.spyOn(sessionManager, 'createSession');
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    await engine.executeWorkflow('wf-1', { sessionManager });
-    expect(spy).toHaveBeenCalled();
-  });
-
-  it('WE8-05: sessionManager.completeSession is called on successful execution', async () => {
-    const engine         = new WorkflowEngine();
-    const sessionManager = new SessionManager();
-    const spy            = vi.spyOn(sessionManager, 'completeSession');
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    await engine.executeWorkflow('wf-1', { sessionManager });
-    expect(spy).toHaveBeenCalled();
+  it('ADVANCE entries have fromState=DRAFT and toState=PROCUREMENT_REQUEST', () => {
+    const started = startWorkflow(freshWorkflow(), 'officer').data!;
+    const advEntries = getEntriesByAction(getHistory(started), 'ADVANCE');
+    expect(advEntries[0]?.fromState).toBe('DRAFT');
+    expect(advEntries[0]?.toState).toBe('PROCUREMENT_REQUEST');
   });
 });
 
-// ─── WE9: Tool integration (4) ────────────────────────────────────────────────
+// ─── WE-13: getWorkflowResult ────────────────────────────────────────────────
 
-describe('WE9 Tool integration', () => {
-  it('WE9-01: workflow with steps that have useTools:true registers successfully', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [makeStep({ id: 's1', useTools: true })];
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    expect(result.ok).toBe(true);
+describe('WE-13 getWorkflowResult returns complete WorkflowResult shape', () => {
+  const result = getWorkflowResult(freshWorkflow());
+
+  it('has currentState with id=DRAFT', () => {
+    expect(result.currentState.id).toBe('DRAFT');
   });
-
-  it('WE9-02: useTools and useMemory flags are preserved in the stored definition', () => {
-    const engine = new WorkflowEngine();
-    const steps  = [
-      makeStep({ id: 's1', useTools: true,  useMemory: false }),
-      makeStep({ id: 's2', useTools: false, useMemory: true  }),
-    ];
-    engine.registerWorkflow(makeWorkflow('wf-1', steps));
-    const result = engine.getWorkflow('wf-1');
-    if (result.ok) {
-      expect(result.value.steps[0].useTools).toBe(true);
-      expect(result.value.steps[0].useMemory).toBe(false);
-      expect(result.value.steps[1].useTools).toBe(false);
-      expect(result.value.steps[1].useMemory).toBe(true);
-    }
+  it('progress=0, completedSteps=[], pendingSteps length=16', () => {
+    expect(result.progress).toBe(0);
+    expect(result.completedSteps).toHaveLength(0);
+    expect(result.pendingSteps).toHaveLength(16);
   });
-
-  it('WE9-03: execution with toolExecutor in options completes normally', async () => {
-    const engine       = new WorkflowEngine();
-    const toolExecutor = { execute: vi.fn() } as unknown as ToolExecutor;
-    engine.registerWorkflow(
-      makeWorkflow('wf-1', [makeStep({ id: 's1', useTools: true })]),
-    );
-    const result = await engine.executeWorkflow('wf-1', { toolExecutor });
-    expect(result.ok).toBe(true);
-  });
-
-  it('WE9-04: no toolExecutor → execution still completes successfully', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(
-      makeWorkflow('wf-1', [makeStep({ id: 's1', useTools: true })]),
-    );
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-  });
-});
-
-// ─── WE10: Edge cases (5) ─────────────────────────────────────────────────────
-
-describe('WE10 Edge cases', () => {
-  it('WE10-01: workflow with 0 steps executes with empty completedSteps', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value.completedSteps).toHaveLength(0);
-  });
-
-  it('WE10-02: DUPLICATE_WORKFLOW when same id is registered twice', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', []));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('DUPLICATE_WORKFLOW');
-  });
-
-  it('WE10-03: DUPLICATE_WORKFLOW message references the duplicate id', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-dup', []));
-    const result = engine.registerWorkflow(makeWorkflow('wf-dup', []));
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('DUPLICATE_WORKFLOW');
-      expect(result.error.message).toContain('wf-dup');
-    }
-  });
-
-  it('WE10-04: INVALID_INPUT for empty string workflow id', () => {
-    const engine = new WorkflowEngine();
-    const result = engine.registerWorkflow({ id: '', name: 'X', steps: [] });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('INVALID_INPUT');
-  });
-
-  it('WE10-05: removeWorkflow then re-register same id succeeds', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    engine.removeWorkflow('wf-1');
-    const result = engine.registerWorkflow(makeWorkflow('wf-1', []));
-    expect(result.ok).toBe(true);
-  });
-});
-
-// ─── WE11: Immutability (4) ───────────────────────────────────────────────────
-
-describe('WE11 Immutability', () => {
-  it('WE11-01: mutating getWorkflow result does not affect stored definition', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const r1 = engine.getWorkflow('wf-1');
-    if (r1.ok) {
-      r1.value.steps.push(makeStep({ id: 'injected' }));
-    }
-    const r2 = engine.getWorkflow('wf-1');
-    if (r2.ok) expect(r2.value.steps).toHaveLength(1);
-  });
-
-  it('WE11-02: mutating listWorkflows result does not affect stored definitions', () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', []));
-    const list = engine.listWorkflows();
-    list[0].name = 'MUTATED';
-    const list2 = engine.listWorkflows();
-    expect(list2[0].name).not.toBe('MUTATED');
-  });
-
-  it('WE11-03: mutating input definition after registerWorkflow does not corrupt stored', () => {
-    const engine = new WorkflowEngine();
-    const def    = makeWorkflow('wf-1', [makeStep({ id: 'orig' })]);
-    engine.registerWorkflow(def);
-    def.steps.push(makeStep({ id: 'extra' }));
-    const r = engine.getWorkflow('wf-1');
-    if (r.ok) expect(r.value.steps).toHaveLength(1);
-  });
-
-  it('WE11-04: completedSteps in execution result is an independent copy', async () => {
-    const engine = new WorkflowEngine();
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1');
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      const original = result.value.completedSteps.length;
-      result.value.completedSteps.push('injected');
-      // A second execution should still see exactly 1 completed step
-      const result2 = await engine.executeWorkflow('wf-1');
-      if (result2.ok) expect(result2.value.completedSteps).toHaveLength(original);
-    }
-  });
-});
-
-// ─── WE12: Never-throw (3) ────────────────────────────────────────────────────
-
-describe('WE12 Never-throw', () => {
-  it('WE12-01: registerWorkflow never throws for any edge-case input', () => {
-    const engine = new WorkflowEngine();
-    const cases  = [
-      undefined,
-      null,
-      {},
-      { id: '', name: '', steps: null },
-      { id: 'x', name: 'y', steps: [{ id: '', title: '', prompt: '' }] },
-    ] as unknown[];
-    for (const input of cases) {
-      expect(() =>
-        engine.registerWorkflow(input as WorkflowDefinition),
-      ).not.toThrow();
-    }
-  });
-
-  it('WE12-02: executeWorkflow never rejects when agentRuntime throws', async () => {
-    const engine  = new WorkflowEngine();
-    const runtime = {
-      run: vi.fn().mockRejectedValue(new Error('boom')),
-    } as unknown as AgentRuntime;
-    engine.registerWorkflow(makeWorkflow('wf-1', [makeStep({ id: 's1' })]));
-    const result = await engine.executeWorkflow('wf-1', { agentRuntime: runtime });
-    expect(result).toBeDefined();
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('EXECUTION_FAILED');
-  });
-
-  it('WE12-03: all CRUD operations never throw for edge-case inputs', () => {
-    const engine = new WorkflowEngine();
-    const ops = [
-      () => engine.getWorkflow(''),
-      () => engine.getWorkflow('ghost'),
-      () => engine.removeWorkflow(''),
-      () => engine.removeWorkflow('ghost'),
-      () => engine.listWorkflows(),
-    ];
-    for (const op of ops) {
-      expect(op).not.toThrow();
-    }
+  it('has legalBasis, requiredDocuments, responsibleRole, nextAvailableActions', () => {
+    expect(Array.isArray(result.legalBasis)).toBe(true);
+    expect(Array.isArray(result.requiredDocuments)).toBe(true);
+    expect(typeof result.responsibleRole).toBe('string');
+    expect(Array.isArray(result.nextAvailableActions)).toBe(true);
   });
 });
