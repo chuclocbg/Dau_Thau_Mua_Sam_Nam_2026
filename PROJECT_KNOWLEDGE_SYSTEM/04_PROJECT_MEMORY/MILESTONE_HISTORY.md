@@ -7,10 +7,30 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.2 Batch A — Reasoning Pipeline Core — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.2 Batch B — AIContext/Prompt/LLM Adapter path — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.2 Batch A — Reasoning Pipeline Core — declared 2026-07-05 (superseded by Batch B)
+
+**Evidence:** 409 test files, 13,809 tests, 0 failures at freeze time; architecture guard test
+confirmed no import from `src/knowledge/`, `src/ai/`, `src/mcp/` and no modification of the
+pre-existing, unrelated `src/reasoning/{reasoningEngine,decisionModel}.ts` (Phase 15 track).
+
+**Summary:** Implemented the deterministic reasoning pipeline — intent detection, applicable
+law/hierarchy/4-tier conflict resolution/supersession (Stage 3, folded into
+`legalReasoningEngine.ts`), rule/threshold evaluation and exception detection (Stage 4), evidence
+collection (Stage 5), citation formatting (Stage 6), confidence scoring/human-review
+determination/decision composition (Stage 7) — all provable against `mockKnowledgeFixtures.ts`
+with zero LLM calls, zero network calls. `Legal`-prefixed only where a real collision was found
+(`LegalReasoningStep`, `LegalRuleResult`, `LegalThresholdResult`, `LegalPipelineStage`) per the
+grep-first, not defensive, naming rule. An architecture gate review (before Batch B) returned GO
+with five non-blocking recommendations, one of which (Finding A: AIContextBuilder must not call
+`ISessionRepository` itself) was applied directly in Batch B's `aiContextBuilder.ts`. Tagged
+`phase-x.2-batch-a-reasoning-core`.
 
 ---
 

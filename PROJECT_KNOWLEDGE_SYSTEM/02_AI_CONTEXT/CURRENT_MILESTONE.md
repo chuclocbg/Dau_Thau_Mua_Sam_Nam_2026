@@ -19,63 +19,66 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.2 Batch A - Reasoning Pipeline Core - FROZEN"
+current_milestone: "Phase X.2 Batch B - AIContext/Prompt/LLM Adapter path - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-05
 milestone_evidence:
-  scope: "src/reasoning/{domain,application,testing}/ — reasoningTypes, intentPatternRegistry,
-         intentDetector, ruleEngine, evidenceCollector, citationFormatter, answerComposer,
-         legalReasoningEngine (also carries Stage 3: applicable law/hierarchy/conflict/
-         supersession — folded in since no separate reasoningEngine.ts file was in scope this
-         round), mockKnowledgeFixtures"
-  scope_exclusion: "Deliberately excludes AIContext, PromptBuilder, ModelSelector, and
-                    claudeLLMAdapter (the AIContext/Prompt/LLM path, 'Batch B' in
-                    PHASE_X2_IMPLEMENTATION_STRATEGY.md) — zero LLM calls, zero network calls,
-                    fully deterministic, testable via mock knowledge fixtures alone."
-  files_added: "9 implementation/fixture files + 8 test files (49 tests)"
-  full_suite_result: "409 test files, 13809 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 401 files / 13760 tests at the X.1 baseline"
-  exit_criteria_met: "Full deterministic pipeline (intent -> applicable law/hierarchy/conflict ->
-                      rule/threshold evaluation -> exception detection -> evidence collection ->
-                      citation formatting -> confidence scoring -> human-review determination ->
-                      decision composition) proven end-to-end against mock fixtures, including
-                      the 4-tier conflict cascade (hierarchy/more-restrictive/lex-posterior/
-                      lex-specialis/unresolved) and Tier-2-preempts-Tier-1 for Layer-3 school
-                      policy; architecture guard test confirms no import from src/knowledge/,
-                      src/ai/, src/mcp/ from the new domain/application/testing subdirectories"
-  frozen_interfaces_touched: "None. No Knowledge Platform or Conversation Core file imported or
-                              modified — ResolvedKnowledge is caller-supplied (mock fixtures
-                              here; X.3's knowledgeResolver.ts in production)."
-  naming_collisions_avoided: "Legal-prefixed only where a real collision was found (per
-                              PHASE_X2_IMPLEMENTATION_STRATEGY.md §11's grep-first, not
-                              defensive, rule): LegalReasoningStep (vs src/reasoning/
-                              decisionModel.ts's Phase 15 ReasoningStep), LegalRuleResult (vs
-                              src/legal/governanceRuleEngine.ts), LegalThresholdResult (vs
-                              src/legal/domain/legalDomainTypes.ts), LegalPipelineStage (vs
-                              src/providers/Pipeline.ts). Pre-existing src/reasoning/
-                              {reasoningEngine,decisionModel}.ts (unrelated Phase 15 track) is
-                              untouched — verified by architecture guard test and git diff."
+  scope: "src/ai/{domain,application,infrastructure}/ — aiTypes (AIContext + subtypes),
+         AIContextBuilder, PromptBuilder, PromptRenderer, ModelCapabilityRegistry, ModelSelector,
+         ClaudeLLMAdapter (wraps the existing src/providers/ClaudeProvider.ts rather than
+         reimplementing raw Anthropic HTTP calls, per the gate review's recommendation E)"
+  scope_exclusion: "No Tool Calling, no MCP, no Multi-Agent, no Knowledge Resolution (X.3), no
+                    Output Validation (X.4), no streaming, no retry engine, no caching, no
+                    telemetry, no production optimizations."
+  files_added: "7 implementation files + 7 test files (46 tests)"
+  full_suite_result: "416 test files, 13855 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 409 files / 13809 tests at the Batch A baseline"
+  exit_criteria_met: "Full pipeline proven: ReasoningResult + conversation history ->
+                      AIContext (deep-frozen, verified by mutation-attempt tests on a top-level
+                      field, a nested array, and a nested object field) -> PromptSpec (verified
+                      as a pure function of AIContext) -> RenderedPrompt (deterministic,
+                      provider-agnostic) -> ModelSelector (verified against a synthetic
+                      non-Claude registry to prove no Anthropic hardcoding) -> ClaudeLLMAdapter
+                      (offline-tested via injected fetchFn, zero network calls, zero streaming,
+                      zero retry). Architecture guard suite (12 tests) proves dependency
+                      direction, no cyclic imports, no provider leakage outside
+                      claudeLLMAdapter.ts, and isolation from the pre-existing 32 flat
+                      src/ai/*.ts files (unrelated '8-G' track)."
+  frozen_interfaces_touched: "None. ReasoningResult (Batch A) and AdvisoryConversationMessage
+                              (X.1) consumed read-only; src/providers/ClaudeProvider.ts
+                              consumed read-only (not frozen, but verified untouched by git diff)."
+  naming_collisions_avoided: "AI-prefixed only where a real collision was found: AIModelInfo (vs
+                              src/providers/OpenAIProvider.ts's ModelInfo), AIModelCapability (vs
+                              src/providers/ModelManager.ts's ModelCapability). AIContext's own
+                              subtypes (AIContextCitation, etc.) matched AI_CONTEXT_SCHEMA.md
+                              exactly with zero collisions found."
+  architecture_gate_review: "Performed before implementation — GO with 5 non-blocking
+                             recommendations; Finding A (AIContextBuilder must not call a
+                             repository directly, per Constraint C-05) was applied in this
+                             milestone's actual code, not left as a follow-up."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.2 Batch B - AIContext/Prompt/LLM Adapter path"
-next_milestone_status: "NOT AUTHORIZED. Batch A's exit criteria confirmed met and frozen this
-                         session. Batch B (which includes LLM integration) has NOT been started,
-                         per explicit instruction to implement Batch A only and stop."
-next_milestone_blocker: "None technical for Batch A's own completeness. Batch B requires a
-                         separate, explicit authorization since it is the point where actual
-                         LLM integration (ClaudeLLMAdapter, live API calls) enters the codebase."
+next_active_milestone: "Phase X.3 - Knowledge Resolution (or any other later milestone)"
+next_milestone_status: "NOT AUTHORIZED. Batch B's exit criteria confirmed met and frozen this
+                         session. No later milestone (X.3 Knowledge Resolution, Tool Calling,
+                         MCP, Multi-Agent, Output Validation) has been started."
+next_milestone_blocker: "ADR-DRAFT-X01 ratification remains the stated prerequisite for X.3
+                         (Knowledge Resolution) specifically, per PHASE_X_EXECUTION_PLAN.md.
+                         Requires explicit human approval to begin any next milestone, per this
+                         project's approval-gated milestone discipline."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.2 Batch B (or any later milestone)."
+                        to begin the next milestone."
 
 do_not:
-  - "Do not begin writing Batch B (AIContext/PromptBuilder/ModelSelector/claudeLLMAdapter) or
-     any later milestone (X.3 Knowledge Resolution, Tool Calling, Multi-Agent) without explicit
-     approval."
-  - "Do not modify any file under src/conversation/ (X.1, frozen) or src/reasoning/{domain,
-     application,testing}/ (X.2 Batch A, frozen) outside of a newly-approved milestone."
-  - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts — the
-     pre-existing, unrelated Phase 15 Governance Reasoning Engine track."
+  - "Do not begin X.3 (Knowledge Resolution), Tool Calling, MCP, Multi-Agent, or Output
+     Validation without explicit approval."
+  - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
+     application,testing}/ (X.2 Batch A, frozen), or src/ai/{domain,application,infrastructure}/
+     (X.2 Batch B, frozen) outside of a newly-approved milestone."
+  - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
+     track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
+     e.g. llmBridge.ts) — none of these belong to Phase X."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -120,7 +123,14 @@ historical_sequence_to_reach_here:
   - "Phase X.2 Batch A (Reasoning Pipeline Core) implemented: reasoningTypes,
      intentPatternRegistry, intentDetector, ruleEngine, evidenceCollector, citationFormatter,
      answerComposer, legalReasoningEngine (incl. Stage 3), mockKnowledgeFixtures, architecture
-     guard test — full repo suite green (13809 tests) — FROZEN — you are here"
+     guard test — full repo suite green (13809 tests) — FROZEN"
+  - "Phase X.2 Batch B architecture gate review performed before implementation — GO with 5
+     non-blocking recommendations, including a real correction (Finding A) to the previously-
+     stated AIContextBuilder integration design"
+  - "Phase X.2 Batch B (AIContext/Prompt/LLM Adapter path) implemented: aiTypes, AIContextBuilder,
+     PromptBuilder, PromptRenderer, ModelCapabilityRegistry, ModelSelector, ClaudeLLMAdapter
+     (wraps existing src/providers/ClaudeProvider.ts), architecture guard suite — full repo
+     suite green (13855 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
