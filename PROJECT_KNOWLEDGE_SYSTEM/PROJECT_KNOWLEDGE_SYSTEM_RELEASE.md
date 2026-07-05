@@ -1,6 +1,19 @@
 # PROJECT_KNOWLEDGE_SYSTEM — Release Note
 
-**Version:** v1.0
+> ## FINAL STATUS
+> **PROJECT_KNOWLEDGE_SYSTEM v1.1 COMPLETE**
+> **Documentation Track: CLOSED**
+> **Next Active Milestone: Phase X.1 — Conversation Core**
+>
+> This v1.0 release note is preserved as the historical record of the original release.
+> Superseded by [`PROJECT_KNOWLEDGE_SYSTEM_v1.1_RELEASE.md`](PROJECT_KNOWLEDGE_SYSTEM_v1.1_RELEASE.md),
+> which documents the Documentation Completion Sprint and the final governance classification
+> (completed / intentionally deferred / future implementation artifacts) that closed the
+> documentation track. ADR-X02 through ADR-X07, Golden Question datasets, Knowledge Base
+> population, domain legal content, FAQ population, and ontology population are confirmed
+> intentionally deferred future-milestone deliverables — **none block Phase X.1.**
+
+**Version:** v1.0 (see banner above for current status)
 **Generated:** 2026-07-05
 **Corresponding code release tag:** `v1.0-knowledge-platform` (commit `dad6b3d`) — independent
 version number, per [`DOCUMENTATION_VERSIONING.md`](DOCUMENTATION_VERSIONING.md); the two are
