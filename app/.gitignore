@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Docker infrastructure secrets — never commit. Copy .env.example or
+# .env.template to .env instead.
+.env
+.env.*.local
+
+# Local pg_dump / volume backup output (see docs/infrastructure.md)
+backups/
+
 # Playwright test output (not source artifacts — regenerated on every run)
 test-results/
 playwright-report/

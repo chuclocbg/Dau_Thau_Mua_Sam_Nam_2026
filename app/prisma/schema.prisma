@@ -1,0 +1,2044 @@
+// prisma/schema.prisma — Phase M1 Production Prisma Layer
+// Status: IMPLEMENTED, PENDING PRODUCTION VERIFICATION (see docs/prisma-production.md)
+// Connection config lives in prisma.config.ts (Prisma 7 driver-adapter pattern) — this file
+// intentionally has no `url` on the datasource block; see docs/prisma-production.md.
+// Run: npx prisma migrate dev --name <description>   (requires DATABASE_URL + a live Postgres)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum DocType {
+  LAW
+  DECREE
+  CIRCULAR
+  DECISION
+  RESOLUTION
+  GUIDELINE
+  UNKNOWN
+}
+
+enum DocStatus {
+  ACTIVE
+  EXPIRED
+  SUPERSEDED
+  DRAFT
+  REPEALED
+}
+
+enum AmendmentType {
+  REPLACE
+  MODIFY
+  ADD
+  REPEAL
+  SUSPEND
+  EXTEND
+  IMPLEMENT
+}
+
+// ─── Core entities ────────────────────────────────────────────────────────────
+
+model LegalDocument {
+  id            String    @id // kebab-case slug
+  symbol        String    @unique // "22/2023/QH15"
+  title         String
+  type          DocType
+  issuer        String
+  effectiveDate String // YYYY-MM-DD
+  expiredDate   String?
+  status        DocStatus @default(ACTIVE)
+  supersededBy  String?
+  replaces      String[]
+  source        String
+  priority      Int       @default(1)
+  tags          String[]
+  summary       String
+  confidence    Float     @default(1.0)
+  fullText      String?   @db.Text
+
+  versions         LegalVersion[]
+  articles         Article[]
+  appendices       Appendix[]
+  keywords         LegalKeyword[]
+  citationsFrom    LegalCitation[]       @relation("CitingDoc")
+  citationsTo      LegalCitation[]       @relation("CitedDoc")
+  amendmentsBase   Amendment[]           @relation("BaseDoc")
+  amendmentsAmend  Amendment[]           @relation("AmendingDoc")
+  effectivePeriods EffectivePeriod[]
+  domains          LegalDocumentDomain[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([effectiveDate])
+  @@map("legal_documents")
+}
+
+model LegalVersion {
+  id          String        @id
+  documentId  String
+  document    LegalDocument @relation(fields: [documentId], references: [id])
+  versionDate String // YYYY-MM-DD
+  changeNote  String
+  amendedById String? // Amendment.id that created this version
+  isBaseline  Boolean       @default(false)
+
+  articles   Article[]
+  appendices Appendix[]
+
+  createdAt DateTime @default(now())
+
+  @@index([documentId])
+  @@map("legal_versions")
+}
+
+model Article {
+  id         String        @id
+  documentId String
+  document   LegalDocument @relation(fields: [documentId], references: [id])
+  versionId  String?
+  version    LegalVersion? @relation(fields: [versionId], references: [id])
+  number     Int
+  title      String
+  content    String        @db.Text
+  chapterRef String? // "I", "II", "1"
+  sortOrder  Int
+
+  clauses Clause[]
+
+  @@index([documentId, number])
+  @@map("legal_articles")
+}
+
+model Clause {
+  id        String  @id
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id])
+  number    Int
+  content   String  @db.Text
+  sortOrder Int
+
+  points Point[]
+
+  @@index([articleId])
+  @@map("legal_clauses")
+}
+
+model Point {
+  id        String @id
+  clauseId  String
+  clause    Clause @relation(fields: [clauseId], references: [id])
+  label     String // 'a', 'b', 'c'
+  content   String @db.Text
+  sortOrder Int
+
+  @@index([clauseId])
+  @@map("legal_points")
+}
+
+model Appendix {
+  id         String        @id
+  documentId String
+  document   LegalDocument @relation(fields: [documentId], references: [id])
+  versionId  String?
+  version    LegalVersion? @relation(fields: [versionId], references: [id])
+  number     String
+  title      String
+  content    String        @db.Text
+
+  @@index([documentId])
+  @@map("legal_appendices")
+}
+
+model LegalCitation {
+  id            String        @id
+  citingDocId   String
+  citingDoc     LegalDocument @relation("CitingDoc", fields: [citingDocId], references: [id])
+  citedDocId    String
+  citedDoc      LegalDocument @relation("CitedDoc", fields: [citedDocId], references: [id])
+  citingArticle String?
+  citedArticle  String?
+  citedClause   String?
+  citedPoint    String?
+  formatted     String
+  isDirect      Boolean       @default(true)
+
+  @@index([citingDocId])
+  @@index([citedDocId])
+  @@map("legal_citations")
+}
+
+model LegalKeyword {
+  id            String         @id
+  term          String
+  definition    String         @db.Text
+  domain        String
+  sourceDocId   String?
+  sourceDoc     LegalDocument? @relation(fields: [sourceDocId], references: [id])
+  sourceArticle String?
+  synonyms      String[]
+
+  @@unique([term, domain])
+  @@index([domain])
+  @@map("legal_keywords")
+}
+
+model LegalDomain {
+  id          String @id // "dau_thau"
+  name        String // "Đấu thầu"
+  description String
+
+  documents LegalDocumentDomain[]
+
+  @@map("legal_domains")
+}
+
+model LegalDocumentDomain {
+  documentId String
+  domainId   String
+  document   LegalDocument @relation(fields: [documentId], references: [id])
+  domain     LegalDomain   @relation(fields: [domainId], references: [id])
+
+  @@id([documentId, domainId])
+  @@map("legal_document_domains")
+}
+
+model Amendment {
+  id                 String        @id
+  baseDocumentId     String
+  baseDocument       LegalDocument @relation("BaseDoc", fields: [baseDocumentId], references: [id])
+  amendingDocumentId String
+  amendingDocument   LegalDocument @relation("AmendingDoc", fields: [amendingDocumentId], references: [id])
+  amendmentType      AmendmentType
+  effectiveDate      String // YYYY-MM-DD
+  affectedArticles   String[]
+  summary            String
+
+  @@index([baseDocumentId])
+  @@map("legal_amendments")
+}
+
+model EffectivePeriod {
+  id         String        @id
+  documentId String
+  document   LegalDocument @relation(fields: [documentId], references: [id])
+  versionId  String?
+  startDate  String // YYYY-MM-DD
+  endDate    String? // null = still in force
+  endReason  String?
+
+  @@index([documentId])
+  @@map("legal_effective_periods")
+}
+
+// ─── Master Data Models (Phase C) ────────────────────────────────────────────
+// Status: IMPLEMENTED, PENDING PRODUCTION VERIFICATION (Phase M1) — see docs/prisma-production.md
+
+enum FundSourceType {
+  STATE
+  ODA
+  PPP
+  ENTERPRISE
+}
+
+model MdDepartment {
+  id         String         @id @default(uuid())
+  code       String         @unique
+  name       String
+  level      Int
+  parentId   String?
+  parent     MdDepartment?  @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children   MdDepartment[] @relation("DeptHierarchy")
+  isActive   Boolean        @default(true)
+  isArchived Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@map("md_departments")
+}
+
+model MdEmployee {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  departmentId String
+  email        String
+  roles        String[]
+  isActive     Boolean  @default(true)
+  isArchived   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([departmentId])
+  @@map("md_employees")
+}
+
+model MdApprovalAuthority {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  name       String
+  level      Int      @unique
+  maxValue   Decimal  @db.Decimal(18, 2)
+  isActive   Boolean  @default(true)
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("md_approval_authorities")
+}
+
+model MdVendor {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  taxCode       String
+  address       String
+  contactEmail  String?
+  isBlacklisted Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  isArchived    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("md_vendors")
+}
+
+model MdFundSource {
+  id         String         @id @default(uuid())
+  code       String         @unique
+  name       String
+  type       FundSourceType
+  isActive   Boolean        @default(true)
+  isArchived Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@map("md_fund_sources")
+}
+
+model MdBudgetYear {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  year        Int
+  startDate   String
+  endDate     String
+  totalBudget Decimal  @db.Decimal(18, 2)
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("md_budget_years")
+}
+
+model MdPackageType {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  name       String
+  category   String
+  isActive   Boolean  @default(true)
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("md_package_types")
+}
+
+model MdProcurementMethod {
+  id                         String   @id @default(uuid())
+  code                       String   @unique
+  name                       String
+  applicablePackageTypeCodes String[]
+  isActive                   Boolean  @default(true)
+  isArchived                 Boolean  @default(false)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@map("md_procurement_methods")
+}
+
+model MdProcurementCategory {
+  id               String                  @id @default(uuid())
+  code             String                  @unique
+  name             String
+  packageTypeCode  String
+  parentCategoryId String?
+  parent           MdProcurementCategory?  @relation("CatHierarchy", fields: [parentCategoryId], references: [id])
+  children         MdProcurementCategory[] @relation("CatHierarchy")
+  isActive         Boolean                 @default(true)
+  isArchived       Boolean                 @default(false)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@map("md_procurement_categories")
+}
+
+model MdDocumentTemplate {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  name             String
+  templateType     String
+  content          String
+  applicableStates String[]
+  isActive         Boolean  @default(true)
+  isArchived       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("md_document_templates")
+}
+
+// ─── Phase D: Procurement Package ────────────────────────────────────────────
+// Status: IMPLEMENTED, PENDING PRODUCTION VERIFICATION (Phase M1) — see docs/prisma-production.md
+
+enum PackageStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ParticipantRole {
+  OWNER
+  EVALUATOR
+  APPROVER
+  OBSERVER
+}
+
+model ProcurementPackage {
+  id                  String        @id @default(uuid())
+  packageCode         String        @unique
+  packageName         String
+  description         String        @default("")
+  packageType         String
+  procurementMethod   String
+  procurementCategory String?
+  estimatedValue      Decimal       @db.Decimal(18, 2)
+  approvedValue       Decimal?      @db.Decimal(18, 2)
+  fundSource          String
+  budgetYear          String
+  department          String
+  owner               String
+  workflowId          String?
+  status              PackageStatus @default(DRAFT)
+  // embedded as JSON
+  schedule            Json          @default("{}")
+  funding             Json          @default("[]")
+  participants        Json          @default("[]")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  items       PackageItem[]
+  budgets     PackageBudget[]
+  attachments PackageAttachment[]
+  history     PackageHistory[]
+
+  @@index([status])
+  @@index([department])
+  @@index([workflowId])
+  @@index([createdAt])
+  @@map("procurement_packages")
+}
+
+model PackageItem {
+  id                     String   @id @default(uuid())
+  packageId              String
+  itemCode               String
+  name                   String
+  unit                   String
+  quantity               Decimal  @db.Decimal(12, 3)
+  estimatedUnitPrice     Decimal  @db.Decimal(18, 2)
+  estimatedTotal         Decimal  @db.Decimal(18, 2)
+  category               String
+  technicalSpecification String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  package ProcurementPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_items")
+}
+
+model PackageBudget {
+  id              String   @id @default(uuid())
+  packageId       String
+  budgetSource    String
+  approvedAmount  Decimal  @db.Decimal(18, 2)
+  committedAmount Decimal  @default(0) @db.Decimal(18, 2)
+  spentAmount     Decimal  @default(0) @db.Decimal(18, 2)
+  remainingAmount Decimal  @db.Decimal(18, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  package ProcurementPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_budgets")
+}
+
+model PackageAttachment {
+  id           String   @id @default(uuid())
+  packageId    String
+  fileName     String
+  fileType     String
+  fileSize     Int
+  uploadedBy   String
+  uploadedAt   DateTime
+  documentType String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  package ProcurementPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_attachments")
+}
+
+model PackageHistory {
+  id          String         @id @default(uuid())
+  packageId   String
+  action      String
+  fromStatus  PackageStatus?
+  toStatus    PackageStatus?
+  performedBy String
+  performedAt DateTime
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  package ProcurementPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_history")
+}
+
+// ─── Phase E — Procurement Planning ──────────────────────────────────────────
+// Status: IMPLEMENTED, PENDING PRODUCTION VERIFICATION (Phase M1) — see docs/prisma-production.md
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MERGED
+  CANCELLED
+}
+
+enum RequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum PlanStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
+enum ProposalStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  CONVERTED
+}
+
+enum AnnualPlanStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  ACTIVE
+  CLOSED
+}
+
+enum DemandStatus {
+  OPEN
+  CONSOLIDATED
+  SUBMITTED
+}
+
+model ProcurementRequest {
+  id               String          @id @default(uuid())
+  requestCode      String          @unique
+  department       String
+  requester        String
+  reason           String
+  needDescription  String
+  needs            Json            @default("[]")
+  estimatedCost    Decimal         @db.Decimal(18, 2)
+  fundingSource    String
+  isUrgent         Boolean         @default(false)
+  expectedTimeline String
+  priority         RequestPriority @default(MEDIUM)
+  legalBasis       String?
+  status           RequestStatus   @default(PENDING)
+  planId           String?
+  mergedFromIds    String[]        @default([])
+  splitFromId      String?
+  performedBy      String?
+  approvedBy       String?
+  approvalNotes    String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  plan ProcurementPlan? @relation(fields: [planId], references: [id])
+
+  @@map("procurement_requests")
+}
+
+model ProcurementPlan {
+  id                    String     @id @default(uuid())
+  planNumber            String     @unique
+  fiscalYear            String
+  organization          String
+  responsibleDepartment String
+  estimatedTotal        Decimal    @default(0) @db.Decimal(18, 2)
+  approvedTotal         Decimal?   @db.Decimal(18, 2)
+  status                PlanStatus @default(DRAFT)
+  approvalHistory       Json       @default("[]")
+  requestIds            String[]   @default([])
+  generatedPackageIds   String[]   @default([])
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  requests    ProcurementRequest[]
+  allocations FundingAllocation[]
+  proposals   PackageProposal[]
+
+  @@map("procurement_plans")
+}
+
+model ProcurementDemand {
+  id               String       @id @default(uuid())
+  demandCode       String       @unique
+  fiscalYear       String
+  department       String
+  requestIds       String[]     @default([])
+  consolidatedCost Decimal      @default(0) @db.Decimal(18, 2)
+  status           DemandStatus @default(OPEN)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@map("procurement_demands")
+}
+
+model FundingAllocation {
+  id              String   @id @default(uuid())
+  planId          String
+  fundSourceCode  String
+  allocatedAmount Decimal  @db.Decimal(18, 2)
+  committedAmount Decimal  @default(0) @db.Decimal(18, 2)
+  remainingAmount Decimal  @db.Decimal(18, 2)
+  budgetYear      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  plan ProcurementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("funding_allocations")
+}
+
+model PackageProposal {
+  id                  String         @id @default(uuid())
+  proposalCode        String         @unique
+  planId              String
+  requestIds          String[]       @default([])
+  proposedPackageType String
+  proposedMethod      String
+  estimatedValue      Decimal        @db.Decimal(18, 2)
+  fundSource          String
+  justification       String?
+  status              ProposalStatus @default(DRAFT)
+  convertedPackageId  String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  plan ProcurementPlan @relation(fields: [planId], references: [id])
+
+  @@map("package_proposals")
+}
+
+model AnnualProcurementPlan {
+  id             String           @id @default(uuid())
+  annualPlanCode String           @unique
+  fiscalYear     String
+  organization   String
+  totalBudget    Decimal          @db.Decimal(18, 2)
+  approvedBudget Decimal?         @db.Decimal(18, 2)
+  planIds        String[]         @default([])
+  status         AnnualPlanStatus @default(DRAFT)
+  submittedAt    DateTime?
+  approvedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("annual_procurement_plans")
+}
+
+// ─── Phase F — Approval Module ────────────────────────────────────────────────
+
+enum ApprovalStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  RETURNED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum ApprovalType {
+  PLAN_APPROVAL
+  PACKAGE_APPROVAL
+  BIDDING_DOCUMENT_APPROVAL
+  EVALUATION_RESULT_APPROVAL
+  CONTRACT_APPROVAL
+  PAYMENT_APPROVAL
+}
+
+enum DecisionOutcome {
+  APPROVED
+  REJECTED
+  RETURNED
+}
+
+enum ApprovalActionEnum {
+  CREATED
+  SUBMITTED
+  ASSIGNED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  RETURNED
+  WITHDRAWN
+  COMMENTED
+  ATTACHMENT_ADDED
+  EXPIRED
+}
+
+enum ApprovalDocumentType {
+  SUPPORTING_DOCUMENT
+  LEGAL_REFERENCE
+  TECHNICAL_SPEC
+  COST_ESTIMATE
+  AUTHORITY_CONFIRMATION
+}
+
+enum SubjectType {
+  PLAN
+  PACKAGE
+}
+
+model ApprovalRequest {
+  id                    String         @id @default(uuid())
+  requestCode           String         @unique
+  approvalType          ApprovalType
+  subjectId             String
+  subjectType           SubjectType
+  requestedBy           String
+  requestedAt           DateTime       @default(now())
+  department            String
+  estimatedValue        BigInt
+  assignedAuthorityCode String?
+  assignedAuthorityName String?
+  dueDate               DateTime?
+  status                ApprovalStatus @default(DRAFT)
+  decisionId            String?
+  notes                 String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  decision    ApprovalDecisionRecord? @relation(fields: [decisionId], references: [id])
+  history     ApprovalHistoryEntry[]
+  comments    ApprovalComment[]
+  attachments ApprovalAttachment[]
+
+  @@index([status])
+  @@index([department])
+  @@index([subjectId])
+  @@index([approvalType])
+  @@map("approval_requests")
+}
+
+model ApprovalDecisionRecord {
+  id                String          @id @default(uuid())
+  requestId         String          @unique
+  outcome           DecisionOutcome
+  decidedBy         String
+  decidedAt         DateTime        @default(now())
+  legalBasis        String
+  conditions        String[]        @default([])
+  revisionRequired  String[]        @default([])
+  decisionReference String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  request ApprovalRequest[]
+
+  @@index([decidedBy])
+  @@map("approval_decisions")
+}
+
+model ApprovalHistoryEntry {
+  id          String             @id @default(uuid())
+  requestId   String
+  action      ApprovalActionEnum
+  performedBy String
+  performedAt DateTime           @default(now())
+  fromStatus  ApprovalStatus?
+  toStatus    ApprovalStatus?
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  request ApprovalRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId, performedAt])
+  @@map("approval_history")
+}
+
+model ApprovalComment {
+  id         String   @id @default(uuid())
+  requestId  String
+  content    String   @db.Text
+  authorCode String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  request ApprovalRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId])
+  @@map("approval_comments")
+}
+
+model ApprovalAttachment {
+  id           String               @id @default(uuid())
+  requestId    String
+  fileName     String
+  fileType     String
+  fileSize     BigInt
+  uploadedBy   String
+  documentType ApprovalDocumentType
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  request ApprovalRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId])
+  @@map("approval_attachments")
+}
+
+// ─── Phase G: Contract Module ─────────────────────────────────────────────────
+// Status: IMPLEMENTED, PENDING PRODUCTION VERIFICATION (Phase M1) — see docs/prisma-production.md
+
+enum ContractStatus {
+  DRAFT
+  SIGNED
+  EFFECTIVE
+  SUSPENDED
+  COMPLETED
+  TERMINATED
+}
+
+enum ContractType {
+  LUMP_SUM
+  UNIT_PRICE
+  TIME_BASED
+  MIXED
+}
+
+enum ContractAmendmentStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum ContractMilestoneStatus {
+  PENDING
+  REACHED
+  DELAYED
+  CANCELLED
+}
+
+enum GuaranteeType {
+  PERFORMANCE
+  ADVANCE_PAYMENT
+  WARRANTY
+}
+
+enum GuaranteeStatus {
+  ACTIVE
+  EXPIRED
+  RETURNED
+  FORFEITED
+}
+
+enum ContractActionEnum {
+  CREATED
+  SIGNED
+  ACTIVATED
+  SUSPENDED
+  RESUMED
+  COMPLETED
+  TERMINATED
+  AMENDMENT_CREATED
+  AMENDMENT_APPROVED
+  AMENDMENT_REJECTED
+  MILESTONE_REACHED
+  MILESTONE_DELAYED
+  GUARANTEE_ADDED
+  GUARANTEE_RETURNED
+  GUARANTEE_FORFEITED
+  NOTE_ADDED
+  ATTACHMENT_ADDED
+}
+
+enum ContractDocumentType {
+  CONTRACT_DOCUMENT
+  AMENDMENT_DOCUMENT
+  PERFORMANCE_SECURITY
+  ADVANCE_PAYMENT_GUARANTEE
+  WARRANTY_DOCUMENT
+  PAYMENT_RECORD
+  HANDOVER_RECORD
+  INSPECTION_RECORD
+  OTHER
+}
+
+model Contract {
+  id                         String         @id @default(uuid())
+  contractNumber             String         @unique
+  contractType               ContractType
+  packageId                  String
+  approvalId                 String?
+  workflowId                 String?
+  winnerCode                 String
+  winnerName                 String
+  contractValue              Decimal        @db.Decimal(18, 2)
+  currency                   String         @default("VND")
+  signedDate                 String?
+  effectiveDate              String?
+  expiryDate                 String?
+  performanceSecurityAmount  Decimal?       @db.Decimal(18, 2)
+  performanceSecurityPercent Decimal?       @db.Decimal(5, 2)
+  advancePaymentAmount       Decimal?       @db.Decimal(18, 2)
+  advancePaymentPercent      Decimal?       @db.Decimal(5, 2)
+  status                     ContractStatus @default(DRAFT)
+  notes                      String?
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+
+  amendments  ContractAmendment[]
+  milestones  ContractMilestone[]
+  guarantees  ContractGuarantee[]
+  history     ContractHistoryEntry[]
+  attachments ContractAttachment[]
+
+  @@index([status])
+  @@index([packageId])
+  @@index([winnerCode])
+  @@index([workflowId])
+  @@index([effectiveDate])
+  @@map("contracts")
+}
+
+model ContractAmendment {
+  id                String                  @id @default(uuid())
+  contractId        String
+  amendmentNumber   Int
+  amendmentCode     String                  @unique
+  reason            String
+  changedFields     String[]
+  valueChange       Decimal?                @db.Decimal(18, 2)
+  timeExtensionDays Int?
+  status            ContractAmendmentStatus @default(DRAFT)
+  approvedBy        String?
+  approvedAt        DateTime?
+  notes             String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@unique([contractId, amendmentNumber])
+  @@index([contractId])
+  @@map("contract_amendments")
+}
+
+model ContractMilestone {
+  id            String                  @id @default(uuid())
+  contractId    String
+  milestoneCode String
+  title         String
+  description   String?
+  plannedDate   String
+  plannedValue  Decimal                 @db.Decimal(18, 2)
+  actualDate    String?
+  actualValue   Decimal?                @db.Decimal(18, 2)
+  status        ContractMilestoneStatus @default(PENDING)
+  verifiedBy    String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, status])
+  @@map("contract_milestones")
+}
+
+model ContractGuarantee {
+  id              String          @id @default(uuid())
+  contractId      String
+  guaranteeType   GuaranteeType
+  amount          Decimal         @db.Decimal(18, 2)
+  percent         Decimal?        @db.Decimal(5, 2)
+  issuerCode      String
+  issuerName      String
+  guaranteeNumber String
+  issuedDate      String
+  expiryDate      String
+  returnedDate    String?
+  status          GuaranteeStatus @default(ACTIVE)
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, status])
+  @@index([contractId, guaranteeType])
+  @@map("contract_guarantees")
+}
+
+model ContractHistoryEntry {
+  id          String             @id @default(uuid())
+  contractId  String
+  action      ContractActionEnum
+  performedBy String
+  performedAt String
+  fromStatus  ContractStatus?
+  toStatus    ContractStatus?
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, performedAt])
+  @@map("contract_history")
+}
+
+model ContractAttachment {
+  id           String               @id @default(uuid())
+  contractId   String
+  fileName     String
+  fileType     String
+  fileSize     BigInt
+  uploadedBy   String
+  documentType ContractDocumentType
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId])
+  @@map("contract_attachments")
+}
+
+// ─── Phase H: Acceptance Module ───────────────────────────────────────────────
+
+enum AcceptanceStatus {
+  DRAFT
+  COMMITTEE_FORMED
+  IN_PROGRESS
+  PARTIAL_ACCEPTED
+  COMPLETED
+  REJECTED
+  WITHDRAWN
+}
+
+enum AcceptanceType {
+  PARTIAL
+  FINAL
+  WARRANTY
+}
+
+enum AcceptanceSessionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AcceptanceItemStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum AcceptanceMinuteStatus {
+  DRAFT
+  SIGNED
+  VOIDED
+}
+
+enum AcceptanceMemberRole {
+  CHAIRMAN
+  SECRETARY
+  MEMBER
+  EXPERT
+}
+
+enum AcceptanceAction {
+  CREATED
+  WITHDRAWN
+  COMMITTEE_FORMED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  SESSION_CREATED
+  SESSION_STARTED
+  SESSION_COMPLETED
+  SESSION_CANCELLED
+  ITEM_RECORDED
+  MINUTE_CREATED
+  MINUTE_SIGNED
+  COMPLETED
+  REJECTED
+  LEGAL_BASIS_ADDED
+}
+
+enum AcceptanceDocType {
+  CONTRACT_DOCUMENT
+  TECHNICAL_REPORT
+  TEST_RESULT
+  PHOTO_EVIDENCE
+  INSPECTION_CERTIFICATE
+  WARRANTY_DOCUMENT
+  MINUTE_ATTACHMENT
+  OTHER
+}
+
+model AcceptanceRequest {
+  id             String           @id @default(uuid())
+  requestCode    String           @unique
+  acceptanceType AcceptanceType
+  contractId     String
+  packageId      String?
+  workflowId     String?
+  requestedBy    String
+  requestedAt    String
+  department     String
+  description    String?
+  legalBasis     String[]
+  status         AcceptanceStatus @default(DRAFT)
+  completedAt    String?
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  committees  AcceptanceCommittee[]
+  sessions    AcceptanceSession[]
+  items       AcceptanceItem[]
+  minutes     AcceptanceMinute[]
+  history     AcceptanceHistoryEntry[]
+  attachments AcceptanceAttachment[]
+
+  @@index([contractId])
+  @@index([status])
+  @@index([workflowId])
+  @@index([department])
+  @@map("acceptance_requests")
+}
+
+model AcceptanceCommittee {
+  id                String   @id @default(uuid())
+  requestId         String   @unique
+  committeeCode     String
+  establishedBy     String
+  establishedAt     String
+  decisionReference String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  request AcceptanceRequest  @relation(fields: [requestId], references: [id])
+  members AcceptanceMember[]
+
+  @@index([requestId])
+  @@map("acceptance_committees")
+}
+
+model AcceptanceMember {
+  id           String               @id @default(uuid())
+  committeeId  String
+  requestId    String
+  memberCode   String
+  memberName   String
+  role         AcceptanceMemberRole
+  organization String?
+  isActive     Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  committee AcceptanceCommittee @relation(fields: [committeeId], references: [id])
+
+  @@unique([committeeId, memberCode])
+  @@index([committeeId, isActive])
+  @@map("acceptance_members")
+}
+
+model AcceptanceSession {
+  id            String                  @id @default(uuid())
+  requestId     String
+  sessionNumber Int
+  sessionType   AcceptanceType
+  scheduledDate String
+  actualDate    String?
+  location      String?
+  chairmanCode  String?
+  status        AcceptanceSessionStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  request AcceptanceRequest @relation(fields: [requestId], references: [id])
+  items   AcceptanceItem[]
+  minute  AcceptanceMinute?
+
+  @@unique([requestId, sessionNumber])
+  @@index([requestId, status])
+  @@map("acceptance_sessions")
+}
+
+model AcceptanceItem {
+  id                 String               @id @default(uuid())
+  sessionId          String
+  requestId          String
+  itemCode           String
+  description        String
+  contractedQuantity Decimal              @db.Decimal(12, 3)
+  acceptedQuantity   Decimal              @db.Decimal(12, 3)
+  rejectedQuantity   Decimal              @db.Decimal(12, 3)
+  unit               String?
+  rejectReason       String?
+  verifiedBy         String?
+  status             AcceptanceItemStatus @default(PENDING)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  session AcceptanceSession @relation(fields: [sessionId], references: [id])
+  request AcceptanceRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId, status])
+  @@index([sessionId])
+  @@map("acceptance_items")
+}
+
+model AcceptanceMinute {
+  id         String                 @id @default(uuid())
+  requestId  String
+  sessionId  String                 @unique
+  minuteCode String
+  conclusion String
+  status     AcceptanceMinuteStatus @default(DRAFT)
+  signedBy   String?
+  signedAt   String?
+  notes      String?
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  request AcceptanceRequest @relation(fields: [requestId], references: [id])
+  session AcceptanceSession @relation(fields: [sessionId], references: [id])
+
+  @@index([requestId])
+  @@map("acceptance_minutes")
+}
+
+model AcceptanceHistoryEntry {
+  id          String            @id @default(uuid())
+  requestId   String
+  action      AcceptanceAction
+  performedBy String
+  performedAt String
+  fromStatus  AcceptanceStatus?
+  toStatus    AcceptanceStatus?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  request AcceptanceRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId, performedAt])
+  @@map("acceptance_history")
+}
+
+model AcceptanceAttachment {
+  id           String            @id @default(uuid())
+  requestId    String
+  fileName     String
+  fileType     String
+  fileSize     BigInt
+  uploadedBy   String
+  documentType AcceptanceDocType
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  request AcceptanceRequest @relation(fields: [requestId], references: [id])
+
+  @@index([requestId])
+  @@map("acceptance_attachments")
+}
+
+// ─── Phase J — Auth Module (Phase M1 production schema) ──────────────────────
+// IMPLEMENTED, PENDING PRODUCTION VERIFICATION. Mirrors src/auth/types/authTypes.ts
+// and src/auth/types/auditTypes.ts. `Auth` prefix avoids collision with reserved
+// words (user, session) — same defensive convention as the `Md` prefix on MasterData.
+
+enum AuthPermissionScope {
+  OWN
+  DEPARTMENT
+  ALL
+}
+
+enum AuthPolicyEffect {
+  ALLOW
+  DENY
+}
+
+model AuthUser {
+  id                String    @id @default(uuid())
+  username          String    @unique
+  email             String    @unique
+  displayName       String
+  departmentId      String
+  roleIds           String[]  @default([])
+  passwordHash      String?
+  externalId        String?
+  externalProvider  String?
+  isActive          Boolean   @default(true)
+  isLocked          Boolean   @default(false)
+  failedLoginCount  Int       @default(0)
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sessions            AuthSession[]
+  delegationsFrom     AuthDelegationGrant[]   @relation("DelegationFrom")
+  delegationsTo       AuthDelegationGrant[]   @relation("DelegationTo")
+  permissionGrants    AuthPermissionGrant[]
+  approvalHierarchies AuthApprovalHierarchy[]
+
+  @@index([departmentId])
+  @@map("auth_users")
+}
+
+model AuthRole {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  description   String?
+  permissionIds String[] @default([])
+  parentRoleId  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("auth_roles")
+}
+
+model AuthPermission {
+  id          String              @id @default(uuid())
+  resource    String
+  action      String
+  scope       AuthPermissionScope
+  conditions  Json?
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([resource, action])
+  @@map("auth_permissions")
+}
+
+model AuthSession {
+  id               String    @id @default(uuid())
+  userId           String
+  user             AuthUser  @relation(fields: [userId], references: [id])
+  refreshTokenHash String
+  issuedAt         DateTime
+  expiresAt        DateTime
+  refreshExpiresAt DateTime
+  revokedAt        DateTime?
+  revokedBy        String?
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model AuthDelegationGrant {
+  id            String              @id @default(uuid())
+  fromUserId    String
+  fromUser      AuthUser            @relation("DelegationFrom", fields: [fromUserId], references: [id])
+  toUserId      String
+  toUser        AuthUser            @relation("DelegationTo", fields: [toUserId], references: [id])
+  permissionIds String[]            @default([])
+  scope         AuthPermissionScope
+  validFrom     DateTime
+  validUntil    DateTime
+  reason        String
+  legalBasis    Json
+  revokedAt     DateTime?
+  revokedBy     String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@map("auth_delegation_grants")
+}
+
+model AuthPermissionGrant {
+  id           String    @id @default(uuid())
+  userId       String
+  user         AuthUser  @relation(fields: [userId], references: [id])
+  permissionId String
+  grantedBy    String
+  validFrom    DateTime
+  validUntil   DateTime?
+  legalBasis   Json?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("auth_permission_grants")
+}
+
+model AuthApprovalHierarchy {
+  id             String    @id @default(uuid())
+  userId         String
+  user           AuthUser  @relation(fields: [userId], references: [id])
+  departmentId   String
+  authorityLevel Int
+  valueThreshold BigInt
+  packageTypes   String[]  @default([])
+  effectiveFrom  DateTime
+  effectiveUntil DateTime?
+  legalBasis     Json
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([departmentId])
+  @@map("auth_approval_hierarchies")
+}
+
+model AuthPolicy {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  resource    String
+  action      String
+  effect      AuthPolicyEffect
+  conditions  Json
+  priority    Int
+  isActive    Boolean          @default(true)
+  legalBasis  Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([resource, action])
+  @@map("auth_policies")
+}
+
+model AuthAuditEvent {
+  id           String   @id @default(uuid())
+  eventType    String
+  userId       String
+  targetUserId String?
+  sessionId    String?
+  resource     String?
+  action       String?
+  outcome      String
+  reason       String?
+  delegationId String?
+  policyId     String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json     @default("{}")
+  occurredAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([occurredAt])
+  @@map("auth_audit_events")
+}
+
+// ─── Phase K — Storage Module (Phase M1 production schema) ───────────────────
+// IMPLEMENTED, PENDING PRODUCTION VERIFICATION. Mirrors src/storage/types/storageTypes.ts
+// and src/storage/types/auditTypes.ts. Only the 5 repository interfaces in
+// StorageRepositories are modeled — StoredObject/StorageVersion are an internal
+// MemoryObjectStore implementation detail in storageService.ts, not a repository,
+// so no Prisma model exists for them (preserves the existing repository abstraction).
+
+enum StorageDocumentType {
+  DECISION
+  TENDER_DOCUMENTS
+  BID_SUBMISSION
+  EVALUATION_REPORT
+  CONTRACT
+  ACCEPTANCE
+  INVOICE
+  PAYMENT_EVIDENCE
+  AUDIT_EVIDENCE
+  LEGAL_DOCUMENT
+  GENERAL
+}
+
+enum StorageUploadStatus {
+  INITIATED
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+model StorageAttachmentReference {
+  id           String              @id @default(uuid())
+  objectId     String
+  moduleType   String
+  moduleId     String
+  documentType StorageDocumentType
+  filename     String
+  mimeType     String
+  sizeBytes    BigInt
+  checksum     String
+  versionId    String
+  uploadedBy   String
+  uploadedAt   DateTime
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([objectId])
+  @@index([moduleType, moduleId])
+  @@index([documentType])
+  @@map("storage_attachment_references")
+}
+
+model StorageUploadSession {
+  id                String              @id @default(uuid())
+  objectKey         String
+  expectedSizeBytes BigInt?
+  expectedChecksum  String?
+  checksumAlgorithm String
+  totalChunks       Int?
+  uploadedChunks    Int                 @default(0)
+  status            StorageUploadStatus @default(INITIATED)
+  documentType      StorageDocumentType
+  uploadedBy        String
+  metadata          Json                @default("{}")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([status])
+  @@index([uploadedBy])
+  @@map("storage_upload_sessions")
+}
+
+model StorageRetentionPolicy {
+  id            String              @id @default(uuid())
+  documentType  StorageDocumentType
+  retentionDays Int
+  legalBasis    Json
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([documentType])
+  @@map("storage_retention_policies")
+}
+
+model StorageLegalHold {
+  id         String    @id @default(uuid())
+  objectId   String?
+  moduleType String?
+  moduleId   String?
+  reason     String
+  legalBasis Json
+  placedBy   String
+  placedAt   DateTime
+  releasedBy String?
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([objectId])
+  @@index([moduleType, moduleId])
+  @@map("storage_legal_holds")
+}
+
+model StorageAuditEvent {
+  id              String   @id @default(uuid())
+  eventType       String
+  objectKey       String?
+  objectId        String?
+  attachmentId    String?
+  uploadSessionId String?
+  userId          String
+  moduleType      String?
+  moduleId        String?
+  outcome         String
+  reason          String?
+  sizeBytes       BigInt?
+  checksum        String?
+  metadata        Json     @default("{}")
+  occurredAt      DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([objectId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([moduleType, moduleId])
+  @@map("storage_audit_events")
+}
+
+// ─── Phase L — Notification Module (Phase M1 production schema) ─────────────
+// IMPLEMENTED, PENDING PRODUCTION VERIFICATION. Mirrors src/notification/types/
+// notificationTypes.ts and auditTypes.ts — all 10 entities in NotificationRepositories.
+// ScheduleTime is split into a flat, indexable `scheduledAt` column plus a `recurrence`
+// Json blob (rather than one opaque Json column) so findDueSchedules() can use a real
+// database index instead of scanning JSON.
+
+enum NotifChannelType {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+  WEBHOOK
+}
+
+enum NotifPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum NotifDeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  EXPIRED
+  CANCELLED
+  RETRIED
+}
+
+enum NotifMode {
+  IMMEDIATE
+  SCHEDULED
+  DELAYED
+  RECURRING
+  BULK
+  EVENT_DRIVEN
+}
+
+enum NotifBatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Notification {
+  id           String              @id @default(uuid())
+  templateCode String
+  subject      String
+  body         String              @db.Text
+  priority     NotifPriority       @default(NORMAL)
+  mode         NotifMode           @default(IMMEDIATE)
+  channels     NotifChannelType[]
+  variables    Json                @default("{}")
+  moduleType   String?
+  moduleId     String?
+  scheduledAt  DateTime?
+  recurrence   Json?
+  batchId      String?
+  ruleId       String?
+  status       NotifDeliveryStatus @default(QUEUED)
+  createdBy    String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  recipients NotificationRecipient[]
+  deliveries NotificationDelivery[]
+
+  @@index([moduleType, moduleId])
+  @@index([batchId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("notification_notifications")
+}
+
+model NotificationRecipient {
+  id             String              @id @default(uuid())
+  notificationId String
+  notification   Notification        @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  address        String
+  channelType    NotifChannelType
+  status         NotifDeliveryStatus @default(QUEUED)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  deliveries NotificationDelivery[]
+
+  @@index([notificationId])
+  @@map("notification_recipients")
+}
+
+model NotificationChannel {
+  id           String           @id @default(uuid())
+  channelType  NotifChannelType
+  providerType String
+  isEnabled    Boolean          @default(true)
+  priority     Int              @default(0)
+  config       Json             @default("{}")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([channelType])
+  @@map("notification_channels")
+}
+
+model NotificationTemplate {
+  id                String             @id @default(uuid())
+  code              String             @unique
+  name              String
+  subjectTemplate   String
+  bodyTemplate      String             @db.Text
+  requiredVariables String[]           @default([])
+  channels          NotifChannelType[]
+  legalBasis        Json               @default("[]")
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@map("notification_templates")
+}
+
+model NotificationDelivery {
+  id                String                @id @default(uuid())
+  notificationId    String
+  notification      Notification          @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  recipientId       String
+  recipient         NotificationRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  channelType       NotifChannelType
+  providerType      String
+  status            NotifDeliveryStatus   @default(QUEUED)
+  attempt           Int
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  failureReason     String?
+  providerMessageId String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([notificationId])
+  @@index([recipientId])
+  @@index([status])
+  @@map("notification_deliveries")
+}
+
+model NotificationBatch {
+  id           String           @id @default(uuid())
+  name         String
+  templateCode String
+  totalCount   Int
+  queuedCount  Int
+  sentCount    Int              @default(0)
+  failedCount  Int              @default(0)
+  status       NotifBatchStatus @default(PENDING)
+  createdBy    String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@map("notification_batches")
+}
+
+model NotificationPreference {
+  id              String           @id @default(uuid())
+  userId          String
+  channelType     NotifChannelType
+  isOptedIn       Boolean          @default(true)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([userId, channelType])
+  @@map("notification_preferences")
+}
+
+model NotificationRule {
+  id           String             @id @default(uuid())
+  eventType    String
+  templateCode String
+  channels     NotifChannelType[]
+  priority     NotifPriority      @default(NORMAL)
+  isActive     Boolean            @default(true)
+  conditions   Json               @default("{}")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([eventType])
+  @@map("notification_rules")
+}
+
+model NotificationEvent {
+  id           String    @id @default(uuid())
+  eventType    String
+  sourceModule String
+  sourceId     String
+  payload      Json      @default("{}")
+  occurredAt   DateTime
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([eventType])
+  @@index([sourceModule, sourceId])
+  @@map("notification_events")
+}
+
+model NotificationAuditEvent {
+  id             String   @id @default(uuid())
+  eventType      String
+  notificationId String?
+  recipientId    String?
+  deliveryId     String?
+  batchId        String?
+  ruleId         String?
+  userId         String
+  outcome        String
+  reason         String?
+  metadata       Json     @default("{}")
+  occurredAt     DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([notificationId])
+  @@index([userId])
+  @@index([eventType])
+  @@map("notification_audit_events")
+}
+
+// ─── Phase I — Payment Module (Phase M1 production schema) ──────────────────
+// IMPLEMENTED, PENDING PRODUCTION VERIFICATION. Mirrors src/payment/paymentTypes.ts.
+// Only the 6 entities with a repository interface in paymentRepository.ts are modeled
+// (PaymentBatch/PaymentApproval/PaymentAudit/PaymentEvent have TS types but no
+// repository — not persisted today, so no Prisma model, preserving existing behaviour).
+// Money.amount is `bigint` per ADR-004 ("never float") — mapped to BigInt, NOT Decimal,
+// to preserve arbitrary-precision integer semantics exactly (unlike the flat Decimal(18,2)
+// used by the older Package/Planning/Contract modules, which predate ADR-004).
+
+enum PaymentCurrency {
+  VND
+  USD
+  EUR
+  JPY
+  AUD
+}
+
+enum PaymentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SUBMITTED_TREASURY
+  TREASURY_APPROVED
+  TREASURY_REJECTED
+  PAID
+  SUSPENDED
+  CANCELLED
+  REJECTED
+}
+
+enum PaymentType {
+  ADVANCE
+  PROGRESS
+  FINAL
+  RETENTION_RELEASE
+  WARRANTY_RELEASE
+  GUARANTEE_RELEASE
+}
+
+enum TreasuryStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+  RETURNED
+}
+
+enum PaymentAction {
+  CREATED
+  SUBMITTED
+  APPROVED
+  REJECTED
+  TREASURY_SUBMITTED
+  TREASURY_APPROVED
+  TREASURY_REJECTED
+  PAID
+  SUSPENDED
+  RESUMED
+  CANCELLED
+  NOTE_ADDED
+  ATTACHMENT_ADDED
+}
+
+model PaymentRequest {
+  id             String          @id @default(uuid())
+  requestCode    String          @unique
+  paymentType    PaymentType
+  contractId     String
+  packageId      String?
+  acceptanceId   String?
+  workflowId     String?
+  requestedBy    String
+  requestedAt    DateTime
+  department     String
+  amount         BigInt
+  currency       PaymentCurrency @default(VND)
+  legalBasis     Json            @default("[]")
+  resolvedRuleId String?
+  status         PaymentStatus   @default(DRAFT)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  payments     Payment[]
+  installments PaymentInstallment[]
+  submissions  TreasurySubmission[]
+  history      PaymentHistoryEntry[]
+  documents    PaymentDocument[]
+
+  @@index([contractId])
+  @@index([acceptanceId])
+  @@index([status])
+  @@index([department])
+  @@index([paymentType])
+  @@index([workflowId])
+  @@map("payment_requests")
+}
+
+model Payment {
+  id            String          @id @default(uuid())
+  requestId     String
+  request       PaymentRequest  @relation(fields: [requestId], references: [id])
+  paymentNumber String          @unique
+  amount        BigInt
+  currency      PaymentCurrency @default(VND)
+  paidAt        DateTime?
+  treasuryRef   String?
+  status        PaymentStatus   @default(DRAFT)
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([requestId])
+  @@map("payments")
+}
+
+model PaymentInstallment {
+  id                String          @id @default(uuid())
+  requestId         String
+  request           PaymentRequest  @relation(fields: [requestId], references: [id])
+  installmentCode   String          @unique
+  installmentNumber Int
+  amount            BigInt
+  currency          PaymentCurrency @default(VND)
+  dueDate           String
+  paidAt            DateTime?
+  status            PaymentStatus   @default(DRAFT)
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([requestId])
+  @@map("payment_installments")
+}
+
+model TreasurySubmission {
+  id             String         @id @default(uuid())
+  requestId      String
+  request        PaymentRequest @relation(fields: [requestId], references: [id])
+  submissionCode String         @unique
+  submittedBy    String
+  submittedAt    DateTime
+  treasuryBranch String?
+  status         TreasuryStatus @default(PENDING)
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  rejectReason   String?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([requestId])
+  @@map("treasury_submissions")
+}
+
+model PaymentHistoryEntry {
+  id          String         @id @default(uuid())
+  requestId   String
+  request     PaymentRequest @relation(fields: [requestId], references: [id])
+  action      PaymentAction
+  performedBy String
+  performedAt DateTime
+  fromStatus  PaymentStatus?
+  toStatus    PaymentStatus?
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([requestId, performedAt])
+  @@map("payment_history")
+}
+
+model PaymentDocument {
+  id           String         @id @default(uuid())
+  requestId    String
+  request      PaymentRequest @relation(fields: [requestId], references: [id])
+  fileName     String
+  fileType     String
+  fileSize     Int
+  uploadedBy   String
+  documentType String
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([requestId])
+  @@map("payment_documents")
+}
