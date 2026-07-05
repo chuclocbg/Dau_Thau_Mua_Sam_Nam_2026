@@ -66,13 +66,19 @@ next_active_milestone: "Phase X.3 - Knowledge Resolution (or any other later mil
 next_milestone_status: "NOT AUTHORIZED. X.4's exit criteria confirmed met and frozen this
                          session. No later milestone (X.3 Knowledge Resolution, Tool Calling,
                          MCP, Multi-Agent) has been started."
-next_milestone_blocker: "ADR-DRAFT-X01 ratification remains the stated prerequisite for X.3
-                         (Knowledge Resolution) specifically, per PHASE_X_EXECUTION_PLAN.md.
-                         Requires explicit human approval to begin any next milestone, per this
-                         project's approval-gated milestone discipline."
+next_milestone_blocker: "RESOLVED 2026-07-05: ADR-DRAFT-X01 ratified as ADR-022 in
+                         app/.memory/decision-index.md (see PROJECT_KNOWLEDGE_SYSTEM/
+                         01_PROJECT_DOCS/ADR-X01_FINAL.md for the ratified final-draft record,
+                         and PHASE_X3_READINESS_REVIEW.md for the readiness review that found
+                         the three additional integration-shape gaps the ratified ADR closes).
+                         X.3's one named blocker is cleared. Ratification is a governance action
+                         only — it does not itself authorize beginning X.3 implementation, which
+                         still requires its own explicit human approval, per this project's
+                         approval-gated milestone discipline."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin the next milestone."
+                        to begin Phase X.3 (Knowledge Resolution) implementation — its blocker
+                        is cleared but starting it is a separate authorization."
 
 do_not:
   - "Do not begin X.3 (Knowledge Resolution), Tool Calling, MCP, or Multi-Agent without explicit
@@ -139,7 +145,15 @@ historical_sequence_to_reach_here:
   - "Phase X.4 (Output Validation) implemented: validationTypes, CitationValidator,
      ConfidenceValidator, LegalConsistencyValidator, OutputValidator, ResponseFormatter,
      ValidationPipeline, architecture guard suite — 100% adversarial-fixture catch rate — full
-     repo suite green (13913 tests) — FROZEN — you are here"
+     repo suite green (13913 tests) — FROZEN"
+  - "PHASE_X3_READINESS_REVIEW.md produced — NO-GO, sole blocker: ADR-DRAFT-X01 not yet
+     ratified; three additional integration-shape gaps found and documented"
+  - "ADR-X01_FINAL.md produced (critical re-review, not a rubber stamp): reconfirmed the
+     original searchKnowledge()/resolveX() split, closed 3 new gaps found this pass (a real
+     temporal-filtering gap in searchKnowledge(), plus 2 field-shape mappings) — GO recommended"
+  - "ADR-X01_FINAL ratified 2026-07-05 as ADR-022 in app/.memory/decision-index.md; original
+     draft PHASE_X_ADR_DRAFT_001.md marked SUPERSEDED; X.3's one named blocker cleared —
+     governance action only, does not itself authorize starting X.3 — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

@@ -3,7 +3,7 @@
 Architectural Decision Records for the Procurement Platform.
 Every non-obvious decision that affects future development.
 
-Last verified against repository state: 2026-07-05 (ADR-021 added — Release Candidate audit passed, GO WITH NOTES; Knowledge Platform v1.0 milestone declared).
+Last verified against repository state: 2026-07-05 (ADR-022 added — Knowledge Retrieval Strategy for Phase X.3 ratified).
 
 Full ADR files: `.memory/decisions/`
 Legacy decision log (pre-ADR): `.memory/decision-log.md`
@@ -45,6 +45,7 @@ Legacy decision log (pre-ADR): `.memory/decision-log.md`
 | ADR-019 | Knowledge Platform core architecture FROZEN after 2 representative providers (Legal, Procurement) proved every extension point; remaining 14 providers built one session at a time, never all at once | ACTIVE | 2026-07-05 | `docs/knowledge-platform.md` (full rationale) |
 | ADR-020 | Knowledge Platform Phase N declared COMPLETE and FROZEN at 16/16 providers (Batches 1-4); platform core/registry/router/search/graph/resolver/retriever/provider contract never modified across the entire phase; `BestPracticeProvider`/`AIFeedbackProvider` are pure knowledge sources with zero AI reasoning or LLM calls, reserved as Phase X's only intended entry points into this layer | ACTIVE | 2026-07-05 | `docs/knowledge-platform.md` (full rationale) |
 | ADR-021 | Post-Phase-N Release Candidate audit (architecture boundaries, Knowledge Platform internals, Project Memory sync, full test suite, technical debt, git readiness) recorded recommendation **GO WITH NOTES**; declared Current Milestone = Knowledge Platform v1.0, Next Planned Milestone = Phase X Architecture Design (not started); notes are pre-existing (uncommitted-work risk, Phase M1 unverified, TD-01–TD-15) and unchanged by Phase N | ACTIVE | 2026-07-05 | `.memory/repository-health.md` (full scorecard) |
+| ADR-022 | Knowledge Retrieval Strategy for Phase X.3: `KnowledgeResolver` uses `searchKnowledge()` for free-text ranked retrieval (`cases`/`bestpractice`), `resolveX(context, asOfDate)` for rule-based applicability; `searchKnowledge()`-sourced items are never eligible for `AppliedRole = 'PRIMARY_BASIS'` (no temporal filtering in `search()`); `LegalBasis.document`→`documentSymbol` mapping, `createdAt` fallback for missing `effectivePeriod`, single-JSON-blob encoding for rule/threshold metadata. Ratifies and supersedes the `ADR-DRAFT-X01` draft. Zero changes to frozen `IKnowledgePlatform` | ACTIVE | 2026-07-05 | `decisions/ADR-022-knowledge-resolution-strategy.md` |
 
 ---
 

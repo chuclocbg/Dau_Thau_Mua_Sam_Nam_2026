@@ -11,8 +11,6 @@ status: CURRENT
 related: [TECHNICAL_DEBT.md, ../04_PROJECT_MEMORY/LESSONS_LEARNED.md]
 
 critical:
-  - "resolveCases/resolveBestPractice signature mismatch blocks Phase X.2 until ADR-DRAFT-X01
-     is ratified"
   - "Hallucinated legal citation reaching a real procurement decision-maker — mitigated by
      OutputValidator design, NOT YET IMPLEMENTED, no code exists to test this against yet"
   - "No auth enforcement wired to endpoints yet — Phase X must not ship an endpoint before

@@ -8,11 +8,14 @@ summary, not as retrievable Context/Decision/Alternatives/Consequences reasoning
 
 **Dependencies:** [AI Advisory Architecture](AI_ADVISORY_ARCHITECTURE.md), [Knowledge Platform](KNOWLEDGE_PLATFORM.md).
 
-**Status:** DECIDED at the documentation-design level. **Not yet ratified** into
-`app/.memory/decision-index.md` — ratification is a separate, explicit action outside this
-system's scope (per `../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md`). Numbered independently
-(`X01`, not `ADR-00X`) specifically to avoid colliding with either of the two existing ADR
-numbering sequences documented in [`../03_KNOWLEDGE_BASE/adr/README.md`](../03_KNOWLEDGE_BASE/adr/README.md).
+**Status:** **SUPERSEDED**, 2026-07-05. This draft's core decision was carried forward and
+ratified as **ADR-022** in `app/.memory/decision-index.md`, via
+[`ADR-X01_FINAL.md`](ADR-X01_FINAL.md) — which also closed three integration-shape gaps this
+original draft did not address (see `ADR-X01_FINAL.md` §2.2–2.3). This file is retained
+verbatim, unedited beyond this status line, as the historical record of the original
+decision. Numbered independently (`X01`, not `ADR-00X`) specifically to avoid colliding with
+either of the two existing ADR numbering sequences documented in
+[`../03_KNOWLEDGE_BASE/adr/README.md`](../03_KNOWLEDGE_BASE/adr/README.md).
 
 **Related:** [`../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md`](../02_AI_CONTEXT/NEXT_APPROVED_PHASE.md) · [`../04_PROJECT_MEMORY/DECISION_HISTORY.md`](../04_PROJECT_MEMORY/DECISION_HISTORY.md)
 

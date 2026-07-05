@@ -44,8 +44,9 @@ high:
 new_findings_from_phase_x_review:
   - what: "resolveCases/resolveBestPractice signature mismatch between pre-existing Phase X
            design docs and the frozen IKnowledgePlatform interface"
-    status: "resolution designed (ADR-DRAFT-X01: use existing searchKnowledge() instead),
-             not yet ratified"
+    status: "RESOLVED 2026-07-05 — ratified as ADR-022 (app/.memory/decision-index.md), via
+             ADR-X01_FINAL.md. Uses existing searchKnowledge() instead of a new method; zero
+             changes to the frozen IKnowledgePlatform."
   - what: "ADR dual-numbering: docs/adr/ADR-004 and .memory/decisions/ADR-004 are different
            decisions sharing a number"
     status: open, low effort to fix (renumber one sequence)

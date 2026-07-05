@@ -26,6 +26,13 @@ Since v1.0, Phase X ADR drafts have begun being persisted under
 of the numbering collision described above. These are DRAFT/DECIDED-but-unratified; formal
 ratification into `app/.memory/decision-index.md` is a separate, explicit action.
 
+**Ratified so far:** `ADR-DRAFT-X01` (Knowledge Retrieval Strategy for Phase X.3) was ratified
+2026-07-05 as `ADR-022` — see `app/.memory/decision-index.md` for the authoritative entry and
+[`../../01_PROJECT_DOCS/ADR-X01_FINAL.md`](../../01_PROJECT_DOCS/ADR-X01_FINAL.md) for the
+final-draft record that was ratified. The original draft,
+[`PHASE_X_ADR_DRAFT_001.md`](../../01_PROJECT_DOCS/PHASE_X_ADR_DRAFT_001.md), is marked
+SUPERSEDED and retained for history, per this folder's own additive-only policy.
+
 ## Future Contents
 
 Once the `docs/adr/` vs `.memory/decisions/` numbering is reconciled (a tracked, low-effort fix
