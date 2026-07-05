@@ -7,10 +7,28 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.1 — Conversation Core — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.2 Batch A — Reasoning Pipeline Core — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.1 — Conversation Core — declared 2026-07-05 (superseded by Phase X.2 Batch A)
+
+**Evidence:** 401 test files, 13,760 tests, 0 failures at freeze time; architecture guard test
+confirmed no import from `src/knowledge/`, `src/reasoning/`, `src/ai/`, `src/mcp/`.
+
+**Summary:** Implemented session-scoped conversation state — `AdvisoryConversationContext`,
+`AdvisorySessionState` (`CREATED`→`ACTIVE`→`IDLE`→`ARCHIVED`), `AdvisoryConversationHistory`,
+`AdvisoryConversationMemory` (token-budget pruning, 2-most-recent-turn floor), and
+`MemorySessionRepository` implementing the frozen `IBaseRepository<T>`. Zero LLM, zero reasoning,
+zero Knowledge Platform dependency, per its own stated scope. `Advisory`-prefixed to avoid four
+real naming collisions with pre-existing, unrelated tracks (`src/providers/`, `src/workspace/`,
+`src/components/SessionPanel.tsx`). A post-implementation review (`PHASE_X1_POST_IMPLEMENTATION_REVIEW.md`)
+found the design sufficiently stable to build on as-is (score 7.9/10) — no redesign needed before
+Phase X.2, only additive follow-ups (composition/rehydration helpers, deferred to be built
+X.2-side without touching any X.1 file). Tagged `phase-x.1-conversation-core`.
 
 ---
 

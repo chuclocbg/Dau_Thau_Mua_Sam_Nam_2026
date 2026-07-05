@@ -19,42 +19,63 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.1 - Conversation Core - FROZEN"
+current_milestone: "Phase X.2 Batch A - Reasoning Pipeline Core - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-05
 milestone_evidence:
-  scope: "src/conversation/{domain,application,infrastructure}/ — ConversationContext,
-         SessionState, ConversationHistory, AdvisoryConversationMemory (token-budget pruning),
-         MemorySessionRepository"
-  files_added: "5 implementation files + 6 test files (39 tests)"
-  full_suite_result: "401 test files, 13760 tests, 0 failures (pool=forks, full repo, no filter)"
-  exit_criteria_met: "Session lifecycle create->active->idle->archive fully tested; 2-most-
-                      recent-turn floor verified under maximum pruning pressure; zero external
-                      dependencies required to run the test suite; architecture guard test
-                      confirms no import from src/knowledge/, src/reasoning/, src/ai/, src/mcp/"
-  frozen_interfaces_touched: "None modified. IBaseRepository implemented only (not changed)."
-  naming_collisions_avoided: "Advisory-prefixed types (AdvisoryConversationContext, etc.) to
-                              avoid collision with pre-existing src/providers/ConversationMemory,
-                              SessionManager, src/workspace/workspaceTypes ConversationContext,
-                              src/components/SessionPanel SessionState"
+  scope: "src/reasoning/{domain,application,testing}/ — reasoningTypes, intentPatternRegistry,
+         intentDetector, ruleEngine, evidenceCollector, citationFormatter, answerComposer,
+         legalReasoningEngine (also carries Stage 3: applicable law/hierarchy/conflict/
+         supersession — folded in since no separate reasoningEngine.ts file was in scope this
+         round), mockKnowledgeFixtures"
+  scope_exclusion: "Deliberately excludes AIContext, PromptBuilder, ModelSelector, and
+                    claudeLLMAdapter (the AIContext/Prompt/LLM path, 'Batch B' in
+                    PHASE_X2_IMPLEMENTATION_STRATEGY.md) — zero LLM calls, zero network calls,
+                    fully deterministic, testable via mock knowledge fixtures alone."
+  files_added: "9 implementation/fixture files + 8 test files (49 tests)"
+  full_suite_result: "409 test files, 13809 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 401 files / 13760 tests at the X.1 baseline"
+  exit_criteria_met: "Full deterministic pipeline (intent -> applicable law/hierarchy/conflict ->
+                      rule/threshold evaluation -> exception detection -> evidence collection ->
+                      citation formatting -> confidence scoring -> human-review determination ->
+                      decision composition) proven end-to-end against mock fixtures, including
+                      the 4-tier conflict cascade (hierarchy/more-restrictive/lex-posterior/
+                      lex-specialis/unresolved) and Tier-2-preempts-Tier-1 for Layer-3 school
+                      policy; architecture guard test confirms no import from src/knowledge/,
+                      src/ai/, src/mcp/ from the new domain/application/testing subdirectories"
+  frozen_interfaces_touched: "None. No Knowledge Platform or Conversation Core file imported or
+                              modified — ResolvedKnowledge is caller-supplied (mock fixtures
+                              here; X.3's knowledgeResolver.ts in production)."
+  naming_collisions_avoided: "Legal-prefixed only where a real collision was found (per
+                              PHASE_X2_IMPLEMENTATION_STRATEGY.md §11's grep-first, not
+                              defensive, rule): LegalReasoningStep (vs src/reasoning/
+                              decisionModel.ts's Phase 15 ReasoningStep), LegalRuleResult (vs
+                              src/legal/governanceRuleEngine.ts), LegalThresholdResult (vs
+                              src/legal/domain/legalDomainTypes.ts), LegalPipelineStage (vs
+                              src/providers/Pipeline.ts). Pre-existing src/reasoning/
+                              {reasoningEngine,decisionModel}.ts (unrelated Phase 15 track) is
+                              untouched — verified by architecture guard test and git diff."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.2 - Reasoning Engine"
-next_milestone_status: "NOT AUTHORIZED. Phase X.1 exit criteria confirmed met and frozen this
-                         session. Phase X.2 has NOT been started, per explicit instruction to
-                         stop after X.1's exit criteria are reached."
-next_milestone_blocker: "None technical — X.2 is built against mocked KnowledgeContext fixtures
-                         first, per PHASE_X_EXECUTION_PLAN.md, so it has no dependency on
-                         ADR-DRAFT-X01 either. Requires explicit human approval to begin, per
-                         this project's approval-gated milestone discipline."
+next_active_milestone: "Phase X.2 Batch B - AIContext/Prompt/LLM Adapter path"
+next_milestone_status: "NOT AUTHORIZED. Batch A's exit criteria confirmed met and frozen this
+                         session. Batch B (which includes LLM integration) has NOT been started,
+                         per explicit instruction to implement Batch A only and stop."
+next_milestone_blocker: "None technical for Batch A's own completeness. Batch B requires a
+                         separate, explicit authorization since it is the point where actual
+                         LLM integration (ClaudeLLMAdapter, live API calls) enters the codebase."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.2 implementation."
+                        to begin Phase X.2 Batch B (or any later milestone)."
 
 do_not:
-  - "Do not begin writing Phase X.2 source code without explicit approval."
-  - "Do not modify any file under src/conversation/ outside of a newly-approved milestone that
-     explicitly extends it — X.1 is frozen."
+  - "Do not begin writing Batch B (AIContext/PromptBuilder/ModelSelector/claudeLLMAdapter) or
+     any later milestone (X.3 Knowledge Resolution, Tool Calling, Multi-Agent) without explicit
+     approval."
+  - "Do not modify any file under src/conversation/ (X.1, frozen) or src/reasoning/{domain,
+     application,testing}/ (X.2 Batch A, frozen) outside of a newly-approved milestone."
+  - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts — the
+     pre-existing, unrelated Phase 15 Governance Reasoning Engine track."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -90,7 +111,16 @@ historical_sequence_to_reach_here:
      conversationTypes.ts"
   - "Phase X.1 (Conversation Core) implemented: conversationTypes, ConversationContextManager,
      SessionStateManager, AdvisoryConversationMemory, MemorySessionRepository, architecture
-     guard test — full repo suite green (13760 tests) — FROZEN — you are here"
+     guard test — full repo suite green (13760 tests) — FROZEN"
+  - "PHASE_X1_POST_IMPLEMENTATION_REVIEW.md produced — score 7.9/10, no redesign needed,
+     two additive follow-ups recommended for X.2 (composition/rehydration helpers)"
+  - "PHASE_X2_IMPLEMENTATION_STRATEGY.md produced — deterministic-first internal build
+     sequence (Batch A / Batch B split), Checkpoint A identified as a safe, freeze-able
+     stopping point short of LLM integration"
+  - "Phase X.2 Batch A (Reasoning Pipeline Core) implemented: reasoningTypes,
+     intentPatternRegistry, intentDetector, ruleEngine, evidenceCollector, citationFormatter,
+     answerComposer, legalReasoningEngine (incl. Stage 3), mockKnowledgeFixtures, architecture
+     guard test — full repo suite green (13809 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
