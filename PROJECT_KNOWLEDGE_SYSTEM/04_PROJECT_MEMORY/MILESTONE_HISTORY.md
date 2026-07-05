@@ -7,10 +7,26 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.2 Batch B — AIContext/Prompt/LLM Adapter path — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4 — Output Validation — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.2 Batch B — AIContext/Prompt/LLM Adapter path — declared 2026-07-05 (superseded by Phase X.4)
+
+**Evidence:** 416 test files, 13,855 tests, 0 failures at freeze time; architecture guard suite
+(12 tests) confirmed dependency direction, no provider leakage, and isolation from the
+pre-existing 32 flat `src/ai/*.ts` files.
+
+**Summary:** Implemented `AIContext` (deep-frozen, per `AI_CONTEXT_SCHEMA.md`), `AIContextBuilder`,
+`PromptBuilder` (presentation only), `PromptRenderer` (deterministic, provider-agnostic),
+`ModelCapabilityRegistry`, `ModelSelector` (provider-independent), and `ClaudeLLMAdapter`
+(wraps the existing `src/providers/ClaudeProvider.ts`). An architecture gate review performed
+before implementation returned GO with 5 non-blocking recommendations; Finding A
+(`AIContextBuilder` must not call a repository directly, per Constraint C-05) was applied
+directly in the code. Tagged `phase-x.2-batch-b-ai-context-prompt`.
 
 ---
 

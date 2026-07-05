@@ -19,49 +19,53 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.2 Batch B - AIContext/Prompt/LLM Adapter path - FROZEN"
+current_milestone: "Phase X.4 - Output Validation - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-05
+milestone_numbering_note: "Requested this round as 'Phase X.3 - Output Validation', but
+                           PHASE_X_EXECUTION_PLAN.md and this file both consistently number
+                           Output Validation as X.4 — X.3 is Knowledge Resolution, blocked on
+                           ADR-DRAFT-X01 ratification. The requested scope (sits after the LLM
+                           Adapter, before the final answer; explicitly excludes Knowledge
+                           Platform integration) is unambiguously X.4's content, not X.3's —
+                           implemented as X.4, flagged transparently, not treated as blocking."
 milestone_evidence:
-  scope: "src/ai/{domain,application,infrastructure}/ — aiTypes (AIContext + subtypes),
-         AIContextBuilder, PromptBuilder, PromptRenderer, ModelCapabilityRegistry, ModelSelector,
-         ClaudeLLMAdapter (wraps the existing src/providers/ClaudeProvider.ts rather than
-         reimplementing raw Anthropic HTTP calls, per the gate review's recommendation E)"
-  scope_exclusion: "No Tool Calling, no MCP, no Multi-Agent, no Knowledge Resolution (X.3), no
-                    Output Validation (X.4), no streaming, no retry engine, no caching, no
-                    telemetry, no production optimizations."
-  files_added: "7 implementation files + 7 test files (46 tests)"
-  full_suite_result: "416 test files, 13855 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 409 files / 13809 tests at the Batch A baseline"
-  exit_criteria_met: "Full pipeline proven: ReasoningResult + conversation history ->
-                      AIContext (deep-frozen, verified by mutation-attempt tests on a top-level
-                      field, a nested array, and a nested object field) -> PromptSpec (verified
-                      as a pure function of AIContext) -> RenderedPrompt (deterministic,
-                      provider-agnostic) -> ModelSelector (verified against a synthetic
-                      non-Claude registry to prove no Anthropic hardcoding) -> ClaudeLLMAdapter
-                      (offline-tested via injected fetchFn, zero network calls, zero streaming,
-                      zero retry). Architecture guard suite (12 tests) proves dependency
-                      direction, no cyclic imports, no provider leakage outside
-                      claudeLLMAdapter.ts, and isolation from the pre-existing 32 flat
-                      src/ai/*.ts files (unrelated '8-G' track)."
-  frozen_interfaces_touched: "None. ReasoningResult (Batch A) and AdvisoryConversationMessage
-                              (X.1) consumed read-only; src/providers/ClaudeProvider.ts
-                              consumed read-only (not frozen, but verified untouched by git diff)."
-  naming_collisions_avoided: "AI-prefixed only where a real collision was found: AIModelInfo (vs
-                              src/providers/OpenAIProvider.ts's ModelInfo), AIModelCapability (vs
-                              src/providers/ModelManager.ts's ModelCapability). AIContext's own
-                              subtypes (AIContextCitation, etc.) matched AI_CONTEXT_SCHEMA.md
-                              exactly with zero collisions found."
-  architecture_gate_review: "Performed before implementation — GO with 5 non-blocking
-                             recommendations; Finding A (AIContextBuilder must not call a
-                             repository directly, per Constraint C-05) was applied in this
-                             milestone's actual code, not left as a follow-up."
+  scope: "src/ai/validation/ — validationTypes (AIValidationResult + 13 issue types),
+         CitationValidator, ConfidenceValidator, LegalConsistencyValidator, OutputValidator
+         (orchestrator + structural checks: malformed output, missing sections, formatting,
+         language, completeness, forbidden patterns), ResponseFormatter, ValidationPipeline"
+  scope_exclusion: "No Tool Calling, no MCP, no Multi-Agent, no Knowledge Platform integration,
+                    no X.3 Knowledge Resolution. Internal validation only — no external services."
+  files_added: "7 implementation files + 7 test files (58 tests)"
+  full_suite_result: "423 test files, 13913 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 416 files / 13855 tests at the Batch B baseline"
+  exit_criteria_met: "100% catch rate against a 6-case adversarial fixture set (hallucinated
+                      citation, numeric drift, decision contradiction, truncated response,
+                      forbidden pattern, malformed output), zero exceptions; a regression test
+                      confirms a clean, well-grounded answer is not over-triggered. Architecture
+                      guard suite (8 tests) confirms dependency direction and zero imports from
+                      Knowledge Platform/MCP/Conversation/providers/Reasoning."
+  frozen_interfaces_touched: "None. AIContext (Batch B) consumed read-only. AIContextBuilder,
+                              PromptBuilder, PromptRenderer, ClaudeLLMAdapter untouched — verified
+                              by git diff and by architecture-guard marker checks."
+  naming_collisions_avoided: "AIValidationResult (vs FOUR unrelated pre-existing ValidationResult
+                              types in src/framework/, src/orchestrator/, src/shared/financial/,
+                              src/procurement/workflow/) — the most collision-prone name found in
+                              this project so far, per the grep-first naming rule."
+  real_bugs_found_and_fixed: "(1) Keyword extraction used JS's ASCII-only \\W, which shredded
+                              Vietnamese diacritic words apart at every accented vowel — fixed
+                              with \\p{L}/\\p{N} Unicode property escapes. (2) NUMERIC_INCONSISTENCY
+                              (HIGH severity) never triggered humanReviewRequired or any visible
+                              flag at all, silently letting a wrong legal percentage reach the
+                              user — fixed by requiring review on any CRITICAL or HIGH issue, per
+                              validation.md's own 'flag as humanReviewRecommended' guidance for
+                              this exact check."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
 next_active_milestone: "Phase X.3 - Knowledge Resolution (or any other later milestone)"
-next_milestone_status: "NOT AUTHORIZED. Batch B's exit criteria confirmed met and frozen this
+next_milestone_status: "NOT AUTHORIZED. X.4's exit criteria confirmed met and frozen this
                          session. No later milestone (X.3 Knowledge Resolution, Tool Calling,
-                         MCP, Multi-Agent, Output Validation) has been started."
+                         MCP, Multi-Agent) has been started."
 next_milestone_blocker: "ADR-DRAFT-X01 ratification remains the stated prerequisite for X.3
                          (Knowledge Resolution) specifically, per PHASE_X_EXECUTION_PLAN.md.
                          Requires explicit human approval to begin any next milestone, per this
@@ -71,11 +75,12 @@ immediate_next_action: "None assigned as of this writing. Waiting for explicit h
                         to begin the next milestone."
 
 do_not:
-  - "Do not begin X.3 (Knowledge Resolution), Tool Calling, MCP, Multi-Agent, or Output
-     Validation without explicit approval."
+  - "Do not begin X.3 (Knowledge Resolution), Tool Calling, MCP, or Multi-Agent without explicit
+     approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
-     application,testing}/ (X.2 Batch A, frozen), or src/ai/{domain,application,infrastructure}/
-     (X.2 Batch B, frozen) outside of a newly-approved milestone."
+     application,testing}/ (X.2 Batch A, frozen), src/ai/{domain,application,infrastructure}/
+     (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen) outside of a newly-approved
+     milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -130,7 +135,11 @@ historical_sequence_to_reach_here:
   - "Phase X.2 Batch B (AIContext/Prompt/LLM Adapter path) implemented: aiTypes, AIContextBuilder,
      PromptBuilder, PromptRenderer, ModelCapabilityRegistry, ModelSelector, ClaudeLLMAdapter
      (wraps existing src/providers/ClaudeProvider.ts), architecture guard suite — full repo
-     suite green (13855 tests) — FROZEN — you are here"
+     suite green (13855 tests) — FROZEN"
+  - "Phase X.4 (Output Validation) implemented: validationTypes, CitationValidator,
+     ConfidenceValidator, LegalConsistencyValidator, OutputValidator, ResponseFormatter,
+     ValidationPipeline, architecture guard suite — 100% adversarial-fixture catch rate — full
+     repo suite green (13913 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
