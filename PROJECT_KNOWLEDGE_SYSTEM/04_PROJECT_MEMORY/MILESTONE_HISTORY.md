@@ -7,10 +7,27 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.3.5 — Knowledge Resolution: Orchestration Wiring — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.3.6 — Knowledge Resolution: Remaining Gaps (Deterministic Enrichment) — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.3.5 — Knowledge Resolution: Orchestration Wiring — declared 2026-07-06 (superseded by X.3.6)
+
+**Evidence:** 440 test files, 14,026 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/` import, zero MCP/provider/LLM/PromptBuilder reference, and that
+every prior milestone's frozen-file markers (X.3.1 through X.3.4) were unchanged.
+
+**Summary:** Implemented `resolutionOrchestrationTypes.ts` (`RankedKnowledge` alias,
+`ResolutionExecutor<TInput,TOutput>`), `resolutionExecutor.ts` (thin adapters wrapping
+`IntentResolutionPipeline.resolve()`/`KnowledgeRankingPipeline.rank()`), `ResolutionCoordinator`
+(sequences intent-retrieval then ranking, no branching), and `KnowledgeResolutionPipeline` (the
+public composition root, composing X.3.3/X.3.4 via their existing `build*()` factories only).
+Proved the full Intent Resolution → Retrieval → Ranking → `RankedKnowledge` chain against a fake
+repository, including that ranking genuinely re-orders/trims results rather than passing
+retrieval through unchanged. Zero modification to X.3.1–X.3.4.
 
 ---
 
