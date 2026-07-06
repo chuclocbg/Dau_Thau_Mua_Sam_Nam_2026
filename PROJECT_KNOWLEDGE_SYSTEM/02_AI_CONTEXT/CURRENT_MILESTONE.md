@@ -19,88 +19,86 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.4.1 - Reasoning Engine Wiring: Batch A (Reasoning Orchestrator) -
+current_milestone: "Phase X.4.2 - Reasoning Engine Wiring: Reasoning Context Assembly -
                     FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/application/reasoningOrchestrator.ts (ReasoningOrchestrator,
-         buildReasoningOrchestrator() — coordinates X.3.7's FinalKnowledgeResolutionPipeline and
-         Batch A's LegalReasoningEngine into ReasoningIntent -> Knowledge Resolution ->
-         ReasoningResult; constructs both via their existing build*() factories only,
-         dependency-injects IKnowledgeRepository + optional ILegalReasoningEngine/
-         RankingPlanner)."
-  scope_exclusion: "This is Batch A only — the orchestrator, nothing more. Zero business logic:
-                    no ranking, no retrieval, no answer generation, no citation formatting, no
-                    conflict resolution, no confidence scoring, no PromptBuilder/PromptRenderer/
-                    LLM adapter/Output Validation/MCP/Tool Calling/Multi-Agent/Conversation Core/
-                    Knowledge Platform changes — confirmed absent by architecture guard.
-                    'Invoke KnowledgeResolutionPipeline' interpreted as X.3.7's
-                    FinalKnowledgeResolutionPipeline specifically (documented inline), since
-                    X.3.5's narrower class alone would skip X.3.6's enrichment. Deliberately
-                    returns ReasoningResult only, not EnrichmentResult's diagnostics alongside
-                    it — the missingEvidence reconciliation question
-                    (PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open and
-                    undecided; answering it here would exceed 'zero additional
-                    responsibilities'. EnrichmentResult itself is unchanged and still available
-                    to any caller resolving knowledge directly."
-  files_added: "1 implementation file + 3 test files (17 tests: 6 unit/DI, 3 real-platform
-               end-to-end integration, 8 architecture guard)"
-  full_suite_result: "453 test files, 14096 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 450 files / 14079 tests at the Pre-X.3.8 API Cleanup baseline"
-  exit_criteria_met: "Dependency-injection tests prove call order (resolve before reason), that
-                      the same intent instance reaches both calls, and genuine DI of both the
-                      repository and the engine. A real-platform end-to-end integration test
-                      (mirroring X.3.2's own proven pattern) exercises the first full chain from
-                      a raw question string through a real intent detector, a real
-                      memory-backed IKnowledgePlatform + LegalProvider, and a real
-                      LegalReasoningEngine — not fakes at any layer — including that temporal
-                      filtering still excludes a not-yet-effective item end-to-end. Architecture
-                      guard confirms zero src/knowledge/, src/ai/, src/mcp/, or
-                      src/conversation/ import; that the orchestrator's only production
-                      dependencies are finalKnowledgeResolutionPipeline.ts and
-                      legalReasoningEngine.ts; zero MCP/PromptBuilder/LLM adapter/
-                      OutputValidator reference; zero ranking/retrieval/citation/conflict/
-                      confidence-scoring logic; and that every prior milestone's frozen-file
-                      markers (X.3.1 through X.3.7, plus the pre-X.4 cleanup) are unchanged."
-  frozen_interfaces_touched: "None. FinalKnowledgeResolutionPipeline (X.3.7)/LegalReasoningEngine
-                              (Batch A, post-cleanup) consumed only via their existing public
-                              build*()/resolve()/reason() surface — verified by git diff and
-                              architecture guard."
-  tooling_note: "tsc --noEmit against the root tsconfig.json checks zero files (solution-style
-                'files': [] + references) — has been a no-op for every tsc invocation across
-                this entire X.3/X.4 track. Running against tsconfig.app.json directly surfaces a
-                pre-existing, repo-wide 'erasableSyntaxOnly' violation on every constructor using
-                parameter-property shorthand, confirmed present since X.3.2's first class (git
-                show against the pre-X.3 baseline tag) — predates this session entirely, not
-                introduced by any Phase X milestone. This orchestrator follows the same existing
-                convention as every other X.3.x class. The real verification gate for this
-                repository has always been the Vitest suite (transpiles via esbuild, ignores
-                this flag), not this specific tsc invocation. Not fixed here — would touch
-                multiple frozen files, out of this milestone's scope."
+  scope: "src/reasoning/domain/reasoningExecutionContextTypes.ts (ReasoningExecutionContext —
+         renamed from the requested 'ReasoningContext' to avoid shadowing the existing, frozen
+         ReasoningContext type on ReasoningIntent.context; reuses KnowledgeItemRef/
+         RuleKnowledgeItemRef/ThresholdKnowledgeItemRef as-is, no parallel 'Normalized*' types);
+         src/reasoning/application/reasoningContextAssembler.ts (assembleReasoningContext() — a
+         pure function, no factory needed since it has no injected dependency; deduplicates
+         items by itemId and legal references by documentSymbol/article/clause/point, both
+         first-occurrence-wins and order-preserving; deep-freezes the result via its own local
+         deepFreeze(), duplicated rather than imported from aiContextBuilder.ts to avoid an
+         src/reasoning/ -> src/ai/ dependency-direction violation)."
+  scope_exclusion: "Zero reasoning, conflict resolution, confidence scoring, citation
+                    generation, explanation generation, answer generation, tool calling, MCP, or
+                    LLM calls — confirmed absent by architecture guard. Not wired into
+                    ReasoningOrchestrator (X.4.1) or LegalReasoningEngine in this milestone —
+                    stands alone, ready for a later milestone to compose, mirroring how X.3.6's
+                    enrichKnowledge() stood alone before X.3.7 wired it in. 'Normalization' is
+                    exactly two structural operations (stable deduplication, deep freezing),
+                    neither changing any item's content; never re-applies or second-guesses
+                    temporal filtering; never mutates its inputs (every normalized item is a new
+                    object via spread)."
+  files_added: "2 implementation files + 3 test files (24 tests: unit/normalization/immutability/
+               determinism, real-platform end-to-end integration, architecture guard)"
+  full_suite_result: "456 test files, 14120 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 453 files / 14096 tests at the X.4.1 baseline"
+  exit_criteria_met: "Unit tests prove field mapping, exact order preservation (never re-sorts),
+                      stable deduplication at both item and legal-basis level, non-mutation of
+                      inputs, genuine deep immutability (top-level context, nested items,
+                      metadata, legalBasis arrays, and warnings — each verified to throw on a
+                      mutation attempt), and determinism (identical output for identical input
+                      aside from the assembledAt timestamp). A real-platform end-to-end
+                      integration test (mirroring X.3.2's and X.4.1's own proven pattern)
+                      exercises the first full chain from a raw question string through a real
+                      intent detector, a real memory-backed IKnowledgePlatform + LegalProvider,
+                      X.3.7's FinalKnowledgeResolutionPipeline, and this milestone's assembler —
+                      not fakes at any layer — including that temporal filtering is preserved,
+                      not re-applied. Architecture guard confirms zero src/knowledge/, src/ai/,
+                      src/mcp/, src/conversation/ import; zero reference to any earlier X.3/X.4
+                      orchestration or retrieval module; zero MCP/PromptBuilder/LLM adapter/
+                      OutputValidator/reasoning/conflict/confidence/citation/answer-generation
+                      reference; and that every prior milestone's frozen-file markers (X.3.1
+                      through X.4.1, plus the pre-X.4 cleanup) are unchanged."
+  frozen_interfaces_touched: "None. Stands alone — does not import FinalKnowledgeResolutionPipeline,
+                              ReasoningOrchestrator, or LegalReasoningEngine at all; consumes only
+                              ReasoningIntent/ResolvedKnowledge as plain values — verified by git
+                              diff and architecture guard."
+  tooling_note: "Same pre-existing, repo-wide 'erasableSyntaxOnly'/root-tsconfig no-op finding
+                noted at the X.4.1 freeze applies unchanged here — not re-triggered by this
+                milestone's code (no constructor parameter properties used; assembleReasoningContext
+                is a plain function). tsc --noEmit -p tsconfig.app.json confirmed zero new errors
+                introduced by either new file."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.4.2 (Reasoning Engine Wiring — Batch B, or whatever comes next)
+next_active_milestone: "Phase X.4.3 (Reasoning Engine Wiring — whatever comes next, e.g. wiring
+                        ReasoningExecutionContext into ReasoningOrchestrator/LegalReasoningEngine)
                         or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.4.1's exit criteria confirmed met and frozen
-                         this session. The missingEvidence-reconciliation question
-                         (ResolutionDiagnostics vs. ReasoningResult.missingEvidence,
-                         PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open and
-                         should shape whatever X.4.2 (or a real caller/API-shape milestone)
-                         turns out to need. The still-open decision on extending
-                         ResolvedKnowledge for checklists/cases/bestpractice/risk also remains
-                         unresolved."
+next_milestone_status: "NOT AUTHORIZED. Phase X.4.2's exit criteria confirmed met and frozen
+                         this session. ReasoningExecutionContext exists but is not yet consumed
+                         anywhere — wiring it into ReasoningOrchestrator (X.4.1) or
+                         LegalReasoningEngine remains open, not-yet-authorized work. The
+                         missingEvidence-reconciliation question (ResolutionDiagnostics vs.
+                         ReasoningResult.missingEvidence, PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md
+                         Finding F-2) remains open and should shape that wiring's scoping. The
+                         still-open decision on extending ResolvedKnowledge for checklists/
+                         cases/bestpractice/risk also remains unresolved."
 next_milestone_blocker: "None technical. Requires its own explicit human authorization to
-                         begin, separate from X.4.1's own approval."
+                         begin, separate from X.4.2's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.4.2 (or any other later milestone)."
+                        to begin Phase X.4.3 (or any other later milestone)."
 
 do_not:
-  - "Do not begin Phase X.4.2, Tool Calling, MCP, or Multi-Agent without explicit approval."
+  - "Do not begin Phase X.4.3, Tool Calling, MCP, or Multi-Agent without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
-     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1, frozen), src/ai/{domain,application,
+     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2, frozen), src/ai/{domain,application,
      infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen) outside of a
      newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
@@ -243,7 +241,15 @@ historical_sequence_to_reach_here:
      FinalKnowledgeResolutionPipeline and Batch A's LegalReasoningEngine, zero business logic of
      its own) — dependency-injection tests, a real-platform end-to-end integration test (first
      full chain from raw question to ReasoningResult against a real IKnowledgePlatform, not
-     fakes), architecture guard — full repo suite green (14096 tests) — FROZEN — you are here"
+     fakes), architecture guard — full repo suite green (14096 tests) — FROZEN"
+  - "Phase X.4.2 (Reasoning Engine Wiring: Reasoning Context Assembly) implemented:
+     reasoningExecutionContextTypes.ts (ReasoningExecutionContext, renamed from the requested
+     'ReasoningContext' to avoid shadowing the existing frozen type), reasoningContextAssembler.ts
+     (assembleReasoningContext() — stable deduplication + deep freeze, zero reasoning/conflict/
+     confidence/citation/answer-generation logic, stands alone, not yet wired into
+     ReasoningOrchestrator/LegalReasoningEngine) — unit/immutability/determinism tests,
+     real-platform end-to-end integration test, architecture guard — full repo suite green
+     (14120 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

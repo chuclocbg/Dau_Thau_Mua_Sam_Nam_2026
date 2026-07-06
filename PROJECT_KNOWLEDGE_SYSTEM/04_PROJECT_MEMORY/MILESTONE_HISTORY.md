@@ -7,10 +7,25 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4.1 — Reasoning Engine Wiring: Batch A (Reasoning Orchestrator) — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4.2 — Reasoning Engine Wiring: Reasoning Context Assembly — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4.1 — Reasoning Engine Wiring: Batch A (Reasoning Orchestrator) — declared 2026-07-06 (superseded by X.4.2)
+
+**Evidence:** 453 test files, 14,096 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/ai/`/`src/mcp/`/`src/conversation/` import and that every
+prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `reasoningOrchestrator.ts` (`ReasoningOrchestrator`,
+`buildReasoningOrchestrator()`) — coordinates X.3.7's `FinalKnowledgeResolutionPipeline` and
+Batch A's `LegalReasoningEngine` (post pre-X.4-cleanup) into `ReasoningIntent` → Knowledge
+Resolution → `ReasoningResult`. Zero business logic of its own. A real-platform end-to-end
+integration test proved the first full chain from a raw question to `ReasoningResult` against a
+real `IKnowledgePlatform`, not fakes at any layer.
 
 ---
 
