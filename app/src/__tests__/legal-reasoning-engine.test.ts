@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildLegalReasoningEngine } from '../reasoning/application/legalReasoningEngine.ts'
+import { detectIntent } from '../reasoning/application/intentDetector.ts'
 import { buildResolvedKnowledge } from '../reasoning/testing/mockKnowledgeFixtures.ts'
 import type { KnowledgeItemRef, ResolvedKnowledge } from '../reasoning/domain/reasoningTypes.ts'
 
@@ -25,13 +26,13 @@ describe('LegalReasoningEngine — full pipeline (mock fixtures)', () => {
   it('composes a decision with the school policy as primary basis when it is more restrictive (Tier 2)', async () => {
     const engine = buildLegalReasoningEngine()
     const result = await engine.reason(
-      {
+      detectIntent({
         question: 'Mức tạm ứng tối đa là bao nhiêu?', asOfDate: ASOF,
         context: {
           packageType: 'GOODS', fundSource: 'STATE_BUDGET', procurementMethod: 'OPEN_TENDER',
           estimatedValue: 3_000_000_000n, advanceAmount: 150_000_000n, advanceRatio: 0.20,
         },
-      },
+      }),
       buildResolvedKnowledge(ASOF),
     )
 
@@ -58,7 +59,7 @@ describe('LegalReasoningEngine — full pipeline (mock fixtures)', () => {
   it('requires human review when a critical rule is INCONCLUSIVE due to missing context', async () => {
     const engine = buildLegalReasoningEngine()
     const result = await engine.reason(
-      { question: 'Có phải đấu thầu rộng rãi không?', asOfDate: ASOF, context: {} },
+      detectIntent({ question: 'Có phải đấu thầu rộng rãi không?', asOfDate: ASOF, context: {} }),
       buildResolvedKnowledge(ASOF),
     )
 
@@ -76,7 +77,7 @@ describe('LegalReasoningEngine — conflict resolution cascade', () => {
     const circular = legalItem({ itemId: 'circular-b', type: 'CIRCULAR', metadata: { conflictDimension: 'D1', conflictValue: '20' } })
 
     const result = await engine.reason(
-      { question: 'test', asOfDate: ASOF },
+      detectIntent({ question: 'test', asOfDate: ASOF }),
       minimalResolvedKnowledge([law, circular]),
     )
 
@@ -93,7 +94,7 @@ describe('LegalReasoningEngine — conflict resolution cascade', () => {
     const newer = legalItem({ itemId: 'decree-newer', type: 'DECREE', effectiveFrom: '2024-01-01', metadata: { conflictDimension: 'D2', conflictValue: '20' } })
 
     const result = await engine.reason(
-      { question: 'test', asOfDate: ASOF },
+      detectIntent({ question: 'test', asOfDate: ASOF }),
       minimalResolvedKnowledge([older, newer]),
     )
 
@@ -108,7 +109,7 @@ describe('LegalReasoningEngine — conflict resolution cascade', () => {
     const b = legalItem({ itemId: 'letter-b', type: 'OFFICIAL_LETTER', effectiveFrom: '2025-01-01', metadata: { conflictDimension: 'D3', conflictValue: '20' } })
 
     const result = await engine.reason(
-      { question: 'test', asOfDate: ASOF },
+      detectIntent({ question: 'test', asOfDate: ASOF }),
       minimalResolvedKnowledge([a, b]),
     )
 
@@ -126,7 +127,7 @@ describe('LegalReasoningEngine — supersession', () => {
     const expired = legalItem({ itemId: 'expired-1', effectiveFrom: '2020-01-01', effectiveTo: '2024-12-31' })
 
     const result = await engine.reason(
-      { question: 'test', asOfDate: ASOF },
+      detectIntent({ question: 'test', asOfDate: ASOF }),
       minimalResolvedKnowledge([expired]),
     )
 
@@ -140,7 +141,7 @@ describe('LegalReasoningEngine.explain', () => {
   it('regenerates an explanation at a different format without re-running the pipeline', async () => {
     const engine = buildLegalReasoningEngine()
     const result = await engine.reason(
-      { question: 'Mức tạm ứng tối đa là bao nhiêu?', asOfDate: ASOF, context: { fundSource: 'STATE_BUDGET', advanceRatio: 0.20 } },
+      detectIntent({ question: 'Mức tạm ứng tối đa là bao nhiêu?', asOfDate: ASOF, context: { fundSource: 'STATE_BUDGET', advanceRatio: 0.20 } }),
       buildResolvedKnowledge(ASOF),
     )
 

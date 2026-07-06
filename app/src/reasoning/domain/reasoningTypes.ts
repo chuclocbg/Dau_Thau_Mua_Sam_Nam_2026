@@ -418,6 +418,6 @@ export interface ReasoningResult {
 // ── Top-level interface ─────────────────────────────────────────────────────────
 
 export interface ILegalReasoningEngine {
-  reason(question: ReasoningQuestion, resolvedKnowledge: ResolvedKnowledge): Promise<ReasoningResult>
+  reason(intent: ReasoningIntent, resolvedKnowledge: ResolvedKnowledge): Promise<ReasoningResult>
   explain(result: ReasoningResult, format: ReasoningOutputFormat): ReasoningExplanation
 }

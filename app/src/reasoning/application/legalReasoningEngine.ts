@@ -1,4 +1,3 @@
-import { detectIntent } from './intentDetector.ts'
 import { detectExceptions, evaluateRule, evaluateThreshold } from './ruleEngine.ts'
 import { collectEvidence } from './evidenceCollector.ts'
 import { formatCitations } from './citationFormatter.ts'
@@ -6,7 +5,7 @@ import { buildExplanation, composeDecision, computeConfidence, determineHumanRev
 import type {
   AppliedArticle, AppliedDocument, AppliedRole, ConflictingItem, DetectedConflict,
   DetectedException, ILegalReasoningEngine, KnowledgeItemRef, LegalBasisRef, LegalReasoningStep,
-  ReasoningExplanation, ReasoningOutputFormat, ReasoningQuestion, ReasoningResult, ReasoningWarning,
+  ReasoningExplanation, ReasoningIntent, ReasoningOutputFormat, ReasoningResult, ReasoningWarning,
   ResolvedKnowledge,
 } from '../domain/reasoningTypes.ts'
 
@@ -184,11 +183,13 @@ function traceStep(
 }
 
 export class LegalReasoningEngine implements ILegalReasoningEngine {
-  async reason(question: ReasoningQuestion, resolvedKnowledge: ResolvedKnowledge): Promise<ReasoningResult> {
+  // Stage 1 (intent detection) is now the caller's responsibility — per the pre-X.4 API
+  // cleanup, intent is supplied here, never detected internally, so a caller holding a
+  // ReasoningIntent already (e.g. one that also drove Knowledge Resolution) never re-detects it.
+  async reason(intent: ReasoningIntent, resolvedKnowledge: ResolvedKnowledge): Promise<ReasoningResult> {
     const trace: LegalReasoningStep[] = []
     const warnings: ReasoningWarning[] = []
 
-    const intent = detectIntent(question)
     const asOfDate = intent.context.asOfDate
     traceStep(trace, 'INTENT_DETECTION', 'DETECT_INTENT', `Phát hiện ý định: ${intent.intentType} (confidence: ${intent.confidence.toFixed(2)})`, [], intent.confidence)
 
@@ -277,8 +278,10 @@ export class LegalReasoningEngine implements ILegalReasoningEngine {
     const decision = composeDecision(citations, ruleResults, confidence.finalScore)
     traceStep(trace, 'ANSWER_COMPOSITION', 'COMPOSE_DECISION', decision ? 'Đã tổng hợp quyết định' : 'Không thể tổng hợp quyết định tự động', [], confidence.finalScore)
 
-    const format = question.outputFormat ?? 'DECISION'
-    const explainability = buildExplanation({ format, decision, appliedArticles, conflicts, missingEvidence, confidence, citations })
+    // ReasoningIntent carries no outputFormat (that field lived only on the now-removed
+    // ReasoningQuestion parameter) — reason() always composes the default DECISION-format
+    // explanation; call explain(result, format) to regenerate at a different format.
+    const explainability = buildExplanation({ format: 'DECISION', decision, appliedArticles, conflicts, missingEvidence, confidence, citations })
 
     return {
       decision, confidence: confidence.finalScore, confidenceLabel: confidence.label,
