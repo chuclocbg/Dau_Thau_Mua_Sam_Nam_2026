@@ -7,10 +7,29 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.3.6 — Knowledge Resolution: Remaining Gaps (Deterministic Enrichment) — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.3.7 — Knowledge Resolution: Final Wiring — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.3.6 — Knowledge Resolution: Remaining Gaps (Deterministic Enrichment) — declared 2026-07-06 (superseded by X.3.7)
+
+**Evidence:** 448 test files, 14,067 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/` import, zero reference to any X.3.2–X.3.5 module, zero MCP/
+provider/LLM/PromptBuilder/validation/citation/conflict-resolution reference, and that every
+prior milestone's frozen-file markers (X.3.1 through X.3.5) were unchanged.
+
+**Summary:** Implemented `knowledgeEnrichmentTypes.ts` (additive diagnostic shapes),
+`resolutionMetadataNormalizer.ts` (`readMetadataString()`), `effectivePeriodEvaluator.ts`
+(independent CURRENT/NOT_YET_EFFECTIVE/EXPIRED classification), `ruleMetadataParser.ts` +
+`thresholdMetadataParser.ts` (ADR-022 Decision 5 — JSON metadata parsing into
+`RuleKnowledgeItemRef`/`ThresholdKnowledgeItemRef`, critical `MissingEvidence` on failure, never
+throws), `knowledgeApplicabilityEvaluator.ts` (final per-item verdict), `resolutionDiagnostics.ts`
+(aggregation), and `knowledgeEnrichmentPipeline.ts` (`enrichKnowledge()` — the pure composition
+function, standalone from X.3.5). Populated `ruleItems`/`thresholdItems`, always empty since
+X.3.3. Zero modification to X.3.1–X.3.5.
 
 ---
 

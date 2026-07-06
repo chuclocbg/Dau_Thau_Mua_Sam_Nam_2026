@@ -19,89 +19,81 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.3.6 - Knowledge Resolution: Remaining Gaps (Deterministic
-                    Enrichment) - FROZEN"
+current_milestone: "Phase X.3.7 - Knowledge Resolution: Final Wiring - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/domain/knowledgeEnrichmentTypes.ts (EffectivePeriodEvaluation,
-         ApplicabilityEvaluation, ResolutionDiagnostics — additive diagnostic shapes, never
-         modifying ResolvedKnowledge/KnowledgeItemRef); src/reasoning/application/
-         resolutionMetadataNormalizer.ts (readMetadataString() — safely narrows
-         KnowledgeItemRef.metadata's Record<string,unknown> values); src/reasoning/application/
-         effectivePeriodEvaluator.ts (evaluateEffectivePeriod() — independent
-         CURRENT/NOT_YET_EFFECTIVE/EXPIRED classification from effectiveFrom/effectiveTo vs
-         asOfDate); src/reasoning/application/ruleMetadataParser.ts +
-         thresholdMetadataParser.ts (ADR-022 Decision 5 — parse metadata['ruleDefinition']/
-         ['thresholdDefinition'] JSON into RuleKnowledgeItemRef/ThresholdKnowledgeItemRef, critical
-         MissingEvidence on parse failure, never throws); src/reasoning/application/
-         knowledgeApplicabilityEvaluator.ts (evaluateApplicability() — combines effectivePeriod
-         status + parse outcome into one verdict); src/reasoning/application/
-         resolutionDiagnostics.ts (buildResolutionDiagnostics() — aggregates per-item
-         evaluations + missing evidence into a summarized record); src/reasoning/application/
-         knowledgeEnrichmentPipeline.ts (enrichKnowledge() — the pure composition function
-         tying all of the above together, standalone from X.3.5)."
-  scope_exclusion: "This is X.3.6 only — deterministic enrichment, zero new reasoning
-                    capability, zero LLM/answer generation. enrichKnowledge() is a standalone
-                    pure function taking a ResolvedKnowledge (X.3.5's RankedKnowledge output)
-                    and returning it with ruleItems/thresholdItems populated (always empty since
-                    X.3.3) plus a ResolutionDiagnostics side-channel — it does not import, wrap,
-                    or modify KnowledgeResolutionPipeline/ResolutionCoordinator (X.3.5) or any
-                    earlier X.3 file. No citation generation, conflict resolution, evidence
-                    formatting, answer generation, PromptBuilder/PromptRenderer/LLM/validation/
-                    MCP/Tool Calling/Multi-Agent, network, or database access — confirmed absent
-                    by architecture guard. Still open: wiring enrichKnowledge() after X.3.5's
-                    resolve() into one chain, and wiring the combined output into
-                    legalReasoningEngine.reason() — both remain separate, not-yet-authorized
-                    steps; and the still-open decision on extending ResolvedKnowledge for
-                    checklists/cases/bestpractice/risk."
-  files_added: "8 implementation files + 8 test files (41 tests)"
-  full_suite_result: "448 test files, 14067 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 440 files / 14026 tests at the X.3.5 baseline"
-  exit_criteria_met: "Rule/threshold parser tests prove a well-formed JSON definition parses
-                      correctly, a malformed/incomplete one produces a critical MissingEvidence
-                      entry without throwing, and an absent metadata key returns null (not an
-                      error). EffectivePeriod evaluator tests prove CURRENT/NOT_YET_EFFECTIVE/
-                      EXPIRED classification from effectiveFrom/effectiveTo vs asOfDate, never
-                      excluding the item. Pipeline tests prove enrichKnowledge() is pure
-                      (identical input -> identical output), populates ruleItems/thresholdItems
-                      across all three item buckets, and produces an accurate diagnostics
-                      summary. Architecture guard confirms zero src/knowledge/ import, zero
-                      reference to any X.3.2-X.3.5 module, zero MCP/provider/LLM/PromptBuilder/
-                      validation/citation/conflict-resolution reference, zero network/database
-                      access, and that every prior milestone's frozen-file markers (X.3.1
-                      through X.3.5) are unchanged."
-  frozen_interfaces_touched: "None. ResolvedKnowledge/KnowledgeItemRef/RuleKnowledgeItemRef/
-                              ThresholdKnowledgeItemRef/MissingEvidence (Batch A) consumed
-                              read-only or constructed as new values; KnowledgeResolutionPipeline/
-                              ResolutionCoordinator (X.3.5) not imported at all — verified by
-                              git diff and architecture guard."
+  scope: "src/reasoning/application/finalKnowledgeResolutionPipeline.ts
+         (FinalKnowledgeResolutionPipeline, buildFinalKnowledgeResolutionPipeline() — composes
+         X.3.5's buildKnowledgeResolutionPipeline() [itself already Intent Resolution ->
+         Retrieval -> Ranking] piped into X.3.6's enrichKnowledge(), with zero adapter code
+         since X.3.5's resolve() output already matches X.3.6's input shape exactly)."
+  scope_exclusion: "This is X.3.7 only — final composition of the already-completed X.3
+                    sub-milestones, zero new reasoning capability. Deliberately does NOT touch
+                    resolutionCoordinator.ts/resolutionExecutor.ts (X.3.5): their generic
+                    2-stage executor/coordinator machinery is not needed to bolt on one
+                    unconditional third call (enrichment) — KnowledgeResolutionPipeline's own
+                    public resolve() is already the correct composition unit, and reaching into
+                    X.3.5's internals for this would be strictly more code for the same result.
+                    Returns EnrichmentResult (knowledge + diagnostics), not bare ResolvedKnowledge,
+                    so the enrichment stage's audit trail survives to the caller. No citation
+                    generation, conflict resolution, evidence formatting, answer generation,
+                    PromptBuilder/PromptRenderer/LLM/OutputValidator/MCP/Tool Calling/Multi-Agent,
+                    network, or database access — confirmed absent by architecture guard. Still
+                    open: wiring FinalKnowledgeResolutionPipeline's output into
+                    legalReasoningEngine.reason() (still no glue connecting Phase X.3 to the
+                    frozen Reasoning Pipeline Core), and the still-open decision on extending
+                    ResolvedKnowledge for checklists/cases/bestpractice/risk."
+  files_added: "1 implementation file + 2 test files (12 tests)"
+  full_suite_result: "450 test files, 14079 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 448 files / 14067 tests at the X.3.6 baseline"
+  exit_criteria_met: "End-to-end tests prove the full Intent Resolution -> Retrieval -> Ranking
+                      -> Enrichment chain against a recording fake repository in one call:
+                      ranked ordering AND populated ruleItems/thresholdItems together,
+                      deterministic stage order, malformed metadata handled without throwing
+                      end-to-end, maxCandidates trimming before enrichment runs, and independent
+                      per-intent resolution. A regression test proves X.3.5's own
+                      KnowledgeResolutionPipeline, called directly, still leaves ruleItems/
+                      thresholdItems empty — confirming X.3.7 added a new composition layer
+                      rather than altering X.3.5's behavior. Architecture guard confirms zero
+                      src/knowledge/ import, that the final pipeline's only cross-milestone
+                      dependencies are knowledgeResolutionPipeline.ts and
+                      knowledgeEnrichmentPipeline.ts (never resolutionCoordinator/
+                      resolutionExecutor/intentResolutionPipeline/IKnowledgePlatform directly),
+                      zero MCP/provider/LLM/PromptBuilder/OutputValidator/citation/conflict-
+                      resolution reference, and that every prior milestone's frozen-file markers
+                      (X.3.1 through X.3.6) are unchanged."
+  frozen_interfaces_touched: "None. KnowledgeResolutionPipeline (X.3.5)/enrichKnowledge() (X.3.6)
+                              consumed only via their existing public surface —
+                              resolutionCoordinator.ts/resolutionExecutor.ts (X.3.5) not
+                              imported at all — verified by git diff and architecture guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.3.7 - Knowledge Resolution: remaining gaps (or any other later
-                        milestone)"
-next_milestone_status: "NOT AUTHORIZED. X.3.6's exit criteria confirmed met and frozen this
-                         session. Phase X.3 as a whole is NOT complete — X.3.1 through X.3.6 are
-                         its first six sub-milestones. Remaining: wiring enrichKnowledge()
-                         (X.3.6) after KnowledgeResolutionPipeline.resolve() (X.3.5) into one
-                         chain, wiring that combined output into legalReasoningEngine.reason()
-                         (still no glue connecting Phase X.3 to the frozen Reasoning Pipeline
-                         Core), and the still-open decision on extending ResolvedKnowledge for
-                         checklists/cases/bestpractice/risk."
-next_milestone_blocker: "None purely technical for enrichment itself. The ResolvedKnowledge-
+next_active_milestone: "Reasoning-engine wiring (connect FinalKnowledgeResolutionPipeline's
+                        output to legalReasoningEngine.reason()) or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. X.3.7's exit criteria confirmed met and frozen this
+                         session. Phase X.3 (Knowledge Resolution) is now a complete, standalone,
+                         deterministic pipeline (X.3.1 through X.3.7) — but its integration with
+                         the rest of the reasoning pipeline remains open: nothing yet calls
+                         FinalKnowledgeResolutionPipeline.resolve() and feeds its
+                         EnrichmentResult.knowledge into legalReasoningEngine.reason(). The
+                         still-open decision on extending ResolvedKnowledge for checklists/
+                         cases/bestpractice/risk also remains unresolved."
+next_milestone_blocker: "None purely technical for the wiring call itself. The ResolvedKnowledge-
                          extension decision (carried over from X.3.3) still requires explicit
                          human authorization to un-freeze Reasoning Pipeline Core, separate from
                          ordinary milestone approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.3.7 (or any other later milestone)."
+                        to begin reasoning-engine wiring (or any other later milestone)."
 
 do_not:
-  - "Do not begin X.3.7, Tool Calling, MCP, or Multi-Agent without explicit approval."
+  - "Do not begin reasoning-engine wiring, Tool Calling, MCP, or Multi-Agent without explicit
+     approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
-     X.3.6, frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or
-     src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
+     X.3.6 + X.3.7, frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen),
+     or src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -204,8 +196,16 @@ historical_sequence_to_reach_here:
      MissingEvidence on failure, never throws), knowledgeApplicabilityEvaluator (final per-item
      verdict), resolutionDiagnostics (aggregation), knowledgeEnrichmentPipeline (enrichKnowledge()
      — pure composition, standalone from X.3.5) — zero modification to X.3.1-X.3.5, zero LLM/
-     answer generation, architecture guard — full repo suite green (14067 tests) — FROZEN —
-     you are here"
+     answer generation, architecture guard — full repo suite green (14067 tests) — FROZEN"
+  - "Phase X.3.7 (Knowledge Resolution: Final Wiring) implemented:
+     finalKnowledgeResolutionPipeline (FinalKnowledgeResolutionPipeline,
+     buildFinalKnowledgeResolutionPipeline() — composes X.3.5's KnowledgeResolutionPipeline
+     [already Intent Resolution -> Retrieval -> Ranking] piped into X.3.6's enrichKnowledge(),
+     zero adapter code needed, resolutionCoordinator.ts/resolutionExecutor.ts deliberately not
+     touched) — zero modification to X.3.1-X.3.6, end-to-end tests proving the full 4-stage
+     deterministic chain plus a regression test proving X.3.5's own pipeline is unchanged,
+     architecture guard — full repo suite green (14079 tests) — FROZEN — Phase X.3 (Knowledge
+     Resolution) is now a complete, standalone, deterministic pipeline — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
