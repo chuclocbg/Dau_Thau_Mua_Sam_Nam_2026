@@ -19,89 +19,84 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.4.7 - Reasoning Engine Wiring: Reasoning Answer Composition -
-                    FROZEN"
+current_milestone: "Phase X.4 - Reasoning Engine Wiring: COMPLETE (X.4.1 through X.4.7 plus
+                    Final Integration) - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/domain/reasoningAnswerTypes.ts (ReasoningAnswerResult — reuses
-         ConfidenceComponents/DetectedConflict/FormattedCitation [Batch A] as-is);
-         src/reasoning/application/reasoningAnswerStage.ts (composeAnswer() — reuses
-         answerComposer.ts's exported composeDecision() directly; groups X.4.6's already-
-         generated citations into primaryCitations/supportingCitations/disputedCitations
-         sections; passes X.4.5's confidence and X.4.4's conflicts through unchanged)."
-  scope_exclusion: "Zero new rule evaluation, zero new conflict resolution, zero recomputed
-                    confidence, zero regenerated citations, zero Tool Calling/MCP/Multi-Agent/
-                    PromptBuilder/LLM/provider/repository/KnowledgePlatform access — confirmed
-                    absent by architecture guard. HONEST SCOPE GAP, documented not fabricated:
-                    composeDecision() requires ruleResults (X.4.3's RuleEvaluationResult, not
-                    one of this milestone's stated inputs) to find PASS/EXCEPTION passages, so
-                    this stage always calls it with an empty ruleResults array — decision is
-                    therefore always null in this milestone's current scope. Confirmed and
-                    locked in by a dedicated parity test proving the real engine produces a
-                    real, non-null decision once genuine rule results exist. Not wired into
-                    ReasoningOrchestrator/LegalReasoningEngine in this milestone — stands alone."
-  files_added: "2 implementation files + 4 test files (28 tests: unit structured-section-
-               grouping/ordering/pass-through/immutability/determinism, parity tests against
-               the real frozen engine including the documented decision-gap divergence,
-               real-platform end-to-end integration, architecture guard)"
-  full_suite_result: "475 test files, 14257 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 471 files / 14229 tests at the X.4.6 baseline"
-  exit_criteria_met: "Parity tests prove genuine equivalence for scenarios with no rule items
-                      (decision null in both paths, confidenceSummary/conflicts match exactly,
-                      citation grouping matches the real engine's own isPrimary/CONFLICT_SOURCE
-                      role assignment) and explicitly lock in the one intentional divergence
-                      (real engine: non-null decision once a passing rule exists; this stage:
-                      always null, since RuleEvaluationResult is not a stated input). One test-
-                      fixture mistake caught and fixed during authoring (two conflicting items
-                      sharing a default documentSymbol collided under X.4.6's own correct
-                      duplicate-citation-elimination logic) — not an implementation bug. Unit
-                      tests prove structured-section grouping (never reformatting), exact order
-                      preservation, confidence/conflicts pass-through unchanged, deep
-                      immutability, non-mutation, and determinism. A real-platform end-to-end
-                      integration test (mirroring X.3.2/X.4.1-X.4.6's own proven pattern)
-                      exercises the first full chain from a raw question string through a real
-                      intent detector, a real memory-backed IKnowledgePlatform + LegalProvider,
-                      X.3.7's FinalKnowledgeResolutionPipeline, X.4.2's
-                      assembleReasoningContext(), X.4.3's evaluateRules(), X.4.4's
-                      resolveConflicts(), X.4.5's evaluateConfidence(), X.4.6's
-                      generateCitations(), and this milestone's composeAnswer() — not fakes at
-                      any layer. Architecture guard confirms zero src/knowledge/, src/ai/,
-                      src/mcp/, src/conversation/ import; that the stage's only production
-                      dependency is answerComposer.ts; zero MCP/Tool Calling/Multi-Agent/
-                      PromptBuilder/LLM adapter/OutputValidator reference; zero rule-evaluation/
-                      conflict-resolution/confidence-computation/citation-formatting logic; no
-                      mutation of input results; that no private helper from an earlier
-                      milestone is re-exported; and that every prior milestone's frozen-file
-                      markers (X.3.1 through X.4.6, plus answerComposer.ts/
-                      legalReasoningEngine.ts) are unchanged."
-  frozen_interfaces_touched: "None. Stands alone — does not import FinalKnowledgeResolutionPipeline,
-                              ReasoningOrchestrator, LegalReasoningEngine, ruleEngine.ts,
-                              citationFormatter.ts, conflictResolutionStage.ts, or
-                              confidenceEvaluationStage.ts at all; consumes only a
-                              ReasoningExecutionContext/ConflictResolutionResult/
-                              ConfidenceEvaluationResult/CitationGenerationResult as plain
-                              values — verified by git diff and architecture guard."
+  scope: "The Final X.4 Integration: src/reasoning/application/reasoningEnginePipeline.ts
+         (ReasoningEnginePipeline, buildReasoningEnginePipeline() — the one public entry point
+         for the complete, native Reasoning Engine, wiring X.3.7's
+         FinalKnowledgeResolutionPipeline -> X.4.2's assembleReasoningContext() -> X.4.3's
+         evaluateRules() -> X.4.4's resolveConflicts() -> X.4.5's evaluateConfidence() -> X.4.6's
+         generateCitations() -> X.4.7's composeAnswer(), each called via its existing public
+         factory/function only). Integration-only milestone: zero new reasoning capability, zero
+         redesign, zero architecture change — confirmed by architecture guard and by a full
+         diff-scope check across the entire X.4 track (pre-X.4 baseline commit 4bcbf47 through
+         this freeze): 41 files added, 4635 insertions, zero existing lines modified."
+  scope_exclusion: "Deliberately does NOT call ReasoningOrchestrator.answer() (X.4.1) to obtain
+                    resolved knowledge, even though ReasoningResult.resolvedKnowledge would make
+                    that technically possible — doing so would run the entire frozen
+                    legalReasoningEngine.reason() pipeline only to discard its result and
+                    recompute an equivalent answer via the native chain, which is wasted
+                    computation, not integration. Builds FinalKnowledgeResolutionPipeline
+                    directly instead — the exact same resolution mechanism
+                    ReasoningOrchestrator's own constructor already builds internally.
+                    ReasoningOrchestrator (X.4.1) itself is untouched and remains a separate,
+                    valid entry point for its own (Batch-A-backed) path. No new
+                    Coordinator/Executor abstraction introduced for the sequencing itself, per
+                    PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md's Finding F-1."
+  files_added: "1 implementation file + 2 test files (15 tests: 6 true end-to-end integration/
+               replay against a real IKnowledgePlatform, 9 architecture guard covering
+               dependency graph + step ordering + frozen-file verification)"
+  full_suite_result: "477 test files, 14272 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 475 files / 14257 tests at the X.4.7 baseline"
+  exit_criteria_met: "True end-to-end integration tests exercise the ENTIRE Reasoning Engine via
+                      the single public entry point against a real memory-backed
+                      IKnowledgePlatform + LegalProvider — an uncontested item, a real hierarchy
+                      conflict with correct primary/disputed separation and reduced confidence,
+                      a not-yet-effective item excluded end-to-end, and an empty platform.
+                      Deterministic replay tests prove answering the same intent twice, and via
+                      two independently-constructed engine instances, produces identical
+                      structured results. Architecture guard confirms the required import set
+                      (exactly the seven X.4/X.3.7 stage modules, nothing from Batch A directly,
+                      nothing from src/knowledge/src/ai/src/mcp/src/conversation/), that the
+                      seven pipeline steps appear in the required order, zero new reasoning
+                      logic, and that every prior milestone's frozen-file marker (X.3.1 through
+                      X.4.7, plus legalReasoningEngine.ts/ruleEngine.ts/answerComposer.ts/
+                      citationFormatter.ts) is unchanged. Performance: a single end-to-end call
+                      against 20 seeded items completed in ~9ms in-memory (measured, not a
+                      formal SLA — Performance & Production Hardening, including caching, rate
+                      limiting, and load testing, remains explicitly out of scope and
+                      unauthorized)."
+  frozen_interfaces_touched: "None across the entire X.4 track. Full diff-scope check from the
+                              pre-X.4 baseline (commit 4bcbf47) through this freeze: 41 files
+                              added, 4635 insertions, zero existing lines modified — verified by
+                              git diff --stat, re-confirmed at this final freeze."
   tooling_note: "Same pre-existing, repo-wide 'erasableSyntaxOnly'/root-tsconfig no-op finding
-                noted at every prior X.4.x freeze applies unchanged here. tsc --noEmit -p
-                tsconfig.app.json confirmed zero new errors introduced by either new file."
+                noted at every prior X.4.x freeze applies unchanged here."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.4.8 (or whatever comes next — explicitly NOT Output
-                        Formatting, Tool Calling, MCP, Multi-Agent, or Production Hardening
-                        without separate explicit authorization) or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.4.7's exit criteria confirmed met and frozen
-                         this session. ReasoningAnswerResult exists but is not yet consumed
-                         anywhere — wiring it (and every earlier X.4.x result) into
-                         ReasoningOrchestrator (X.4.1) or LegalReasoningEngine remains open,
-                         not-yet-authorized work. The missingEvidence-reconciliation question
-                         (PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2), the superseded-item
-                         citation gap (X.4.6), the always-null decision gap (this milestone,
-                         both requiring RuleEvaluationResult as a stated input to close), and
-                         the still-open decision on extending ResolvedKnowledge for checklists/
-                         cases/bestpractice/risk all remain unresolved."
+next_active_milestone: "Output Formatting, Tool Calling, MCP, Multi-Agent, or Production
+                        Hardening — none authorized to begin without separate explicit
+                        approval — or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. Phase X.4 (Reasoning Engine Wiring) is now declared
+                         COMPLETE and FROZEN in its entirety (X.4.1 through X.4.7 plus this
+                         Final Integration) — a complete, native, deterministic Reasoning Engine
+                         exists as ReasoningEnginePipeline, proven end-to-end against a real
+                         Knowledge Platform. Three carried-forward, still-open questions remain,
+                         none blocking this freeze: (1) the missingEvidence-reconciliation
+                         question (PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2); (2) the
+                         superseded-item citation gap (X.4.6) and the always-null decision gap
+                         (X.4.7), both requiring RuleEvaluationResult to be added as a stated
+                         input to whatever milestone closes them; (3) the still-open decision on
+                         extending ResolvedKnowledge for checklists/cases/bestpractice/risk.
+                         ReasoningOrchestrator (X.4.1, Batch-A-backed) and
+                         ReasoningEnginePipeline (native X.4.2-X.4.7-backed) now coexist as two
+                         separate, valid entry points — reconciling or choosing between them is
+                         also open, not-yet-authorized work."
 next_milestone_blocker: "None technical. Requires its own explicit human authorization to
-                         begin, separate from X.4.7's own approval."
+                         begin, separate from this freeze's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
                         to begin the next milestone."
@@ -112,7 +107,8 @@ do_not:
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
-     X.4.7, frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or
+     X.4.7 + Final X.4 Integration, frozen), src/ai/{domain,application,infrastructure}/ (X.2
+     Batch B, frozen), or
      src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
@@ -311,7 +307,18 @@ historical_sequence_to_reach_here:
      null since RuleEvaluationResult is not one of this milestone's stated inputs) — unit
      tests, parity tests proving equivalence plus the documented decision-gap divergence,
      real-platform end-to-end integration test, architecture guard — full repo suite green
-     (14257 tests) — FROZEN — you are here"
+     (14257 tests) — FROZEN"
+  - "Final X.4 Integration implemented: reasoningEnginePipeline.ts (ReasoningEnginePipeline,
+     buildReasoningEnginePipeline() — the one public entry point for the complete Reasoning
+     Engine, wiring X.3.7's FinalKnowledgeResolutionPipeline through X.4.2-X.4.7's stage
+     functions in fixed order; deliberately builds FinalKnowledgeResolutionPipeline directly
+     rather than routing through ReasoningOrchestrator/legalReasoningEngine.reason() to avoid
+     wasted computation) — true end-to-end integration tests against a real IKnowledgePlatform,
+     deterministic replay tests, architecture guard (dependency graph, step ordering,
+     frozen-file verification) — full repo suite green (14272 tests) — full X.4-track diff
+     scope re-verified (41 files added, 4635 insertions, zero existing lines modified since the
+     pre-X.4 baseline) — FROZEN — Phase X.4 (Reasoning Engine Wiring) is now COMPLETE — you are
+     here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

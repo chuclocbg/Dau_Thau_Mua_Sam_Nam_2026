@@ -7,10 +7,27 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4.7 — Reasoning Engine Wiring: Reasoning Answer Composition — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4 — Reasoning Engine Wiring: COMPLETE (Final Integration) — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4.7 — Reasoning Engine Wiring: Reasoning Answer Composition — declared 2026-07-06 (superseded by the Final X.4 Integration)
+
+**Evidence:** 475 test files, 14,257 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/ai/`/`src/mcp/`/`src/conversation/` import and that every
+prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `reasoningAnswerTypes.ts` (`ReasoningAnswerResult` — reused
+`ConfidenceComponents`/`DetectedConflict`/`FormattedCitation`) and `reasoningAnswerStage.ts`
+(`composeAnswer()` — reused `answerComposer.ts`'s own exported `composeDecision()` directly;
+grouped X.4.6's citations into `primaryCitations`/`supportingCitations`/`disputedCitations`
+sections; passed X.4.5's confidence and X.4.4's conflicts through unchanged). Documented,
+intentional gap: `decision` always `null` since `RuleEvaluationResult` was not one of this
+milestone's stated inputs — confirmed by a dedicated parity test proving the real engine
+produces a real decision once genuine rule results exist.
 
 ---
 
