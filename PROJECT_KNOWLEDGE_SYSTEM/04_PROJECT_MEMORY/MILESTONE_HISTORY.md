@@ -7,10 +7,24 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.3.2 — Knowledge Resolution: Retrieval & Wiring — declared 2026-07-05 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.3.3 — Knowledge Resolution: Intent-Driven Orchestration — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.3.2 — Knowledge Resolution: Retrieval & Wiring — declared 2026-07-05 (superseded by X.3.3)
+
+**Evidence:** 427 test files, 13,943 tests, 0 failures at freeze time; architecture guard (7
+tests) confirmed the interface/adapter import boundary and zero MCP/provider/Anthropic/
+PromptBuilder references.
+
+**Summary:** Implemented `IKnowledgeRepository` (pure interface) and `KnowledgePlatformRepository`
+(the sole file permitted to import `IKnowledgePlatform`, via constructor dependency injection).
+Proven against a real memory-backed `IKnowledgePlatform` + `LegalProvider` (Phase N's own
+integration-test pattern), not just fixtures — confirming real `KnowledgeItem`/`LegalBasis`
+objects satisfy X.3.1's `KnowledgeReference` shapes with zero cast needed.
 
 ---
 
