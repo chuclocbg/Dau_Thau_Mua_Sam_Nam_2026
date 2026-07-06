@@ -7,10 +7,27 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.3.3 — Knowledge Resolution: Intent-Driven Orchestration — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.3.4 — Knowledge Resolution: Knowledge Ranking & Selection — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.3.3 — Knowledge Resolution: Intent-Driven Orchestration — declared 2026-07-06 (superseded by X.3.4)
+
+**Evidence:** 431 test files, 13,971 tests, 0 failures at freeze time; architecture guard (6
+tests) confirmed the interface-only dependency and zero ranking/scoring/confidence/citation/
+conflict logic.
+
+**Summary:** Implemented `knowledgeResolutionPlanner.ts` (`planKnowledgeResolution()` — data-
+driven domain selection per intent), `resolveKnowledgeWarnings.ts` (`buildEffectivePeriodWarnings()`
+— corrected mid-implementation to produce plain strings, matching `ResolvedKnowledge.warnings`'s
+actual `readonly string[]` type, not the richer `ReasoningWarning` object initially assumed), and
+`intentResolutionPipeline.ts` (`IntentResolutionPipeline`, depending only on
+`IKnowledgeRepository`, never the concrete adapter). Found and documented that `checklists`/
+`cases`/`bestpractice`/`risk` domains have no destination field on the frozen `ResolvedKnowledge`
+— the planner intentionally only requests `legal`/`procurement`/`school`.
 
 ---
 
