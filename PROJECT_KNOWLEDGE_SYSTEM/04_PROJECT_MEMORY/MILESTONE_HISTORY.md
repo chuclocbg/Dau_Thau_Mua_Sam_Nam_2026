@@ -7,10 +7,32 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.3.7 — Knowledge Resolution: Final Wiring — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Pre-X.3.8 API Cleanup — LegalReasoningEngine.reason() accepts ReasoningIntent — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.3.7 — Knowledge Resolution: Final Wiring — declared 2026-07-06 (superseded by the Pre-X.3.8 API Cleanup)
+
+**Evidence:** 450 test files, 14,079 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/` import, that the final pipeline's only cross-milestone
+dependencies are `knowledgeResolutionPipeline.ts`/`knowledgeEnrichmentPipeline.ts`, and that
+every prior milestone's frozen-file markers (X.3.1 through X.3.6) were unchanged.
+
+**Summary:** Implemented `finalKnowledgeResolutionPipeline.ts`
+(`FinalKnowledgeResolutionPipeline`, `buildFinalKnowledgeResolutionPipeline()`) — composed X.3.5's
+`KnowledgeResolutionPipeline` (already Intent Resolution → Retrieval → Ranking) piped into X.3.6's
+`enrichKnowledge()`, with zero adapter code. Declared Phase X.3 (Knowledge Resolution) complete as
+a standalone, deterministic pipeline. Followed by `PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md` (no
+redesign recommended, 8.1/10 average across 18 categories, six findings F-1–F-6 logged for
+awareness), `PHASE_X4_IMPLEMENTATION_PLAN_FINAL.md` (planned the still-unbuilt reasoning-engine
+wiring, recommending it be tracked as Phase X.3.8, not X.4 — X.4 already means Output Validation),
+and `PHASE_X4_API_REVIEW.md` (found `legalReasoningEngine.reason()`'s internal `detectIntent()`
+call would force any future orchestrator to detect intent twice — cheap to fix now since
+`reason()` had exactly one caller anywhere in the repo, its own test file; recommended the small,
+compatible redesign this cleanup implements).
 
 ---
 

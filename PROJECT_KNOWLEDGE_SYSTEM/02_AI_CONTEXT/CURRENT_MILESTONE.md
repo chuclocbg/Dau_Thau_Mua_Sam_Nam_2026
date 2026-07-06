@@ -19,81 +19,80 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.3.7 - Knowledge Resolution: Final Wiring - FROZEN"
+current_milestone: "Pre-X.3.8 API Cleanup - LegalReasoningEngine.reason() accepts
+                    ReasoningIntent - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/application/finalKnowledgeResolutionPipeline.ts
-         (FinalKnowledgeResolutionPipeline, buildFinalKnowledgeResolutionPipeline() — composes
-         X.3.5's buildKnowledgeResolutionPipeline() [itself already Intent Resolution ->
-         Retrieval -> Ranking] piped into X.3.6's enrichKnowledge(), with zero adapter code
-         since X.3.5's resolve() output already matches X.3.6's input shape exactly)."
-  scope_exclusion: "This is X.3.7 only — final composition of the already-completed X.3
-                    sub-milestones, zero new reasoning capability. Deliberately does NOT touch
-                    resolutionCoordinator.ts/resolutionExecutor.ts (X.3.5): their generic
-                    2-stage executor/coordinator machinery is not needed to bolt on one
-                    unconditional third call (enrichment) — KnowledgeResolutionPipeline's own
-                    public resolve() is already the correct composition unit, and reaching into
-                    X.3.5's internals for this would be strictly more code for the same result.
-                    Returns EnrichmentResult (knowledge + diagnostics), not bare ResolvedKnowledge,
-                    so the enrichment stage's audit trail survives to the caller. No citation
-                    generation, conflict resolution, evidence formatting, answer generation,
-                    PromptBuilder/PromptRenderer/LLM/OutputValidator/MCP/Tool Calling/Multi-Agent,
-                    network, or database access — confirmed absent by architecture guard. Still
-                    open: wiring FinalKnowledgeResolutionPipeline's output into
-                    legalReasoningEngine.reason() (still no glue connecting Phase X.3 to the
-                    frozen Reasoning Pipeline Core), and the still-open decision on extending
-                    ResolvedKnowledge for checklists/cases/bestpractice/risk."
-  files_added: "1 implementation file + 2 test files (12 tests)"
-  full_suite_result: "450 test files, 14079 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 448 files / 14067 tests at the X.3.6 baseline"
-  exit_criteria_met: "End-to-end tests prove the full Intent Resolution -> Retrieval -> Ranking
-                      -> Enrichment chain against a recording fake repository in one call:
-                      ranked ordering AND populated ruleItems/thresholdItems together,
-                      deterministic stage order, malformed metadata handled without throwing
-                      end-to-end, maxCandidates trimming before enrichment runs, and independent
-                      per-intent resolution. A regression test proves X.3.5's own
-                      KnowledgeResolutionPipeline, called directly, still leaves ruleItems/
-                      thresholdItems empty — confirming X.3.7 added a new composition layer
-                      rather than altering X.3.5's behavior. Architecture guard confirms zero
-                      src/knowledge/ import, that the final pipeline's only cross-milestone
-                      dependencies are knowledgeResolutionPipeline.ts and
-                      knowledgeEnrichmentPipeline.ts (never resolutionCoordinator/
-                      resolutionExecutor/intentResolutionPipeline/IKnowledgePlatform directly),
-                      zero MCP/provider/LLM/PromptBuilder/OutputValidator/citation/conflict-
-                      resolution reference, and that every prior milestone's frozen-file markers
-                      (X.3.1 through X.3.6) are unchanged."
-  frozen_interfaces_touched: "None. KnowledgeResolutionPipeline (X.3.5)/enrichKnowledge() (X.3.6)
-                              consumed only via their existing public surface —
-                              resolutionCoordinator.ts/resolutionExecutor.ts (X.3.5) not
-                              imported at all — verified by git diff and architecture guard."
+  scope: "src/reasoning/domain/reasoningTypes.ts (ILegalReasoningEngine.reason()'s first
+         parameter changed from ReasoningQuestion to the existing ReasoningIntent type — no new
+         ResolvedIntent/DTO type introduced); src/reasoning/application/legalReasoningEngine.ts
+         (removed the internal detectIntent(question) call; reason() now uses the
+         caller-supplied intent directly; one incidental fix — format was read from
+         question.outputFormat, a field ReasoningIntent doesn't carry, so reason() now always
+         composes the default DECISION-format explanation, explain(result, format) remains the
+         supported way to get a different format); src/__tests__/legal-reasoning-engine.test.ts
+         (mechanical update at all 7 call sites — detectIntent(question) called in the test,
+         passed to reason() instead of the raw question literal, zero assertion changes)."
+  scope_exclusion: "This is a pre-X.4/X.3.8 architecture cleanup only, NOT X.4/X.3.8
+                    implementation itself. Per PHASE_X4_API_REVIEW.md: grepped first — reason()
+                    had exactly one caller anywhere in the repo (its own test file, 7 call
+                    sites) before this cleanup, confirming this was the cheapest this change
+                    would ever be to make. Every other stage inside reason() (conflict
+                    resolution, rule/threshold evaluation, evidence collection, citation
+                    formatting, confidence scoring, decision composition) is untouched — all of
+                    it already only ever read from the intent variable, never from question
+                    directly. Zero new abstraction, zero new orchestration, zero new DTO, zero
+                    additional responsibility introduced — confirmed by diff scope (3 files
+                    touched, all pre-approved) and full suite (zero new tests, identical count)."
+  files_added: "0 files added; 3 files modified (reasoningTypes.ts, legalReasoningEngine.ts,
+               legal-reasoning-engine.test.ts)"
+  full_suite_result: "450 test files, 14079 tests, 0 failures (pool=forks, full repo, no filter)
+                      — identical counts to the X.3.7 baseline, since this is a pure
+                      signature/wiring refactor with no new tests and no behavior change for
+                      any existing assertion"
+  exit_criteria_met: "TypeScript build passes; all 7 updated test call sites in
+                      legal-reasoning-engine.test.ts pass with zero assertion changes; full
+                      repository suite green at the same 450/14079 count as before (proving no
+                      regression anywhere, including every X.3.1-X.3.7 architecture guard's
+                      frozen-file-marker check for legalReasoningEngine.ts, which still matches
+                      its own /Stages 1, 3-7/ marker); git diff confirms exactly the 3
+                      pre-approved files touched, nothing else."
+  frozen_interfaces_touched: "legalReasoningEngine.ts and reasoningTypes.ts's
+                              ILegalReasoningEngine were explicitly authorized for this one
+                              surgical change (PHASE_X4_API_REVIEW.md's approved redesign) — not
+                              an unauthorized frozen-file break. Zero other frozen file (all of
+                              X.3.1-X.3.7, Conversation Core, Batch B, X.4 Output Validation)
+                              touched — verified by git status."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Reasoning-engine wiring (connect FinalKnowledgeResolutionPipeline's
-                        output to legalReasoningEngine.reason()) or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. X.3.7's exit criteria confirmed met and frozen this
-                         session. Phase X.3 (Knowledge Resolution) is now a complete, standalone,
-                         deterministic pipeline (X.3.1 through X.3.7) — but its integration with
-                         the rest of the reasoning pipeline remains open: nothing yet calls
-                         FinalKnowledgeResolutionPipeline.resolve() and feeds its
-                         EnrichmentResult.knowledge into legalReasoningEngine.reason(). The
-                         still-open decision on extending ResolvedKnowledge for checklists/
+next_active_milestone: "Phase X.3.8 (Reasoning Engine Wiring — connect
+                        FinalKnowledgeResolutionPipeline's output to the now-redesigned
+                        legalReasoningEngine.reason(intent, resolvedKnowledge)) or any other
+                        later milestone"
+next_milestone_status: "NOT AUTHORIZED. This cleanup's exit criteria confirmed met and frozen
+                         this session. Phase X.3.8 is now unblocked on the API-shape question
+                         specifically (PHASE_X4_API_REVIEW.md's finding is resolved) but still
+                         requires its own explicit authorization to begin. The
+                         missingEvidence-reconciliation question (ResolutionDiagnostics vs.
+                         ReasoningResult.missingEvidence, PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md
+                         Finding F-2) remains open and should shape that milestone's scoping.
+                         The still-open decision on extending ResolvedKnowledge for checklists/
                          cases/bestpractice/risk also remains unresolved."
-next_milestone_blocker: "None purely technical for the wiring call itself. The ResolvedKnowledge-
-                         extension decision (carried over from X.3.3) still requires explicit
-                         human authorization to un-freeze Reasoning Pipeline Core, separate from
-                         ordinary milestone approval."
+next_milestone_blocker: "None technical. Both require explicit human authorization to begin,
+                         separate from this cleanup's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin reasoning-engine wiring (or any other later milestone)."
+                        to begin Phase X.3.8 (or any other later milestone)."
 
 do_not:
-  - "Do not begin reasoning-engine wiring, Tool Calling, MCP, or Multi-Agent without explicit
-     approval."
+  - "Do not begin Phase X.3.8/X.4, Tool Calling, MCP, or Multi-Agent without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
-     X.3.6 + X.3.7, frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen),
-     or src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
+     X.3.6 + X.3.7, frozen — noting legalReasoningEngine.ts/reasoningTypes.ts were this
+     cleanup's own explicitly-approved exception, now re-frozen as of this checkpoint),
+     src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
+     (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -205,7 +204,30 @@ historical_sequence_to_reach_here:
      touched) — zero modification to X.3.1-X.3.6, end-to-end tests proving the full 4-stage
      deterministic chain plus a regression test proving X.3.5's own pipeline is unchanged,
      architecture guard — full repo suite green (14079 tests) — FROZEN — Phase X.3 (Knowledge
-     Resolution) is now a complete, standalone, deterministic pipeline — you are here"
+     Resolution) is now a complete, standalone, deterministic pipeline"
+  - "PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md produced: no redesign recommended, 8.1/10 average
+     across 18 categories, six findings (F-1 unreused ResolutionExecutor/Coordinator
+     abstraction, F-2 missingEvidence reconciliation gap, F-3 rule/threshold parser
+     duplication, F-4 a stray switch statement inconsistent with the project's own Map-lookup
+     convention, F-5 three-deep type aliasing, F-6 uncached per-item metadata parsing) logged
+     for awareness, none blocking"
+  - "PHASE_X4_IMPLEMENTATION_PLAN_FINAL.md produced: renamed the still-unbuilt 'reasoning-engine
+     wiring' milestone to Phase X.3.8 (X.4 already means Output Validation, built and frozen);
+     recommended one milestone, one new composition file, no split; identified the double-
+     detectIntent() call as the one concrete integration risk"
+  - "PHASE_X4_API_REVIEW.md produced: re-examined the double-detectIntent() finding first-
+     principles rather than accepting it as permanent debt — grepped and confirmed reason() had
+     exactly one caller anywhere in the repo (its own test file), making this the cheapest
+     possible moment to fix the signature; recommended the small, compatible redesign this
+     cleanup implements"
+  - "Pre-X.3.8 API Cleanup implemented: reasoningTypes.ts's ILegalReasoningEngine.reason() and
+     legalReasoningEngine.ts's implementation changed to accept intent: ReasoningIntent instead
+     of question: ReasoningQuestion, removing the internal detectIntent() call entirely (reused
+     the existing ReasoningIntent type, no new ResolvedIntent/DTO); legal-reasoning-engine.test.ts
+     updated mechanically at 7 call sites, zero assertion changes; one incidental fix
+     (question.outputFormat had no ReasoningIntent equivalent — reason() now always composes
+     the default DECISION-format explanation) — full repo suite green at the identical
+     450/14079 count as the X.3.7 baseline — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
