@@ -7,10 +7,26 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Pre-X.3.8 API Cleanup — LegalReasoningEngine.reason() accepts ReasoningIntent — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4.1 — Reasoning Engine Wiring: Batch A (Reasoning Orchestrator) — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Pre-X.3.8 API Cleanup — LegalReasoningEngine.reason() accepts ReasoningIntent — declared 2026-07-06 (superseded by Phase X.4.1)
+
+**Evidence:** 450 test files, 14,079 tests, 0 failures at freeze time — identical count to the
+X.3.7 baseline, since this was a pure signature/wiring refactor with no new tests.
+
+**Summary:** `ILegalReasoningEngine.reason()`'s first parameter changed from `ReasoningQuestion`
+to the existing `ReasoningIntent` type (reused, no new `ResolvedIntent`/DTO), removing the
+internal `detectIntent(question)` call from `LegalReasoningEngine`. Grepped first: `reason()` had
+exactly one caller anywhere in the repo (its own test file, 7 mechanically-updated call sites,
+zero assertion changes) — confirmed the cheapest possible moment to make this change. One
+incidental fix: `question.outputFormat` had no `ReasoningIntent` equivalent, so `reason()` now
+always composes the default DECISION-format explanation (`explain(result, format)` remains the
+supported way to get a different format).
 
 ---
 

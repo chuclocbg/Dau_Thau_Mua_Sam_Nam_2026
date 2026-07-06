@@ -19,80 +19,90 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Pre-X.3.8 API Cleanup - LegalReasoningEngine.reason() accepts
-                    ReasoningIntent - FROZEN"
+current_milestone: "Phase X.4.1 - Reasoning Engine Wiring: Batch A (Reasoning Orchestrator) -
+                    FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/domain/reasoningTypes.ts (ILegalReasoningEngine.reason()'s first
-         parameter changed from ReasoningQuestion to the existing ReasoningIntent type — no new
-         ResolvedIntent/DTO type introduced); src/reasoning/application/legalReasoningEngine.ts
-         (removed the internal detectIntent(question) call; reason() now uses the
-         caller-supplied intent directly; one incidental fix — format was read from
-         question.outputFormat, a field ReasoningIntent doesn't carry, so reason() now always
-         composes the default DECISION-format explanation, explain(result, format) remains the
-         supported way to get a different format); src/__tests__/legal-reasoning-engine.test.ts
-         (mechanical update at all 7 call sites — detectIntent(question) called in the test,
-         passed to reason() instead of the raw question literal, zero assertion changes)."
-  scope_exclusion: "This is a pre-X.4/X.3.8 architecture cleanup only, NOT X.4/X.3.8
-                    implementation itself. Per PHASE_X4_API_REVIEW.md: grepped first — reason()
-                    had exactly one caller anywhere in the repo (its own test file, 7 call
-                    sites) before this cleanup, confirming this was the cheapest this change
-                    would ever be to make. Every other stage inside reason() (conflict
-                    resolution, rule/threshold evaluation, evidence collection, citation
-                    formatting, confidence scoring, decision composition) is untouched — all of
-                    it already only ever read from the intent variable, never from question
-                    directly. Zero new abstraction, zero new orchestration, zero new DTO, zero
-                    additional responsibility introduced — confirmed by diff scope (3 files
-                    touched, all pre-approved) and full suite (zero new tests, identical count)."
-  files_added: "0 files added; 3 files modified (reasoningTypes.ts, legalReasoningEngine.ts,
-               legal-reasoning-engine.test.ts)"
-  full_suite_result: "450 test files, 14079 tests, 0 failures (pool=forks, full repo, no filter)
-                      — identical counts to the X.3.7 baseline, since this is a pure
-                      signature/wiring refactor with no new tests and no behavior change for
-                      any existing assertion"
-  exit_criteria_met: "TypeScript build passes; all 7 updated test call sites in
-                      legal-reasoning-engine.test.ts pass with zero assertion changes; full
-                      repository suite green at the same 450/14079 count as before (proving no
-                      regression anywhere, including every X.3.1-X.3.7 architecture guard's
-                      frozen-file-marker check for legalReasoningEngine.ts, which still matches
-                      its own /Stages 1, 3-7/ marker); git diff confirms exactly the 3
-                      pre-approved files touched, nothing else."
-  frozen_interfaces_touched: "legalReasoningEngine.ts and reasoningTypes.ts's
-                              ILegalReasoningEngine were explicitly authorized for this one
-                              surgical change (PHASE_X4_API_REVIEW.md's approved redesign) — not
-                              an unauthorized frozen-file break. Zero other frozen file (all of
-                              X.3.1-X.3.7, Conversation Core, Batch B, X.4 Output Validation)
-                              touched — verified by git status."
+  scope: "src/reasoning/application/reasoningOrchestrator.ts (ReasoningOrchestrator,
+         buildReasoningOrchestrator() — coordinates X.3.7's FinalKnowledgeResolutionPipeline and
+         Batch A's LegalReasoningEngine into ReasoningIntent -> Knowledge Resolution ->
+         ReasoningResult; constructs both via their existing build*() factories only,
+         dependency-injects IKnowledgeRepository + optional ILegalReasoningEngine/
+         RankingPlanner)."
+  scope_exclusion: "This is Batch A only — the orchestrator, nothing more. Zero business logic:
+                    no ranking, no retrieval, no answer generation, no citation formatting, no
+                    conflict resolution, no confidence scoring, no PromptBuilder/PromptRenderer/
+                    LLM adapter/Output Validation/MCP/Tool Calling/Multi-Agent/Conversation Core/
+                    Knowledge Platform changes — confirmed absent by architecture guard.
+                    'Invoke KnowledgeResolutionPipeline' interpreted as X.3.7's
+                    FinalKnowledgeResolutionPipeline specifically (documented inline), since
+                    X.3.5's narrower class alone would skip X.3.6's enrichment. Deliberately
+                    returns ReasoningResult only, not EnrichmentResult's diagnostics alongside
+                    it — the missingEvidence reconciliation question
+                    (PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open and
+                    undecided; answering it here would exceed 'zero additional
+                    responsibilities'. EnrichmentResult itself is unchanged and still available
+                    to any caller resolving knowledge directly."
+  files_added: "1 implementation file + 3 test files (17 tests: 6 unit/DI, 3 real-platform
+               end-to-end integration, 8 architecture guard)"
+  full_suite_result: "453 test files, 14096 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 450 files / 14079 tests at the Pre-X.3.8 API Cleanup baseline"
+  exit_criteria_met: "Dependency-injection tests prove call order (resolve before reason), that
+                      the same intent instance reaches both calls, and genuine DI of both the
+                      repository and the engine. A real-platform end-to-end integration test
+                      (mirroring X.3.2's own proven pattern) exercises the first full chain from
+                      a raw question string through a real intent detector, a real
+                      memory-backed IKnowledgePlatform + LegalProvider, and a real
+                      LegalReasoningEngine — not fakes at any layer — including that temporal
+                      filtering still excludes a not-yet-effective item end-to-end. Architecture
+                      guard confirms zero src/knowledge/, src/ai/, src/mcp/, or
+                      src/conversation/ import; that the orchestrator's only production
+                      dependencies are finalKnowledgeResolutionPipeline.ts and
+                      legalReasoningEngine.ts; zero MCP/PromptBuilder/LLM adapter/
+                      OutputValidator reference; zero ranking/retrieval/citation/conflict/
+                      confidence-scoring logic; and that every prior milestone's frozen-file
+                      markers (X.3.1 through X.3.7, plus the pre-X.4 cleanup) are unchanged."
+  frozen_interfaces_touched: "None. FinalKnowledgeResolutionPipeline (X.3.7)/LegalReasoningEngine
+                              (Batch A, post-cleanup) consumed only via their existing public
+                              build*()/resolve()/reason() surface — verified by git diff and
+                              architecture guard."
+  tooling_note: "tsc --noEmit against the root tsconfig.json checks zero files (solution-style
+                'files': [] + references) — has been a no-op for every tsc invocation across
+                this entire X.3/X.4 track. Running against tsconfig.app.json directly surfaces a
+                pre-existing, repo-wide 'erasableSyntaxOnly' violation on every constructor using
+                parameter-property shorthand, confirmed present since X.3.2's first class (git
+                show against the pre-X.3 baseline tag) — predates this session entirely, not
+                introduced by any Phase X milestone. This orchestrator follows the same existing
+                convention as every other X.3.x class. The real verification gate for this
+                repository has always been the Vitest suite (transpiles via esbuild, ignores
+                this flag), not this specific tsc invocation. Not fixed here — would touch
+                multiple frozen files, out of this milestone's scope."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.3.8 (Reasoning Engine Wiring — connect
-                        FinalKnowledgeResolutionPipeline's output to the now-redesigned
-                        legalReasoningEngine.reason(intent, resolvedKnowledge)) or any other
-                        later milestone"
-next_milestone_status: "NOT AUTHORIZED. This cleanup's exit criteria confirmed met and frozen
-                         this session. Phase X.3.8 is now unblocked on the API-shape question
-                         specifically (PHASE_X4_API_REVIEW.md's finding is resolved) but still
-                         requires its own explicit authorization to begin. The
-                         missingEvidence-reconciliation question (ResolutionDiagnostics vs.
-                         ReasoningResult.missingEvidence, PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md
-                         Finding F-2) remains open and should shape that milestone's scoping.
-                         The still-open decision on extending ResolvedKnowledge for checklists/
-                         cases/bestpractice/risk also remains unresolved."
-next_milestone_blocker: "None technical. Both require explicit human authorization to begin,
-                         separate from this cleanup's own approval."
+next_active_milestone: "Phase X.4.2 (Reasoning Engine Wiring — Batch B, or whatever comes next)
+                        or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. Phase X.4.1's exit criteria confirmed met and frozen
+                         this session. The missingEvidence-reconciliation question
+                         (ResolutionDiagnostics vs. ReasoningResult.missingEvidence,
+                         PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open and
+                         should shape whatever X.4.2 (or a real caller/API-shape milestone)
+                         turns out to need. The still-open decision on extending
+                         ResolvedKnowledge for checklists/cases/bestpractice/risk also remains
+                         unresolved."
+next_milestone_blocker: "None technical. Requires its own explicit human authorization to
+                         begin, separate from X.4.1's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.3.8 (or any other later milestone)."
+                        to begin Phase X.4.2 (or any other later milestone)."
 
 do_not:
-  - "Do not begin Phase X.3.8/X.4, Tool Calling, MCP, or Multi-Agent without explicit approval."
+  - "Do not begin Phase X.4.2, Tool Calling, MCP, or Multi-Agent without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
-     X.3.6 + X.3.7, frozen — noting legalReasoningEngine.ts/reasoningTypes.ts were this
-     cleanup's own explicitly-approved exception, now re-frozen as of this checkpoint),
-     src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
-     (X.4, frozen) outside of a newly-approved milestone."
+     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1, frozen), src/ai/{domain,application,
+     infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen) outside of a
+     newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -227,7 +237,13 @@ historical_sequence_to_reach_here:
      updated mechanically at 7 call sites, zero assertion changes; one incidental fix
      (question.outputFormat had no ReasoningIntent equivalent — reason() now always composes
      the default DECISION-format explanation) — full repo suite green at the identical
-     450/14079 count as the X.3.7 baseline — FROZEN — you are here"
+     450/14079 count as the X.3.7 baseline — FROZEN"
+  - "Phase X.4.1 (Reasoning Engine Wiring: Batch A) implemented: reasoningOrchestrator.ts
+     (ReasoningOrchestrator, buildReasoningOrchestrator() — coordinates X.3.7's
+     FinalKnowledgeResolutionPipeline and Batch A's LegalReasoningEngine, zero business logic of
+     its own) — dependency-injection tests, a real-platform end-to-end integration test (first
+     full chain from raw question to ReasoningResult against a real IKnowledgePlatform, not
+     fakes), architecture guard — full repo suite green (14096 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
