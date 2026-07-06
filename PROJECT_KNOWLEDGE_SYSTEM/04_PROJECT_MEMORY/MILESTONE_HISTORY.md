@@ -7,10 +7,25 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4.2 — Reasoning Engine Wiring: Reasoning Context Assembly — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4.3 — Reasoning Engine Wiring: Reasoning Rule Evaluation — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4.2 — Reasoning Engine Wiring: Reasoning Context Assembly — declared 2026-07-06 (superseded by X.4.3)
+
+**Evidence:** 456 test files, 14,120 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/ai/`/`src/mcp/`/`src/conversation/` import and that every
+prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `reasoningExecutionContextTypes.ts` (`ReasoningExecutionContext` —
+renamed from the requested "ReasoningContext" to avoid shadowing the existing frozen type) and
+`reasoningContextAssembler.ts` (`assembleReasoningContext()` — stable deduplication + deep
+freeze, zero reasoning/conflict/confidence/citation/answer-generation logic). Stands alone, not
+yet wired into `ReasoningOrchestrator`/`LegalReasoningEngine`. A real-platform end-to-end
+integration test proved genuine freeze against real platform data.
 
 ---
 
