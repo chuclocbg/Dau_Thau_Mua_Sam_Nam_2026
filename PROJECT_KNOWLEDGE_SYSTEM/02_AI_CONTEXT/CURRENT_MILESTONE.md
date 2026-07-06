@@ -19,100 +19,101 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.4.3 - Reasoning Engine Wiring: Reasoning Rule Evaluation -
+current_milestone: "Phase X.4.4 - Reasoning Engine Wiring: Reasoning Conflict Resolution -
                     FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/domain/ruleEvaluationTypes.ts (KnowledgeItemEvaluation,
-         RuleEvaluationResult — reuses EffectivePeriodStatus/ApplicabilityStatus [X.3.6] and
-         LegalRuleResult/LegalThresholdResult [Batch A] as-is); src/reasoning/application/
-         ruleEvaluationStage.ts (evaluateRules() — a pure function taking one
-         ReasoningExecutionContext parameter, not three, since context.intent already IS the
-         ReasoningIntent and context's five item buckets already carry forward everything from
-         ResolvedKnowledge this stage needs)."
-  scope_exclusion: "Zero conflict resolution, zero ranking of competing conclusions, zero
-                    explanation/citation/answer generation, zero confidence scoring, zero Tool
-                    Calling/MCP/LLM — confirmed absent by architecture guard. Every
-                    sub-computation reused directly from an already-frozen milestone rather than
-                    reimplemented: execute legal rules/evaluate threshold rules ->
-                    ruleEngine.ts's evaluateRule()/evaluateThreshold() (Batch A, frozen, already
-                    exported — exception detection deliberately out of scope, not a named
-                    responsibility, every rule evaluated with an empty exceptions array);
-                    evaluate temporal validity -> effectivePeriodEvaluator.ts's
-                    evaluateEffectivePeriod() (X.3.6, frozen, already exported); evaluate
-                    applicability -> knowledgeApplicabilityEvaluator.ts's evaluateApplicability()
-                    (X.3.6, frozen, already exported, metadataParseFailed always false since a
-                    parse failure would already have excluded the item upstream); evaluate legal
-                    hierarchy -> rankingStrategy.ts's legalHierarchyScore() (X.3.4, frozen,
-                    already exported) — reused rather than re-deriving a third independent
-                    authority-level table. Not wired into ReasoningOrchestrator/
-                    LegalReasoningEngine in this milestone — stands alone."
-  files_added: "2 implementation files + 3 test files (39 tests: unit rule/threshold/temporal/
-               hierarchy/immutability/determinism, real-platform end-to-end integration,
-               architecture guard)"
-  full_suite_result: "459 test files, 14144 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 456 files / 14120 tests at the X.4.2 baseline"
-  exit_criteria_met: "Unit tests prove rule/threshold execution (PASS/FAIL/INCONCLUSIVE, a
-                      missing context field omitting the threshold result entirely per
-                      evaluateThreshold's own null-return contract), evidence-reference
-                      preservation, per-item evaluation across all five buckets, temporal
-                      validity classification, hierarchy scoring (LAW > INTERNAL_REGULATION),
-                      deep immutability, non-mutation of inputs, and determinism. A
-                      real-platform end-to-end integration test (mirroring X.3.2/X.4.1/X.4.2's
-                      own proven pattern) exercises the first full chain from a raw question
-                      string through a real intent detector, a real memory-backed
-                      IKnowledgePlatform + LegalProvider + ProcurementProvider, X.3.7's
-                      FinalKnowledgeResolutionPipeline, X.4.2's assembleReasoningContext(), and
-                      this milestone's evaluateRules() — not fakes at any layer — proving a
-                      real, platform-seeded rule item (JSON-encoded ruleDefinition metadata, per
-                      ADR-022 Decision 5) evaluates through to a PASS result with correct
-                      evidence references. Architecture guard confirms zero src/knowledge/,
+  scope: "src/reasoning/domain/conflictResolutionTypes.ts (RejectedCandidateEntry,
+         ConflictResolutionResult — reuses DetectedConflict/ConflictingItem/ConflictResolution
+         [Batch A] as-is); src/reasoning/application/conflictResolutionStage.ts
+         (resolveConflicts() — a pure function taking a ReasoningExecutionContext [X.4.2] and a
+         RuleEvaluationResult [X.4.3], re-expressing legalReasoningEngine.ts's private 4-tier
+         cascade — MORE_RESTRICTIVE -> HIERARCHY -> LEX_POSTERIOR -> LEX_SPECIALIS -> UNRESOLVED
+         — from scratch, since every function in that cascade is non-exported and there is no
+         public component to reuse for it; verified byte-for-byte equivalent to the real, frozen
+         cascade by dedicated parity tests covering all four tiers)."
+  scope_exclusion: "Zero confidence scoring, zero citation/explanation/answer generation, zero
+                    Tool Calling/MCP/LLM, zero repository/KnowledgePlatform access — confirmed
+                    absent by architecture guard. Two pieces ARE genuinely reused, not
+                    reimplemented: item applicability comes from X.4.3's own
+                    RuleEvaluationResult.itemEvaluations[].applicability (never re-derived via a
+                    fresh temporal check); the authority-hierarchy comparison uses
+                    rankingStrategy.ts's own exported legalHierarchyScore() (X.3.4, frozen)
+                    directly, with ConflictingItem.authorityLevel (a frozen, reused output field)
+                    derived by inverting that function's own known 0-1 formula back to a raw
+                    level number — not a second independent authority table. Not wired into
+                    ReasoningOrchestrator/LegalReasoningEngine in this milestone — stands alone."
+  files_added: "2 implementation files + 4 test files (49 tests: unit grouping/eligibility/
+               rejected-candidates/authorityLevel-round-trip/immutability/determinism, parity
+               tests against the real frozen cascade across all 4 tiers, real-platform
+               end-to-end integration, architecture guard)"
+  full_suite_result: "463 test files, 14173 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 459 files / 14144 tests at the X.4.3 baseline"
+  exit_criteria_met: "Parity tests feed identical item scenarios through both the real, frozen
+                      LegalReasoningEngine.reason() and resolveConflicts(), asserting identical
+                      resolution outcomes for Tier 1 (hierarchy), Tier 2 (more restrictive),
+                      Tier 3 (lex posterior), and UNRESOLVED — the same scenarios
+                      legal-reasoning-engine.test.ts itself already exercises. One of these
+                      tests caught a real detail during authoring (the frozen cascade
+                      deliberately leaves supersededItem undefined in the MORE_RESTRICTIVE-wins
+                      branch) via the real engine's own output disagreeing with the parity
+                      test's first-draft assumption, not the implementation. Unit tests prove
+                      grouping/eligibility filtering, deduplicated rejected-candidate recording,
+                      authorityLevel round-trip correctness, deep immutability, non-mutation,
+                      and determinism. A real-platform end-to-end integration test (mirroring
+                      X.3.2/X.4.1/X.4.2/X.4.3's own proven pattern) exercises the first full
+                      chain from a raw question string through a real intent detector, a real
+                      memory-backed IKnowledgePlatform + LegalProvider, X.3.7's
+                      FinalKnowledgeResolutionPipeline, X.4.2's assembleReasoningContext(),
+                      X.4.3's evaluateRules(), and this milestone's resolveConflicts() — not
+                      fakes at any layer. Architecture guard confirms zero src/knowledge/,
                       src/ai/, src/mcp/, src/conversation/ import; that the stage's only
-                      production dependencies are ruleEngine.ts/effectivePeriodEvaluator.ts/
-                      knowledgeApplicabilityEvaluator.ts/rankingStrategy.ts; zero MCP/
-                      PromptBuilder/LLM adapter/OutputValidator/conflict/confidence/citation/
-                      answer-generation reference; no switch-statement domain dispatch; and that
-                      every prior milestone's frozen-file markers (X.3.1 through X.4.2, plus
+                      production dependency is rankingStrategy.ts; zero MCP/PromptBuilder/LLM
+                      adapter/OutputValidator/confidence/citation/answer-generation/rule-
+                      execution reference; no switch-statement domain dispatch; and that every
+                      prior milestone's frozen-file markers (X.3.1 through X.4.3, plus
                       ruleEngine.ts/legalReasoningEngine.ts) are unchanged."
   frozen_interfaces_touched: "None. Stands alone — does not import FinalKnowledgeResolutionPipeline,
-                              ReasoningOrchestrator, or LegalReasoningEngine at all; consumes only
-                              a ReasoningExecutionContext as a plain value — verified by git diff
-                              and architecture guard."
+                              ReasoningOrchestrator, LegalReasoningEngine, or ruleEngine.ts at
+                              all; consumes only a ReasoningExecutionContext and a
+                              RuleEvaluationResult as plain values — verified by git diff and
+                              architecture guard."
   tooling_note: "Same pre-existing, repo-wide 'erasableSyntaxOnly'/root-tsconfig no-op finding
-                noted at the X.4.1/X.4.2 freezes applies unchanged here — not re-triggered by
-                this milestone's code (no constructor parameter properties; evaluateRules is a
-                plain function). tsc --noEmit -p tsconfig.app.json confirmed zero new errors
-                introduced by either new file."
+                noted at the X.4.1/X.4.2/X.4.3 freezes applies unchanged here — not re-triggered
+                by this milestone's code. tsc --noEmit -p tsconfig.app.json confirmed zero new
+                errors introduced by either new file."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.4.4 (Reasoning Engine Wiring — whatever comes next, e.g. wiring
-                        RuleEvaluationResult/ReasoningExecutionContext into
-                        ReasoningOrchestrator/LegalReasoningEngine, or conflict resolution over
-                        RuleEvaluationResult) or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.4.3's exit criteria confirmed met and frozen
-                         this session. RuleEvaluationResult exists but is not yet consumed
-                         anywhere — wiring it (and ReasoningExecutionContext, X.4.2) into
-                         ReasoningOrchestrator (X.4.1) or LegalReasoningEngine remains open,
+next_active_milestone: "Phase X.4.5 (Reasoning Engine Wiring — whatever comes next, e.g. wiring
+                        ConflictResolutionResult/RuleEvaluationResult/ReasoningExecutionContext
+                        into ReasoningOrchestrator/LegalReasoningEngine, or confidence scoring
+                        over ConflictResolutionResult) or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. Phase X.4.4's exit criteria confirmed met and frozen
+                         this session. ConflictResolutionResult exists but is not yet consumed
+                         anywhere — wiring it (and RuleEvaluationResult/ReasoningExecutionContext)
+                         into ReasoningOrchestrator (X.4.1) or LegalReasoningEngine remains open,
                          not-yet-authorized work. The missingEvidence-reconciliation question
                          (ResolutionDiagnostics vs. ReasoningResult.missingEvidence,
                          PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open and
                          should shape that wiring's scoping. The still-open decision on
                          extending ResolvedKnowledge for checklists/cases/bestpractice/risk also
-                         remains unresolved."
+                         remains unresolved. Explicitly forbidden next: confidence scoring,
+                         citation generation, answer generation, Tool Calling, MCP, Multi-Agent."
 next_milestone_blocker: "None technical. Requires its own explicit human authorization to
-                         begin, separate from X.4.3's own approval."
+                         begin, separate from X.4.4's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.4.4 (or any other later milestone)."
+                        to begin Phase X.4.5 (or any other later milestone)."
 
 do_not:
-  - "Do not begin Phase X.4.4, Tool Calling, MCP, or Multi-Agent without explicit approval."
+  - "Do not begin Phase X.4.5, confidence scoring, citation generation, answer generation, Tool
+     Calling, MCP, or Multi-Agent without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
-     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3, frozen), src/ai/{domain,
-     application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4, frozen)
-     outside of a newly-approved milestone."
+     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4, frozen), src/ai/
+     {domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4,
+     frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -270,7 +271,17 @@ historical_sequence_to_reach_here:
      knowledgeApplicabilityEvaluator.ts's evaluateApplicability(), and rankingStrategy.ts's
      legalHierarchyScore(), all already-exported from earlier frozen milestones — zero
      reimplemented business logic) — unit tests, real-platform end-to-end integration test,
-     architecture guard — full repo suite green (14144 tests) — FROZEN — you are here"
+     architecture guard — full repo suite green (14144 tests) — FROZEN"
+  - "Phase X.4.4 (Reasoning Engine Wiring: Reasoning Conflict Resolution) implemented:
+     conflictResolutionTypes.ts (RejectedCandidateEntry, ConflictResolutionResult — reuses
+     DetectedConflict/ConflictingItem/ConflictResolution), conflictResolutionStage.ts
+     (resolveConflicts() — a from-scratch, byte-for-byte-verified re-expression of
+     legalReasoningEngine.ts's private, non-exported 4-tier cascade, since no public component
+     exists to reuse for it; reuses X.4.3's applicability determination and X.3.4's
+     legalHierarchyScore() directly for the two pieces that ARE public) — unit tests, parity
+     tests proving identical outcomes to the real frozen cascade across all 4 tiers,
+     real-platform end-to-end integration test, architecture guard — full repo suite green
+     (14173 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
