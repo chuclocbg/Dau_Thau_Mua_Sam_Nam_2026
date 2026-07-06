@@ -19,101 +19,98 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.4.4 - Reasoning Engine Wiring: Reasoning Conflict Resolution -
+current_milestone: "Phase X.4.5 - Reasoning Engine Wiring: Reasoning Confidence Scoring -
                     FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-06
 milestone_evidence:
-  scope: "src/reasoning/domain/conflictResolutionTypes.ts (RejectedCandidateEntry,
-         ConflictResolutionResult — reuses DetectedConflict/ConflictingItem/ConflictResolution
-         [Batch A] as-is); src/reasoning/application/conflictResolutionStage.ts
-         (resolveConflicts() — a pure function taking a ReasoningExecutionContext [X.4.2] and a
-         RuleEvaluationResult [X.4.3], re-expressing legalReasoningEngine.ts's private 4-tier
-         cascade — MORE_RESTRICTIVE -> HIERARCHY -> LEX_POSTERIOR -> LEX_SPECIALIS -> UNRESOLVED
-         — from scratch, since every function in that cascade is non-exported and there is no
-         public component to reuse for it; verified byte-for-byte equivalent to the real, frozen
-         cascade by dedicated parity tests covering all four tiers)."
-  scope_exclusion: "Zero confidence scoring, zero citation/explanation/answer generation, zero
-                    Tool Calling/MCP/LLM, zero repository/KnowledgePlatform access — confirmed
-                    absent by architecture guard. Two pieces ARE genuinely reused, not
-                    reimplemented: item applicability comes from X.4.3's own
-                    RuleEvaluationResult.itemEvaluations[].applicability (never re-derived via a
-                    fresh temporal check); the authority-hierarchy comparison uses
-                    rankingStrategy.ts's own exported legalHierarchyScore() (X.3.4, frozen)
-                    directly, with ConflictingItem.authorityLevel (a frozen, reused output field)
-                    derived by inverting that function's own known 0-1 formula back to a raw
-                    level number — not a second independent authority table. Not wired into
-                    ReasoningOrchestrator/LegalReasoningEngine in this milestone — stands alone."
-  files_added: "2 implementation files + 4 test files (49 tests: unit grouping/eligibility/
-               rejected-candidates/authorityLevel-round-trip/immutability/determinism, parity
-               tests against the real frozen cascade across all 4 tiers, real-platform
-               end-to-end integration, architecture guard)"
-  full_suite_result: "463 test files, 14173 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 459 files / 14144 tests at the X.4.3 baseline"
+  scope: "src/reasoning/domain/confidenceEvaluationTypes.ts (EvidenceWeightSummary,
+         ConfidenceEvaluationResult — reuses ConfidenceComponents [Batch A] as-is);
+         src/reasoning/application/confidenceEvaluationStage.ts (evaluateConfidence() — reuses
+         answerComposer.ts's exported computeConfidence() directly; independently derives its
+         required appliedDocuments/primaryItemConfidences input shape via role-assignment
+         bookkeeping that mirrors legalReasoningEngine.ts's own private algorithm exactly,
+         verified byte-for-byte equivalent by dedicated parity tests)."
+  scope_exclusion: "Zero new conflict resolution, zero modification of conflict results, zero
+                    citation/explanation/answer generation, zero Tool Calling/MCP/Multi-Agent/
+                    PromptBuilder/LLM/provider/repository/KnowledgePlatform access — confirmed
+                    absent by architecture guard. The confidence FORMULA itself
+                    (computeConfidence(), deduction weights, thresholds, label bands) is reused
+                    unmodified — unlike X.4.4's conflict cascade, this milestone genuinely had a
+                    public scorer to reuse. Honest scope gaps, never fabricated: missingEvidence
+                    is always [] and unresolvedExceptionCount/unresolvedCrossReferenceCount are
+                    always 0, since evidence collection and exception detection remain out of
+                    scope for every X.4.x milestone so far. Not wired into ReasoningOrchestrator/
+                    LegalReasoningEngine in this milestone — stands alone."
+  files_added: "2 implementation files + 4 test files (34 tests: unit reuse/evidence-weight-
+               aggregation/non-mutation/immutability/determinism, parity tests against the real
+               frozen engine across 5 scenarios, real-platform end-to-end integration,
+               architecture guard)"
+  full_suite_result: "467 test files, 14201 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 463 files / 14173 tests at the X.4.4 baseline"
   exit_criteria_met: "Parity tests feed identical item scenarios through both the real, frozen
-                      LegalReasoningEngine.reason() and resolveConflicts(), asserting identical
-                      resolution outcomes for Tier 1 (hierarchy), Tier 2 (more restrictive),
-                      Tier 3 (lex posterior), and UNRESOLVED — the same scenarios
-                      legal-reasoning-engine.test.ts itself already exercises. One of these
-                      tests caught a real detail during authoring (the frozen cascade
-                      deliberately leaves supersededItem undefined in the MORE_RESTRICTIVE-wins
-                      branch) via the real engine's own output disagreeing with the parity
-                      test's first-draft assumption, not the implementation. Unit tests prove
-                      grouping/eligibility filtering, deduplicated rejected-candidate recording,
-                      authorityLevel round-trip correctness, deep immutability, non-mutation,
-                      and determinism. A real-platform end-to-end integration test (mirroring
-                      X.3.2/X.4.1/X.4.2/X.4.3's own proven pattern) exercises the first full
-                      chain from a raw question string through a real intent detector, a real
-                      memory-backed IKnowledgePlatform + LegalProvider, X.3.7's
-                      FinalKnowledgeResolutionPipeline, X.4.2's assembleReasoningContext(),
-                      X.4.3's evaluateRules(), and this milestone's resolveConflicts() — not
-                      fakes at any layer. Architecture guard confirms zero src/knowledge/,
-                      src/ai/, src/mcp/, src/conversation/ import; that the stage's only
-                      production dependency is rankingStrategy.ts; zero MCP/PromptBuilder/LLM
-                      adapter/OutputValidator/confidence/citation/answer-generation/rule-
-                      execution reference; no switch-statement domain dispatch; and that every
-                      prior milestone's frozen-file markers (X.3.1 through X.4.3, plus
-                      ruleEngine.ts/legalReasoningEngine.ts) are unchanged."
+                      LegalReasoningEngine.reason() and evaluateConfidence(), asserting
+                      identical confidence.finalScore/label across 5 scenarios (Tier 1
+                      hierarchy, UNRESOLVED, no-conflict baseline, an expired/superseded item,
+                      Tier 2 more restrictive) — all 5 passed on first run. Unit tests prove the
+                      reused scorer fires correctly, evidence-weight aggregation (PRIMARY_BASIS/
+                      SUPPORTING_BASIS as supporting, CONFLICT_SOURCE as rejected, not-yet-
+                      effective items excluded from both), non-mutation of conflict/rule-
+                      evaluation inputs, deep immutability, and determinism. A real-platform
+                      end-to-end integration test (mirroring X.3.2/X.4.1/X.4.2/X.4.3/X.4.4's own
+                      proven pattern) exercises the first full chain from a raw question string
+                      through a real intent detector, a real memory-backed IKnowledgePlatform +
+                      LegalProvider, X.3.7's FinalKnowledgeResolutionPipeline, X.4.2's
+                      assembleReasoningContext(), X.4.3's evaluateRules(), X.4.4's
+                      resolveConflicts(), and this milestone's evaluateConfidence() — not fakes
+                      at any layer. Architecture guard confirms zero src/knowledge/, src/ai/,
+                      src/mcp/, src/conversation/ import; that the stage's only production
+                      dependency is answerComposer.ts; zero MCP/Tool Calling/Multi-Agent/
+                      PromptBuilder/LLM adapter/OutputValidator reference; zero conflict-
+                      resolution/citation/explanation/answer-generation/rule-execution logic; no
+                      mutation of input results; that no private helper from an earlier
+                      milestone is re-exported; and that every prior milestone's frozen-file
+                      markers (X.3.1 through X.4.4, plus answerComposer.ts/
+                      legalReasoningEngine.ts) are unchanged."
   frozen_interfaces_touched: "None. Stands alone — does not import FinalKnowledgeResolutionPipeline,
-                              ReasoningOrchestrator, LegalReasoningEngine, or ruleEngine.ts at
-                              all; consumes only a ReasoningExecutionContext and a
-                              RuleEvaluationResult as plain values — verified by git diff and
+                              ReasoningOrchestrator, LegalReasoningEngine, ruleEngine.ts, or
+                              conflictResolutionStage.ts at all; consumes only a
+                              ReasoningExecutionContext/RuleEvaluationResult/
+                              ConflictResolutionResult as plain values — verified by git diff and
                               architecture guard."
   tooling_note: "Same pre-existing, repo-wide 'erasableSyntaxOnly'/root-tsconfig no-op finding
-                noted at the X.4.1/X.4.2/X.4.3 freezes applies unchanged here — not re-triggered
-                by this milestone's code. tsc --noEmit -p tsconfig.app.json confirmed zero new
-                errors introduced by either new file."
+                noted at every prior X.4.x freeze applies unchanged here. tsc --noEmit -p
+                tsconfig.app.json confirmed zero new errors introduced by either new file."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.4.5 (Reasoning Engine Wiring — whatever comes next, e.g. wiring
-                        ConflictResolutionResult/RuleEvaluationResult/ReasoningExecutionContext
-                        into ReasoningOrchestrator/LegalReasoningEngine, or confidence scoring
-                        over ConflictResolutionResult) or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.4.4's exit criteria confirmed met and frozen
-                         this session. ConflictResolutionResult exists but is not yet consumed
-                         anywhere — wiring it (and RuleEvaluationResult/ReasoningExecutionContext)
-                         into ReasoningOrchestrator (X.4.1) or LegalReasoningEngine remains open,
-                         not-yet-authorized work. The missingEvidence-reconciliation question
-                         (ResolutionDiagnostics vs. ReasoningResult.missingEvidence,
-                         PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open and
-                         should shape that wiring's scoping. The still-open decision on
-                         extending ResolvedKnowledge for checklists/cases/bestpractice/risk also
-                         remains unresolved. Explicitly forbidden next: confidence scoring,
-                         citation generation, answer generation, Tool Calling, MCP, Multi-Agent."
+next_active_milestone: "Phase X.4.6 (or whatever comes next — explicitly NOT Citation
+                        Generation, Explanation Generation, Answer Generation, Output
+                        Formatting, Tool Calling, MCP, Multi-Agent, or Production Hardening
+                        without separate explicit authorization) or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. Phase X.4.5's exit criteria confirmed met and frozen
+                         this session. ConfidenceEvaluationResult exists but is not yet consumed
+                         anywhere — wiring it (and ConflictResolutionResult/RuleEvaluationResult/
+                         ReasoningExecutionContext) into ReasoningOrchestrator (X.4.1) or
+                         LegalReasoningEngine remains open, not-yet-authorized work. The
+                         missingEvidence-reconciliation question
+                         (PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md Finding F-2) remains open. The
+                         still-open decision on extending ResolvedKnowledge for checklists/
+                         cases/bestpractice/risk also remains unresolved."
 next_milestone_blocker: "None technical. Requires its own explicit human authorization to
-                         begin, separate from X.4.4's own approval."
+                         begin, separate from X.4.5's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.4.5 (or any other later milestone)."
+                        to begin the next milestone."
 
 do_not:
-  - "Do not begin Phase X.4.5, confidence scoring, citation generation, answer generation, Tool
-     Calling, MCP, or Multi-Agent without explicit approval."
+  - "Do not begin Citation Generation, Explanation Generation, Answer Generation, Output
+     Formatting, Tool Calling, MCP, Multi-Agent, or Production Hardening without explicit
+     approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
-     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4, frozen), src/ai/
-     {domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/ (X.4,
-     frozen) outside of a newly-approved milestone."
+     X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5, frozen),
+     src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
+     (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
      e.g. llmBridge.ts) — none of these belong to Phase X."
@@ -281,7 +278,17 @@ historical_sequence_to_reach_here:
      legalHierarchyScore() directly for the two pieces that ARE public) — unit tests, parity
      tests proving identical outcomes to the real frozen cascade across all 4 tiers,
      real-platform end-to-end integration test, architecture guard — full repo suite green
-     (14173 tests) — FROZEN — you are here"
+     (14173 tests) — FROZEN"
+  - "Phase X.4.5 (Reasoning Engine Wiring: Reasoning Confidence Scoring) implemented:
+     confidenceEvaluationTypes.ts (EvidenceWeightSummary, ConfidenceEvaluationResult — reuses
+     ConfidenceComponents), confidenceEvaluationStage.ts (evaluateConfidence() — reuses
+     answerComposer.ts's own exported computeConfidence() directly, unlike X.4.4's conflict
+     cascade this milestone genuinely had a public scorer to reuse; independently derives its
+     required appliedDocuments/primaryItemConfidences input via role-assignment bookkeeping
+     mirroring legalReasoningEngine.ts's own private algorithm) — unit tests, parity tests
+     proving identical confidence scores to the real frozen engine across 5 scenarios,
+     real-platform end-to-end integration test, architecture guard — full repo suite green
+     (14201 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

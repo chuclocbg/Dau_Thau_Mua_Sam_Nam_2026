@@ -7,10 +7,26 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4.4 — Reasoning Engine Wiring: Reasoning Conflict Resolution — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4.5 — Reasoning Engine Wiring: Reasoning Confidence Scoring — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4.4 — Reasoning Engine Wiring: Reasoning Conflict Resolution — declared 2026-07-06 (superseded by X.4.5)
+
+**Evidence:** 463 test files, 14,173 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/ai/`/`src/mcp/`/`src/conversation/` import and that every
+prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `conflictResolutionTypes.ts` (`RejectedCandidateEntry`,
+`ConflictResolutionResult` — reused `DetectedConflict`/`ConflictingItem`/`ConflictResolution`)
+and `conflictResolutionStage.ts` (`resolveConflicts()` — a from-scratch, byte-for-byte-verified
+re-expression of `legalReasoningEngine.ts`'s private, non-exported 4-tier cascade, since no
+public component existed to reuse for it; reused X.4.3's applicability determination and X.3.4's
+`legalHierarchyScore()` directly for the two pieces that were public). Parity tests proved
+identical outcomes to the real frozen cascade across all four tiers.
 
 ---
 
