@@ -7,10 +7,26 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4.5 — Reasoning Engine Wiring: Reasoning Confidence Scoring — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.4.6 — Reasoning Engine Wiring: Reasoning Citation Generation — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4.5 — Reasoning Engine Wiring: Reasoning Confidence Scoring — declared 2026-07-06 (superseded by X.4.6)
+
+**Evidence:** 467 test files, 14,201 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/ai/`/`src/mcp/`/`src/conversation/` import and that every
+prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `confidenceEvaluationTypes.ts` (`EvidenceWeightSummary`,
+`ConfidenceEvaluationResult` — reused `ConfidenceComponents`) and `confidenceEvaluationStage.ts`
+(`evaluateConfidence()` — reused `answerComposer.ts`'s exported `computeConfidence()` directly;
+independently derived its required `appliedDocuments`/`primaryItemConfidences` input via
+role-assignment bookkeeping mirroring `legalReasoningEngine.ts`'s own private algorithm). Parity
+tests proved identical confidence scores to the real frozen engine across 5 scenarios, all
+passing on first run.
 
 ---
 
