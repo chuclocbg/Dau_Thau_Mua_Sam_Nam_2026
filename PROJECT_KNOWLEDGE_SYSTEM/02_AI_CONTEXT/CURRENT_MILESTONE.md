@@ -19,120 +19,117 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.8 - Multi-Agent Orchestration - FROZEN"
+current_milestone: "Phase X.9.1 - Production Hardening: HTTP Server & Bootstrap - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-07
 milestone_evidence:
-  scope: "src/multiagent/domain/multiAgentTypes.ts (WorkerTask, WorkerOutcome, CoordinationRun,
-         CoordinatorOptions/Result/Error — reuses RetryOptions [src/providers/RetryPolicy.ts]
-         rather than a parallel options shape); src/multiagent/application/taskScheduler.ts
-         (validateTasks(), buildWaves() — pure, deterministic duplicate-id/missing-dependency/
-         cycle validation and Kahn's-BFS wave grouping, zero reasoning-layer knowledge);
-         src/multiagent/application/coordinatorAgent.ts (CoordinatorAgent.run() — parallel wave
-         scheduling, dependency-result aggregation, per-task timeout via Promise.race,
-         AbortSignal-based cancellation, fail-fast on first failure; reuses RetryPolicy's
-         constructor + .sleep() directly for uniform per-task retry, since a WorkerTask is an
-         opaque callback with no per-task error-code vocabulary to classify against);
-         src/multiagent/application/reasoningWorkerAdapter.ts (buildReasoningWorkerTask() — the
-         single composition point: wraps the real, frozen chain
-         ReasoningEnginePipeline.answer() -> formatConversationResponse() ->
-         runToolCallingStage() into one WorkerTask.execute() callback)."
+  scope: "src/config/appConfig.ts (loadAppConfigFromEnv() — PORT/HOST/NODE_ENV/LOG_LEVEL/
+         SHUTDOWN_TIMEOUT_MS, never-throw, deliberately separate from frozen src/providers/env.ts);
+         src/bootstrap/buildApplication.ts (the composition root — constructs, never modifies, a
+         real memory-backed IKnowledgePlatform + LegalProvider, ReasoningEnginePipeline,
+         ToolRegistry/ToolExecutor, CoordinatorAgent, and an optional caller-supplied MCPClient);
+         src/health/healthCheck.ts (checkLiveness()/checkReadiness()/checkHealth() — pure
+         functions over an already-built Application); src/api/reasoningRoutes.ts +
+         coordinatorRoutes.ts (POST /api/v1/reasoning/answer and /reasoning/batch — thin HTTP
+         adapters over the real X.4-X.8 chain); src/server/httpServer.ts (buildHttpServer() — a
+         pure Fastify-instance builder with /live, /ready, /health, and the API routes, no
+         .listen() call inside it, mirroring src/interface/restAdapter.ts's own established
+         pattern); src/server/main.ts (the one file that calls server.listen(), guarded by an
+         import.meta.url entrypoint check); src/startup/gracefulShutdown.ts
+         (createShutdownHandler()/registerGracefulShutdown() — SIGTERM/SIGINT close the listener
+         and disconnect an optional MCPClient, racing a hard timeout)."
   scope_exclusion: "Zero reasoning, retrieval, ranking, conflict resolution, confidence
-                    computation, citation generation, Tool Calling, MCP, formatting logic
-                    reimplemented anywhere in multiAgentTypes.ts/taskScheduler.ts/
-                    coordinatorAgent.ts (confirmed: zero src/reasoning/, src/knowledge/,
-                    src/mcp/, src/ai/, src/conversation/ import in any of the three). TRANSPARENCY
-                    FINDING (direct inspection, not assumed from documentation):
-                    src/providers/MultiAgentCoordinator.ts (pre-existing, unrelated 'P6' track,
-                    P6-10V) already implements agent registration + topological task scheduling,
-                    but its AgentTask/AgentDefinition model requires an
-                    AgentRuntime.run(prompt) — an actual LLM call via ProviderManager, i.e.
-                    literal independent reasoning per agent. This milestone's own explicit rule
-                    ('Agents NEVER perform reasoning independently. Reasoning remains
-                    centralized.') forbids exactly that, so MultiAgentCoordinator.ts is not
-                    imported or reused; CoordinatorAgent/taskScheduler.ts are new, deterministic,
-                    LLM-free orchestration code — legitimate new work for this milestone's own
-                    stated deliverable (task decomposition/parallel scheduling/dependency
-                    tracking), not a duplication of anything this milestone is told never to
-                    duplicate. REJECTED_DESIGNS.md's 'Rejected: Multi-LLM-Agent Conversations'
-                    already made the same decision project-wide ('deterministic upstream
-                    orchestration with exactly one LLM synthesis call' over LLM-to-LLM hops) —
-                    this milestone's design is consistent with, not a reversal of, that
-                    rejection. Also noted: 'Rejected: Building MCP and Multi-Agent Now' rejected
-                    Multi-Agent on TIMING grounds only ('no production usage data exists yet'),
-                    not the design — this milestone's explicit authorization is the stated
-                    resolution path. ARCHITECTURE NOTE on the diagram order given for this
-                    milestone ('Reasoning Engine -> Tool Calling -> MCP -> Output Formatting'):
-                    the REAL, already-frozen order (Reasoning -> Output Formatting -> Tool
-                    Calling, with MCP-sourced tools already folded one layer below Tool Calling
-                    per X.7) is preserved in reasoningWorkerAdapter.ts rather than reordering
-                    frozen stages to match the diagram's prose — reordering would itself be a
-                    frozen-milestone modification, explicitly forbidden; recorded transparently."
-  files_added: "4 implementation files + 4 test files (44 tests: 12 task-scheduler unit tests
-               [validation, deterministic wave grouping], 15 coordinator-agent unit tests
-               [decomposition validation, parallel scheduling, dependency tracking, fail-fast
-               failure handling, timeout, cancellation, retry orchestration including a parity
-               assertion against RetryPolicy.prototype.sleep(), deterministic replay], 3 true
-               end-to-end integration tests dispatching real reasoning-engine workers in
-               parallel through the complete ReasoningEnginePipeline/OutputFormatter/Tool
-               Calling stack, 14 architecture guard)"
-  full_suite_result: "493 test files, 14406 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 489 files / 14366 tests at the X.7 freeze baseline"
-  exit_criteria_met: "Unit tests prove task decomposition validation (duplicate ids, missing
-                      dependencies, self/two-node/diamond-graph cycles), deterministic parallel
-                      scheduling (independent tasks run concurrently, verified by interleaved
-                      timing; a diamond graph schedules in the correct wave order), dependency
-                      tracking (a dependency's completed value is passed to its dependent),
-                      fail-fast failure handling (a failure aborts scheduling of any wave not yet
-                      started), timeout handling (a hanging task is marked FAILED via
-                      taskTimeoutMs), cancellation (AbortSignal aborted before or during a run
-                      marks the run CANCELLED and stops scheduling further waves), and retry
-                      orchestration (uniform retry up to maxAttempts, stops on success). A parity
-                      test proves CoordinatorAgent's backoff genuinely delegates to
-                      RetryPolicy.prototype.sleep() (spied, called maxAttempts-1 times with
-                      correct attempt indices) rather than being reimplemented. A deterministic-
-                      replay test proves identical task batches produce identical outcome
-                      sequences (aside from runId/timestamps). A true end-to-end integration test
-                      dispatches multiple real reasoning-engine workers in parallel (via
-                      buildReasoningWorkerTask()) against a real memory-backed
-                      IKnowledgePlatform + LegalProvider, the complete ReasoningEnginePipeline,
-                      the real Output Formatter, and — for one worker — a real ToolRegistry/
-                      ToolExecutor, aggregating all outcomes into one CoordinationRun.
-                      Architecture guard confirms multiAgentTypes.ts/taskScheduler.ts/
-                      coordinatorAgent.ts never import src/reasoning/, src/knowledge/, src/mcp/,
-                      src/ai/, or src/conversation/ at all; that reasoningWorkerAdapter.ts is the
-                      only file importing src/reasoning/, and only outputFormatter.ts/
-                      toolCallingStage.ts/reasoningEnginePipeline.ts (never ruleEngine.ts/
-                      legalReasoningEngine.ts/citationFormatter.ts/answerComposer.ts/
-                      finalKnowledgeResolutionPipeline.ts/knowledgePlatformRepository.ts); that
-                      the only src/providers/ imports across all new files are RetryPolicy.ts/
-                      ToolExecutor.ts types — never MultiAgentCoordinator/ToolCallingAgent/
-                      AgentRuntime/ProviderManager/ProviderRegistry; zero reimplemented
-                      reasoning/retrieval/Tool Calling/MCP/formatting logic anywhere; and that
-                      every prior milestone's frozen-file marker (X.3.1 through X.7, plus
-                      answerComposer.ts and the pre-existing RetryPolicy/ToolExecutor/
-                      ToolRegistry/MultiAgentCoordinator provider files) is unchanged."
-  frozen_interfaces_touched: "None. coordinatorAgent.ts/taskScheduler.ts/multiAgentTypes.ts do
-                              not import ReasoningEnginePipeline, any X.4.x stage,
-                              outputFormatter.ts, toolCallingStage.ts, or any MCP file at all.
-                              reasoningWorkerAdapter.ts (the one composition point) calls only
-                              already-frozen, already-exported functions, never modifying them.
-                              Zero modification to src/providers/RetryPolicy.ts, ToolExecutor.ts,
-                              ToolRegistry.ts, or MultiAgentCoordinator.ts, and zero modification
-                              to any src/reasoning/ or src/mcp/ file — verified by git diff and
-                              architecture guard."
+                    computation, citation generation, Tool Calling, MCP, or Multi-Agent logic
+                    reimplemented anywhere — confirmed by architecture guard: config/health/
+                    server/startup files never import src/reasoning/, src/knowledge/, src/mcp/,
+                    or src/multiagent/ directly; buildApplication.ts is the only composition
+                    point; the API layer imports only top-level, already-frozen entry points
+                    (detectIntent, formatConversationResponse, runToolCallingStage,
+                    buildReasoningWorkerTask, CoordinatorAgent.run), never an internal reasoning
+                    stage. TRANSPARENCY FINDING: a real, working Fastify HTTP adapter already
+                    existed before this milestone — src/interface/restAdapter.ts ('Phase 14'),
+                    wiring an older, unrelated set of governance services to real routes — but
+                    grep confirmed `.listen(` was called nowhere in the repository, and
+                    package.json had no start script; PRODUCTION_HARDENING_AUDIT.md's own
+                    findings #1/#2/#9 (later renumbered) are the direct basis for this
+                    milestone's scope. buildHttpServer() deliberately mirrors restAdapter.ts's
+                    thin-handler pattern rather than inventing a new one. A real smoke test
+                    (`npm run server`, curl against a real socket) caught and fixed a genuine bug:
+                    the initial string-comparison entrypoint guard silently failed under tsx on
+                    this platform, so main() never ran and no server ever started; replaced with
+                    pathToFileURL(process.argv[1]).href and re-verified live — a real
+                    POST /api/v1/reasoning/answer returned a genuine ConversationResponse over an
+                    actual network socket."
+  files_added: "8 implementation files + 6 test files (38 tests: app-config validation, graceful-
+               shutdown unit tests including a force-exit-on-timeout case, health-check unit
+               tests, a true end-to-end HTTP integration test suite exercising a real
+               Application — real memory-backed IKnowledgePlatform + LegalProvider, complete
+               ReasoningEnginePipeline, real ToolExecutor, real CoordinatorAgent — via Fastify's
+               own inject(), covering liveness/readiness/health, a real answer through the
+               complete reasoning + Tool Calling chain, a real batch through the complete
+               Multi-Agent chain, request validation, and deterministic replay, plus an
+               architecture guard); 1 package.json script added ('server')"
+  full_suite_result: "498 test files, 14444 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 493 files / 14406 tests at the X.8 freeze baseline"
+  exit_criteria_met: "Unit tests prove config validation (defaults, overrides, and rejection of
+                      invalid PORT/NODE_ENV/LOG_LEVEL/SHUTDOWN_TIMEOUT_MS, never throwing on
+                      garbage input), graceful shutdown (close+onShutdown+exit ordering,
+                      concurrent-signal dedup, timeout force-exit via a race rather than a
+                      sequential await so the handler's own promise always settles, tolerance for
+                      a missing onShutdown callback), and health/readiness/liveness (liveness
+                      always ok; readiness true with no MCP client configured, true/false
+                      matching a configured MCP client's real CONNECTED/DISCONNECTED status —
+                      never a fabricated check against a dependency that doesn't exist). A true
+                      end-to-end integration test exercises the complete chain — a real
+                      Application wired into a real Fastify instance via inject() — for
+                      liveness/readiness/health, a real question answered through the complete
+                      Reasoning Engine + Output Formatting + Tool Calling stack, a real batch of
+                      questions coordinated through the complete Multi-Agent stack, request
+                      validation rejection, and deterministic replay (identical markdown for an
+                      identical question asked twice). A real smoke test (actual process,
+                      actual TCP socket, actual curl requests) additionally verified the server
+                      genuinely runs outside the test harness — not just via inject() — and
+                      shuts down cleanly. Architecture guard confirms config/health/server/
+                      startup files never import src/reasoning/, src/knowledge/, src/mcp/, or
+                      src/multiagent/ directly; that buildApplication.ts is the only file
+                      constructing (never modifying) the frozen X.3-X.8 components; that
+                      reasoningRoutes.ts/coordinatorRoutes.ts import only top-level frozen entry
+                      points, never an internal stage (ruleEvaluationStage/
+                      conflictResolutionStage/confidenceEvaluationStage/citationGenerationStage/
+                      reasoningAnswerStage/ruleEngine/legalReasoningEngine/citationFormatter/
+                      answerComposer/finalKnowledgeResolutionPipeline/mcpClient/mcpToolAdapter);
+                      zero reimplemented reasoning/ranking/conflict/confidence/citation/answer-
+                      composition/Tool-Calling/MCP/Multi-Agent logic anywhere; that main.ts is
+                      the only file calling .listen(); and that every prior milestone's
+                      frozen-file marker (X.1 through X.8, plus restAdapter.ts and the
+                      pre-existing ToolExecutor/ToolRegistry/RetryPolicy provider files) is
+                      unchanged."
+  frozen_interfaces_touched: "None. src/reasoning/**, src/knowledge/**, src/conversation/**,
+                              src/providers/**, src/mcp/**, and src/multiagent/** were not
+                              modified — verified by git diff and architecture guard.
+                              buildApplication.ts and the API routes only CONSTRUCT/CALL
+                              already-frozen, already-exported public functions/constructors;
+                              nothing in this milestone edited a frozen file's contents."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Production Hardening — not authorized to begin without separate explicit
-                        approval — or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.8's exit criteria confirmed met and frozen this
-                         session. CoordinatorAgent/buildReasoningWorkerTask exist but are not yet
-                         wired into any real conversation session/API entry point that actually
-                         decomposes a single incoming question into multiple sub-intents — the
-                         integration tests demonstrate the mechanism with independently-supplied
-                         intents, but no real question-decomposition heuristic exists yet for
-                         this domain (none was fabricated). Stdio-based MCP transports, MCP
-                         auth/permission enforcement, ToolDecider design for real domains, the
+next_active_milestone: "Phase X.9.2 (Batch B — Logging/Metrics/Tracing/Error middleware) or any
+                        other later milestone — none authorized to begin without separate
+                        explicit approval"
+next_milestone_status: "NOT AUTHORIZED. Phase X.9.1's exit criteria confirmed met and frozen this
+                         session, per explicit instruction to stop and wait after every frozen
+                         milestone. Batch A (HTTP Server & Bootstrap) is complete: a real,
+                         runnable HTTP server now exists with health/readiness/liveness and two
+                         real API routes over the real X.4-X.8 chain. Remaining PRODUCTION_
+                         HARDENING_AUDIT.md findings not yet addressed: no structured
+                         logging/metrics/tracing on the request path (Batch B), no streaming/SSE/
+                         cancellation-through-the-HTTP-layer (Batch C), no Dockerfile/production
+                         config for the app itself (Batch D), no deployment scripts/operational
+                         runbook (Batch E). Also still open: no auth/permission layer on the new
+                         API routes (correctly deferred per the audit's own sequencing — there
+                         was nothing to protect until this milestone built the entry point; now
+                         that it exists, this becomes the natural next co-requirement), no rate
+                         limiting on the API routes, ToolRegistry is empty by default (no real
+                         tools registered — a deployment decision, not fabricated), the
                          missingEvidence-reconciliation question, the superseded-item/decision
                          gaps, and the still-open ResolvedKnowledge extension decision all remain
                          unresolved, carried forward unchanged from earlier freezes."
@@ -140,22 +137,24 @@ next_milestone_blocker: "None technical. Requires its own explicit human authori
                          begin, separate from this freeze's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin the next milestone."
+                        to begin Phase X.9.2."
 
 do_not:
-  - "Do not begin Production Hardening without explicit approval."
+  - "Do not begin Phase X.9.2 (or any later batch/milestone) without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
      X.4.7 + Final X.4 Integration + X.5 + X.6, frozen), src/mcp/{domain,infrastructure,
      application}/ (X.7, frozen), src/multiagent/{domain,application}/ (X.8, frozen),
-     src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
-     (X.4, frozen) outside of a newly-approved milestone."
+     src/config/, src/bootstrap/, src/health/, src/server/, src/api/, src/startup/ (X.9.1,
+     frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or
+     src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the pre-existing src/providers/*.ts files (the unrelated 'P6' track,
-     e.g. ToolCallingAgent.ts, AgentRuntime.ts, MultiAgentCoordinator.ts, ProviderManager.ts) —
-     none of these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/
-     RestClient.ts are reused by X.6/X.7/X.8 but must remain unmodified."
+     e.g. ToolCallingAgent.ts, AgentRuntime.ts, MultiAgentCoordinator.ts, ProviderManager.ts), or
+     src/interface/restAdapter.ts (Phase 14, unrelated, pre-existing Fastify pattern) — none of
+     these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts are
+     reused by X.6/X.7/X.8/X.9.1 but must remain unmodified."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -423,7 +422,30 @@ historical_sequence_to_reach_here:
      a RetryPolicy.sleep() parity assertion, deterministic replay), a true end-to-end integration
      test dispatching real reasoning-engine workers in parallel through the complete
      ReasoningEnginePipeline/OutputFormatter/Tool Calling stack, architecture guard — full repo
-     suite green (14406 tests) — FROZEN — you are here"
+     suite green (14406 tests) — FROZEN"
+  - "PRODUCTION_HARDENING_AUDIT.md produced (Phase X.9 audit, no code changes): architecture
+     readiness 8.5/10, production readiness 3/10 — the X.3-X.8 stack was well-built but wired
+     into nothing (zero real callers outside its own tests); found a real, working but never-
+     started Fastify adapter (restAdapter.ts, 'Phase 14'), zero logging/metrics/tracing, a
+     hardcoded /health stub with no socket behind it, and no deployment target — 20 prioritized
+     findings, none fabricated."
+  - "Phase X.9.1 (Production Hardening: HTTP Server & Bootstrap — Batch A) implemented:
+     appConfig.ts (loadAppConfigFromEnv() — server-level config, separate from the frozen
+     LLM-only env.ts), buildApplication.ts (the composition root — constructs, never modifies, a
+     real memory-backed IKnowledgePlatform + LegalProvider, ReasoningEnginePipeline, ToolRegistry/
+     ToolExecutor, CoordinatorAgent), healthCheck.ts (checkLiveness()/checkReadiness()/
+     checkHealth() — readiness honest about having no external dependency to probe for the
+     in-memory reasoning path, checking a real MCPClient's status only when one is configured),
+     reasoningRoutes.ts + coordinatorRoutes.ts (POST /api/v1/reasoning/answer and /reasoning/batch
+     — thin adapters over the real X.4-X.8 chain, mirroring restAdapter.ts's own established
+     pattern), httpServer.ts (buildHttpServer() — pure Fastify builder, /live /ready /health, no
+     .listen() inside it), main.ts (the one file calling .listen(), guarded by an
+     import.meta.url entrypoint check), gracefulShutdown.ts (SIGTERM/SIGINT close the listener +
+     disconnect an optional MCPClient, racing a hard timeout) — unit tests, a true end-to-end
+     integration test suite against a real Application via Fastify inject(), a real smoke test
+     (actual process, actual socket, actual curl requests) that caught and fixed a genuine
+     entrypoint-detection bug before freeze, architecture guard — full repo suite green
+     (14444 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

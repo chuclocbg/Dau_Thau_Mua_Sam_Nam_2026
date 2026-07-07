@@ -7,10 +7,34 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.8 — Multi-Agent Orchestration — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.9.1 — Production Hardening: HTTP Server & Bootstrap — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.8 — Multi-Agent Orchestration — declared 2026-07-07 (superseded by X.9.1)
+
+**Evidence:** 493 test files, 14,406 tests, 0 failures at freeze time; architecture guard
+confirmed `multiAgentTypes.ts`/`taskScheduler.ts`/`coordinatorAgent.ts` never import
+`src/reasoning/`/`src/knowledge/`/`src/mcp/`/`src/ai/`/`src/conversation/` at all, and that every
+prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `multiAgentTypes.ts` (`WorkerTask`, `WorkerOutcome`, `CoordinationRun` —
+reused `RetryOptions`), `taskScheduler.ts` (`validateTasks()`, `buildWaves()` — deterministic
+Kahn's-BFS wave grouping), `coordinatorAgent.ts` (`CoordinatorAgent.run()` — parallel scheduling,
+dependency tracking, fail-fast, timeout, `AbortSignal` cancellation; reused `RetryPolicy`
+directly), and `reasoningWorkerAdapter.ts` (`buildReasoningWorkerTask()` — the single composition
+point wrapping the real, frozen `ReasoningEnginePipeline.answer()` -> `formatConversationResponse()`
+-> `runToolCallingStage()` chain into one `WorkerTask`). Found by direct inspection that the
+pre-existing `src/providers/MultiAgentCoordinator.ts` requires an LLM call via
+`AgentRuntime.run(prompt)` — literal independent reasoning per agent, exactly what this
+milestone's own rule forbids — so new, deterministic, LLM-free scheduling code was written
+instead, consistent with `REJECTED_DESIGNS.md`'s own prior "Rejected: Multi-LLM-Agent
+Conversations" decision. A true end-to-end integration test dispatched real reasoning-engine
+workers in parallel through the complete `ReasoningEnginePipeline`/`OutputFormatter`/Tool Calling
+stack.
 
 ---
 
