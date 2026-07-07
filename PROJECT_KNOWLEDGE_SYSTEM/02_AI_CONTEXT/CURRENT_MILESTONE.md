@@ -19,102 +19,117 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.6 - Tool Calling - FROZEN"
+current_milestone: "Phase X.7 - MCP Integration - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-07
 milestone_evidence:
-  scope: "src/reasoning/domain/toolCallingTypes.ts (ToolInvocationDecision, ToolDecider,
-         NormalizedToolResult, ToolAugmentedResponse — reuses ToolCall [src/providers/
-         ToolRegistry.ts] and ConversationResponse/ReasoningAnswerResult as-is);
-         src/reasoning/application/toolCallingStage.ts (runToolCallingStage(),
-         neverInvokeTool — a thin orchestration stage consuming X.5's ConversationResponse;
-         genuinely reuses src/providers/ToolExecutor.ts's ToolExecutor.execute() [constructor-
-         injected, never constructed by this milestone] and src/providers/RetryPolicy.ts's
-         RetryPolicy constructor + .sleep() timing directly, with a NEW tool-execution-specific
-         retryable-error-code set since RetryPolicy's own isTransient()/isNonRetryable() classify
-         a different, LLM-provider vocabulary)."
+  scope: "src/mcp/domain/mcpTypes.ts (MCPToolDescriptor, MCPRequest, MCPResponse<T>,
+         MCPClientError(Code), MCPClientResult<T>, MCPTransport — reuses ToolParameter
+         [src/providers/ToolRegistry.ts] for inputSchema as-is, zero lossy conversion needed);
+         src/mcp/infrastructure/httpMCPTransport.ts (HttpMCPTransport — the one concrete
+         MCPTransport shipped, targets 'Streamable HTTP' MCP, genuinely reuses
+         src/providers/RestClient.ts's post() for the network call instead of a second fetch
+         wrapper); src/mcp/application/mcpClient.ts (MCPClient — connection lifecycle,
+         capability discovery [listTools()], tool execution [callTool()], reuses
+         src/providers/RetryPolicy.ts's constructor + .sleep() directly with its own small
+         MCP-transport-specific retryable-code set); src/mcp/application/mcpToolAdapter.ts
+         (registerMCPTools() — the single composition point: discovers remote tools via
+         MCPClient.listTools() and registers each as an ordinary ToolDefinition into the SAME,
+         already-frozen src/providers/ToolRegistry.ts that local tools use, with a handler that
+         forwards to MCPClient.callTool() and throws on failure — so ToolExecutor/
+         ToolCallingStage need zero MCP-awareness and zero changes)."
   scope_exclusion: "Zero reasoning, retrieval, ranking, conflict resolution, confidence
-                    computation, citation generation, MCP, Multi-Agent, LLM Adapter, Prompt
-                    Building, Output Validation, Production Hardening — confirmed absent by
-                    architecture guard. TRANSPARENCY FINDING (direct inspection, not assumed
-                    from documentation): src/providers/ToolCallingAgent.ts and
-                    src/providers/AgentRuntime.ts already exist under the pre-existing,
-                    unrelated 'P6' provider-layer track, but both require an actual LLM call via
-                    ProviderManager.chat() and detect tool-call syntax embedded in raw LLM
-                    response text — neither applies to Phase X's deterministic, non-LLM-driven
-                    pipeline and neither is imported. src/providers/ToolRegistry.ts and
-                    src/providers/ToolExecutor.ts ARE genuinely reusable (fully generic, no LLM
-                    coupling) and are reused directly, unmodified. Tool REGISTRATION (which real
-                    tools exist) is entirely the caller's concern — this milestone never
-                    constructs a ToolRegistry or registers a tool of its own; the default
-                    ToolDecider (neverInvokeTool) always declines, honestly reflecting that no
-                    real tool trigger rule exists yet for this domain rather than fabricating
-                    one. NUMBERING NOTE: PHASE_X_EXECUTION_PLAN.md's own X.5 already means Tool
-                    Calling (MCP-based) — this milestone's 'Tool Calling' is explicitly distinct
-                    from MCP, the same kind of collision already reconciled for X.4/X.5;
-                    recorded transparently, tracked under the user's own 'Phase X.6 (Tool
-                    Calling)' label for this session. Also noted:
-                    PHASE_X4_FINAL_ARCHITECTURE_AUDIT.md, named in this milestone's required
-                    reading list, does not exist — only PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md
-                    does; flagged transparently, not fabricated."
-  files_added: "2 implementation files + 4 test files (30 tests: 12 unit decision/retry/
-               normalization/immutability/determinism/timeout, 5 parity tests proving genuine
-               delegation to ToolExecutor.execute() and RetryPolicy.sleep()/.maxAttempts rather
-               than reimplementation, 3 true end-to-end integration tests against a real
-               ToolRegistry/ToolExecutor through the complete ReasoningEnginePipeline +
-               formatConversationResponse(), 10 architecture guard)"
-  full_suite_result: "485 test files, 14333 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 481 files / 14303 tests at the X.5 freeze baseline"
-  exit_criteria_met: "Parity tests prove every invocation attempt is a real
-                      ToolExecutor.execute() call (spied, asserted called with the exact ToolCall
-                      the decider produced, once per retry attempt) and that backoff sleeps
-                      delegate to RetryPolicy.prototype.sleep() (spied, asserted called
-                      maxAttempts-1 times with the correct attempt indices) — not reimplemented.
-                      Unit tests prove decision logic (default decider never invokes; injected
-                      decider's call is honored; shouldInvoke:true with no call is treated as a
-                      decline), retry behavior (retryable TOOL_EXECUTION_FAILED retried up to
-                      maxAttempts; non-retryable INVALID_ARGUMENTS never retried; retry stops
-                      immediately on success), normalization (success/failure shape,
-                      errorMessage present only on failure), timeout wiring (timeoutMs passed
-                      through to the executor, surfaces as a TIMEOUT failure), deep immutability,
-                      non-mutation of the input ConversationResponse, and determinism. A true
-                      end-to-end integration test exercises the complete chain — a real intent
-                      detector, a real memory-backed IKnowledgePlatform + LegalProvider, the
-                      complete native Reasoning Engine, the real Output Formatter, and a real
-                      ToolRegistry/ToolExecutor with an actual registered tool — for a
-                      tool-declined default path, a real tool invocation, and an empty platform.
-                      Architecture guard confirms zero src/knowledge/, src/mcp/,
-                      src/conversation/, or src/ai/ import; that the only src/providers/ imports
-                      are ToolExecutor.ts/ToolRegistry.ts/RetryPolicy.ts — never
-                      ToolCallingAgent/AgentRuntime/ProviderManager/ProviderRegistry/
-                      ConversationMemory/ConversationBuilder/MultiAgentCoordinator; zero MCP/
-                      Multi-Agent/Anthropic/OpenAI/Gemini/PromptBuilder/LLM adapter/Output
-                      Validation reference; zero reasoning/retrieval/ranking/conflict/confidence/
-                      citation/answer-composition/output-formatting logic; zero mutation of the
-                      input ConversationResponse/ReasoningAnswerResult; and that every prior
-                      milestone's frozen-file marker (X.3.1 through X.5, plus answerComposer.ts,
-                      responseFormatter.ts, and the pre-existing ToolRegistry/ToolExecutor/
-                      RetryPolicy provider files) is unchanged."
+                    computation, citation generation, Multi-Agent, LLM Adapter, Prompt Building,
+                    Output Validation, Production Hardening — confirmed absent by architecture
+                    guard. TRANSPARENCY FINDING (direct inspection, not assumed from
+                    documentation): PHASE_X_EXECUTION_PLAN.md's own 'X.5 — Tool Calling' section
+                    already reserves the src/mcp/ directory and src/mcp/domain/mcpTypes.ts
+                    specifically, but for a DIFFERENT design (IMCPTool/MCPExecutionContext/
+                    MCPToolResult feeding a from-scratch MCPToolRegistry + MCPGateway mirroring
+                    ProviderRegistry, plus an authPermissionBridge.ts). That design predates
+                    Phase X.6 (Tool Calling) — it had no ToolRegistry/ToolExecutor/RetryPolicy
+                    application-layer stage to reuse yet. This milestone's live instructions
+                    explicitly forbid duplicating Tool Calling, Provider interfaces, or
+                    RetryPolicy and require reusing ToolExecutor/ToolRegistry/RetryPolicy — a
+                    parallel MCPToolRegistry/MCPGateway would violate that directly, so the
+                    directory path is honored but the internal design is not; auth/permission
+                    enforcement is correspondingly left as open future work, not fabricated as
+                    handled. Also noted: REJECTED_DESIGNS.md's 'Rejected: Building MCP and
+                    Multi-Agent Now' entry rejected MCP on TIMING grounds only ('no production
+                    usage data exists yet'), not the design — this milestone's explicit
+                    authorization is the stated resolution path, not a reversal. Also noted (same
+                    as X.6's freeze): PHASE_X4_FINAL_ARCHITECTURE_AUDIT.md, named in this
+                    milestone's required reading list, does not exist — only
+                    PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md does; flagged transparently."
+  files_added: "4 implementation files + 4 test files (33 tests: 15 MCPClient unit tests
+               [connection lifecycle, capability discovery, tool execution, timeout, retry], 4
+               parity tests proving genuine delegation to RetryPolicy.sleep()/RestClient.post()
+               rather than reimplementation, 3 true end-to-end integration tests against a fake
+               but protocol-faithful in-memory MCP server through a real ToolRegistry/
+               ToolExecutor/ToolCallingStage/ReasoningEnginePipeline/OutputFormatter, 11
+               architecture guard)"
+  full_suite_result: "489 test files, 14366 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 485 files / 14333 tests at the X.6 freeze baseline"
+  exit_criteria_met: "Parity tests prove MCPClient's backoff genuinely delegates to
+                      RetryPolicy.prototype.sleep() (spied, called maxAttempts-1 times with
+                      correct attempt indices) and that HttpMCPTransport genuinely delegates the
+                      network call to RestClient.post() (spied, asserted called with a
+                      JSON-RPC-shaped body against the configured endpoint) — neither
+                      reimplemented. Unit tests prove connection lifecycle (DISCONNECTED ->
+                      CONNECTED, double-connect/disconnect-when-disconnected rejected),
+                      capability discovery (NOT_CONNECTED guard, well-formed tools/list parsing,
+                      PROTOCOL_ERROR on a malformed response), tool execution (tools/call
+                      request shape, content normalization, TOOL_CALL_FAILED on isError:true,
+                      PROTOCOL_ERROR on a JSON-RPC error), and retry/timeout (TIMEOUT on a
+                      hanging transport, TRANSPORT_ERROR retried up to maxAttempts, PROTOCOL_ERROR
+                      never retried, retry stops on success). A true end-to-end integration test
+                      exercises the complete chain — Question -> Reasoning -> Output Formatting
+                      -> Tool Calling -> MCP Adapter -> a fake-but-protocol-faithful 'External
+                      MCP Server' (a real MCPTransport implementation, not a mock of MCPClient)
+                      -> Normalized Tool Result -> Conversation Response — for a successful
+                      remote tool invocation, an MCP tool-call error normalized through the exact
+                      same TOOL_EXECUTION_FAILED path as any local tool, and a tool-declined
+                      default path. Architecture guard confirms zero src/knowledge/, src/ai/, or
+                      src/conversation/ import; that mcpTypes.ts/mcpClient.ts/
+                      httpMCPTransport.ts never import src/reasoning/ at all; that
+                      mcpToolAdapter.ts is the only file importing src/providers/ToolRegistry.ts
+                      and never imports toolCallingStage.ts/ruleEngine.ts/citationFormatter.ts/
+                      answerComposer.ts; that the only src/providers/ imports across all new
+                      files are RestClient.ts/RetryPolicy.ts/ToolRegistry.ts — never
+                      ToolExecutor.ts/ToolCallingAgent/AgentRuntime/ProviderManager/
+                      ProviderRegistry; zero reimplemented Tool Calling/RetryPolicy/ToolRegistry
+                      logic; zero reasoning/retrieval/ranking/conflict/confidence/citation/
+                      Multi-Agent logic; that MCPClient never constructs its own transport
+                      (always caller-injected); that registerMCPTools() never mutates a
+                      discovered descriptor; and that every prior milestone's frozen-file marker
+                      (X.3.1 through X.6, plus answerComposer.ts and the pre-existing
+                      ToolRegistry/ToolExecutor/RetryPolicy/RestClient provider files) is
+                      unchanged."
   frozen_interfaces_touched: "None. Does not import ReasoningEnginePipeline, any X.4.x stage,
-                              outputFormatter.ts, answerComposer.ts, or src/ai/validation/ at
-                              all — consumes only a ConversationResponse and
-                              ReasoningAnswerResult as plain values, and a caller-injected
-                              ToolExecutor instance — verified by git diff and architecture
-                              guard. Zero modification to src/providers/ToolRegistry.ts,
-                              ToolExecutor.ts, or RetryPolicy.ts."
+                              outputFormatter.ts, answerComposer.ts, toolCallingStage.ts, or
+                              src/ai/validation/ at all in production code (only the integration
+                              test wires MCP-registered tools through the real, unmodified
+                              runToolCallingStage()/ToolExecutor). Zero modification to
+                              src/providers/ToolRegistry.ts, ToolExecutor.ts, RetryPolicy.ts, or
+                              RestClient.ts, and zero modification to any src/reasoning/ file —
+                              verified by git diff and architecture guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "MCP, Multi-Agent, or Production Hardening — none authorized to begin
-                        without separate explicit approval — or any other later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.6's exit criteria confirmed met and frozen this
-                         session. ToolAugmentedResponse exists but is not yet consumed anywhere
-                         — wiring runToolCallingStage() into an actual conversation session/API
-                         entry point, and deciding on a real ToolDecider for this domain (no
-                         tool trigger rule exists yet), remain open, not-yet-authorized work. The
-                         missingEvidence-reconciliation question, the superseded-item/decision
-                         gaps (both requiring RuleEvaluationResult as a stated input to close),
-                         and the still-open ResolvedKnowledge extension decision all remain
-                         unresolved, carried forward unchanged from the X.4 freeze."
+next_active_milestone: "Multi-Agent or Production Hardening — none authorized to begin without
+                        separate explicit approval — or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. Phase X.7's exit criteria confirmed met and frozen this
+                         session. registerMCPTools()/MCPClient exist but are not yet wired into
+                         any real, network-reachable MCP server or a real ToolDecider for this
+                         domain — both remain open, not-yet-authorized work, same as X.6's
+                         still-open ToolDecider gap. Stdio-based MCP transports are not
+                         implemented (only 'Streamable HTTP' via HttpMCPTransport) — an honest,
+                         documented gap, not a blocker. Auth/permission enforcement for MCP tool
+                         calls (contemplated by the original, now-superseded plan's
+                         authPermissionBridge.ts) remains unbuilt. The missingEvidence-
+                         reconciliation question, the superseded-item/decision gaps (both
+                         requiring RuleEvaluationResult as a stated input to close), and the
+                         still-open ResolvedKnowledge extension decision all remain unresolved,
+                         carried forward unchanged from the X.4 freeze."
 next_milestone_blocker: "None technical. Requires its own explicit human authorization to
                          begin, separate from this freeze's own approval."
 
@@ -122,18 +137,18 @@ immediate_next_action: "None assigned as of this writing. Waiting for explicit h
                         to begin the next milestone."
 
 do_not:
-  - "Do not begin MCP, Multi-Agent, or Production Hardening without explicit approval."
+  - "Do not begin Multi-Agent or Production Hardening without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
-     X.4.7 + Final X.4 Integration + X.5 + X.6, frozen), src/ai/{domain,application,infrastructure}/
-     (X.2 Batch B, frozen), or
-     src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
+     X.4.7 + Final X.4 Integration + X.5 + X.6, frozen), src/mcp/{domain,infrastructure,
+     application}/ (X.7, frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B,
+     frozen), or src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the pre-existing src/providers/*.ts files (the unrelated 'P6' track,
      e.g. ToolCallingAgent.ts, AgentRuntime.ts, ProviderManager.ts) — none of these belong to
-     Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts are reused by X.6 but must remain
-     unmodified."
+     Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts are reused by X.6/X.7
+     but must remain unmodified."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -363,7 +378,25 @@ historical_sequence_to_reach_here:
      reimplementation, real-platform end-to-end integration tests (real ToolRegistry/
      ToolExecutor with an actual registered tool, through the complete ReasoningEnginePipeline +
      formatConversationResponse()), architecture guard — full repo suite green (14333 tests) —
-     FROZEN — you are here"
+     FROZEN"
+  - "Phase X.7 (MCP Integration) implemented: mcpTypes.ts (MCPToolDescriptor, MCPRequest,
+     MCPResponse<T>, MCPClientError(Code), MCPClientResult<T>, MCPTransport — reuses
+     ToolParameter for inputSchema as-is), httpMCPTransport.ts (HttpMCPTransport — the one
+     concrete MCPTransport shipped, reuses src/providers/RestClient.ts's post() for the network
+     call), mcpClient.ts (MCPClient — connection lifecycle, capability discovery, tool
+     execution; reuses RetryPolicy's constructor + .sleep() directly with its own MCP-transport-
+     specific retryable-code set), mcpToolAdapter.ts (registerMCPTools() — the single
+     composition point: discovers remote tools and registers each as an ordinary ToolDefinition
+     into the SAME, already-frozen src/providers/ToolRegistry.ts that local tools use, so
+     ToolExecutor/ToolCallingStage need zero MCP-awareness and zero changes; found by direct
+     inspection that PHASE_X_EXECUTION_PLAN.md's own pre-planned MCPToolRegistry/MCPGateway
+     design, drafted before Phase X.6 existed, would have duplicated Tool Calling/ToolRegistry —
+     not built; the src/mcp/ directory reservation was honored, the internal design was not) —
+     unit tests, parity tests proving genuine delegation to RetryPolicy.sleep()/RestClient.post()
+     rather than reimplementation, a true end-to-end integration test against a fake-but-
+     protocol-faithful in-memory MCP server through a real ToolRegistry/ToolExecutor/
+     ToolCallingStage/ReasoningEnginePipeline/OutputFormatter, architecture guard — full repo
+     suite green (14366 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

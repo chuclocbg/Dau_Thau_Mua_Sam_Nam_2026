@@ -7,10 +7,33 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.6 — Tool Calling — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.7 — MCP Integration — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.6 — Tool Calling — declared 2026-07-07 (superseded by X.7)
+
+**Evidence:** 485 test files, 14,333 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/mcp/`/`src/conversation/`/`src/ai/` import, that the only
+`src/providers/` imports were `ToolExecutor.ts`/`ToolRegistry.ts`/`RetryPolicy.ts`, and that
+every prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `toolCallingTypes.ts` (`ToolInvocationDecision`, `ToolDecider`,
+`NormalizedToolResult`, `ToolAugmentedResponse` — reused `ToolCall` from the pre-existing
+`src/providers/ToolRegistry.ts` as-is) and `toolCallingStage.ts` (`runToolCallingStage()`,
+`neverInvokeTool` — reused `src/providers/ToolExecutor.ts`'s `ToolExecutor.execute()`
+[constructor-injected] and `src/providers/RetryPolicy.ts`'s constructor + `.sleep()` timing
+directly, with a new tool-execution-specific retryable-error-code set since `RetryPolicy`'s own
+`isTransient()`/`isNonRetryable()` classify a different, LLM-provider vocabulary). Found by
+direct inspection that `src/providers/ToolCallingAgent.ts`/`AgentRuntime.ts` are NOT reusable —
+both require an actual LLM call via `ProviderManager.chat()`, out of scope. Parity tests proved
+genuine delegation to `ToolExecutor.execute()`/`RetryPolicy.sleep()` rather than
+reimplementation. A true end-to-end integration test proved a real `ToolRegistry`/`ToolExecutor`
+with an actual registered tool, invoked through the complete chain — real intent detector, real
+`IKnowledgePlatform`, complete `ReasoningEnginePipeline`, real Output Formatter.
 
 ---
 
