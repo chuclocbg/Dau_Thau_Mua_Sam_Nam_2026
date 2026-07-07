@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url'
 import { loadAppConfigFromEnv } from '../config/appConfig.ts'
 import { buildApplication } from '../bootstrap/buildApplication.ts'
 import { buildHttpServer } from './httpServer.ts'
@@ -33,7 +34,7 @@ export async function main(): Promise<void> {
 }
 
 const isEntrypoint = typeof process !== 'undefined' && process.argv[1] !== undefined
-  && import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`
+  && import.meta.url === pathToFileURL(process.argv[1]).href
 
 if (isEntrypoint) {
   void main()
