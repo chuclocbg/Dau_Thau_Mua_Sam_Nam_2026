@@ -1,23 +1,30 @@
-// ── Application Config — Phase X.9.1 ───────────────────────────────────────────
-// Server-level configuration only (port/host/env/log level/shutdown timeout). Deliberately
-// separate from src/providers/env.ts (frozen, LLM-provider-API-key loading only) — no overlap,
-// no duplication: this file has never read OPENAI_API_KEY/ANTHROPIC_API_KEY/GEMINI_API_KEY and
-// never will, since Phase X's reasoning path is LLM-free by design (REJECTED_DESIGNS.md's
-// "Rejected: Multi-LLM-Agent Conversations"). Never throws — same never-throw Result<T,E>
-// discipline used throughout src/reasoning/src/mcp/src/multiagent, applied here for consistency,
-// not because any frozen file is imported.
+// ── Application Config — Phase X.9.1, extended Phase X.9.2 ────────────────────
+// Server-level configuration only (port/host/env/log level+format/shutdown timeout).
+// Deliberately separate from src/providers/env.ts (frozen, LLM-provider-API-key loading only) —
+// no overlap, no duplication: this file has never read OPENAI_API_KEY/ANTHROPIC_API_KEY/
+// GEMINI_API_KEY and never will, since Phase X's reasoning path is LLM-free by design
+// (REJECTED_DESIGNS.md's "Rejected: Multi-LLM-Agent Conversations"). Never throws — same
+// never-throw Result<T,E> discipline used throughout src/reasoning/src/mcp/src/multiagent,
+// applied here for consistency, not because any frozen file is imported.
+//
+// X.9.2 addition: logFormat ('json'|'pretty'), consumed by src/logging/structuredLogger.ts.
+// src/config/ is an explicitly allowed directory for X.9.2 — this extension is authorized, not
+// a frozen-file violation.
 
 export type NodeEnv = 'development' | 'production' | 'test'
+export type LogFormat = 'json' | 'pretty'
 
 export interface AppConfig {
   readonly port: number
   readonly host: string
   readonly nodeEnv: NodeEnv
   readonly logLevel: 'debug' | 'info' | 'warn' | 'error'
+  readonly logFormat: LogFormat
   readonly shutdownTimeoutMs: number
 }
 
-export type AppConfigErrorCode = 'INVALID_PORT' | 'INVALID_NODE_ENV' | 'INVALID_LOG_LEVEL' | 'INVALID_SHUTDOWN_TIMEOUT'
+export type AppConfigErrorCode =
+  | 'INVALID_PORT' | 'INVALID_NODE_ENV' | 'INVALID_LOG_LEVEL' | 'INVALID_LOG_FORMAT' | 'INVALID_SHUTDOWN_TIMEOUT'
 
 export interface AppConfigError {
   readonly code: AppConfigErrorCode
@@ -30,12 +37,14 @@ export type AppConfigResult =
 
 const VALID_NODE_ENVS = new Set<NodeEnv>(['development', 'production', 'test'])
 const VALID_LOG_LEVELS = new Set(['debug', 'info', 'warn', 'error'])
+const VALID_LOG_FORMATS = new Set<LogFormat>(['json', 'pretty'])
 
 const DEFAULTS = {
   port: 3000,
   host: '0.0.0.0',
   nodeEnv: 'development' as NodeEnv,
   logLevel: 'info' as const,
+  logFormat: 'json' as const,
   shutdownTimeoutMs: 10_000,
 }
 
@@ -70,6 +79,15 @@ export function loadAppConfigFromEnv(env: Record<string, string | undefined> = p
     logLevel = logLevelRaw as AppConfig['logLevel']
   }
 
+  const logFormatRaw = env['LOG_FORMAT']?.trim()
+  let logFormat: LogFormat = DEFAULTS.logFormat
+  if (logFormatRaw !== undefined && logFormatRaw !== '') {
+    if (!VALID_LOG_FORMATS.has(logFormatRaw as LogFormat)) {
+      return { ok: false, error: { code: 'INVALID_LOG_FORMAT', message: `LOG_FORMAT must be one of json|pretty; received: '${logFormatRaw}'.` } }
+    }
+    logFormat = logFormatRaw as LogFormat
+  }
+
   const shutdownRaw = env['SHUTDOWN_TIMEOUT_MS']?.trim()
   let shutdownTimeoutMs = DEFAULTS.shutdownTimeoutMs
   if (shutdownRaw !== undefined && shutdownRaw !== '') {
@@ -80,5 +98,5 @@ export function loadAppConfigFromEnv(env: Record<string, string | undefined> = p
     shutdownTimeoutMs = parsed
   }
 
-  return { ok: true, value: { port, host, nodeEnv, logLevel, shutdownTimeoutMs } }
+  return { ok: true, value: { port, host, nodeEnv, logLevel, logFormat, shutdownTimeoutMs } }
 }
