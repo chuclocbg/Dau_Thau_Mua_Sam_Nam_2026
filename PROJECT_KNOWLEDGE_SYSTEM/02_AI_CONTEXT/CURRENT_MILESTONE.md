@@ -19,139 +19,150 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.9.2 - Production Hardening: Logging/Metrics/Tracing/Error Middleware - FROZEN"
+current_milestone: "Phase X.9.3 - Production Hardening: Streaming/SSE/HTTP Cancellation - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-07
 milestone_evidence:
-  scope: "src/logging/structuredLogger.ts (createStructuredLogger() — level-filtered JSON/pretty
-         lines to stdout, .child() for request-scoped context); src/logging/requestContext.ts
-         (generateRequestId()/resolveCorrelationId()); src/tracing/tracingTypes.ts +
-         src/tracing/tracer.ts (TraceContext/Span/Tracer — an OpenTelemetry-shaped, vendor-free
-         abstraction; SimpleTracer; parseTraceParent()/formatTraceParent() — W3C Trace Context);
-         src/metrics/requestMetrics.ts (recordRequestStart()/recordRequestCompletion() — a thin
-         naming layer over the existing, unmodified MetricsCollector); src/middleware/
-         errorMapper.ts (mapErrorToHttpResponse() — HTTP exception mapping, production message
-         redaction for 5xx); src/middleware/requestLifecycleHooks.ts
-         (registerRequestLifecycleHooks() — the one Fastify wiring point: request timing,
-         correlation ID, trace propagation, structured logging, metrics, global error handler).
-         DI-only additions to three X.9.1 files, per this milestone's explicit carve-out:
-         appConfig.ts (+logFormat), buildApplication.ts (+logger/metrics/tracer/nodeEnv on
-         Application), httpServer.ts (+one call to registerRequestLifecycleHooks())."
+  scope: "src/streaming/sseTypes.ts (SSEEvent/StreamWriter — a minimal, transport-agnostic
+         abstraction); src/streaming/sseWriter.ts (SSEWriter — the one concrete StreamWriter:
+         backpressure-safe SSE framing over a raw ServerResponse, awaits 'drain', idempotent
+         graceful close()); src/streaming/streamRace.ts (raceSignalAndTimeout()/
+         StreamAbortedError/StreamTimeoutError — the HTTP-layer cancellation/timeout boundary);
+         src/cancellation/requestAbortSignal.ts (createAbortSignalForResponse() — client
+         disconnect detection via Node's standard 'close before writableEnded' pattern, exposed
+         as a native AbortSignal); src/http/reasoningStreamRoute.ts
+         (registerReasoningStreamRoute() — POST /api/v1/reasoning/answer/stream, streaming the
+         lifecycle of a single reasoning answer over SSE via the exact same real, frozen chain
+         X.9.1's reasoningRoutes.ts already calls). DI-only additions to three files, per this
+         milestone's explicit carve-out: appConfig.ts (+streamTimeoutMs), buildApplication.ts
+         (+streamTimeoutMs on Application), httpServer.ts (+one call to
+         registerReasoningStreamRoute())."
   scope_exclusion: "Zero reasoning, retrieval, ranking, conflict resolution, confidence
                     computation, citation generation, Tool Calling, MCP, or Multi-Agent logic
-                    reimplemented anywhere — confirmed by architecture guard: no new
-                    logging/metrics/tracing/middleware file imports src/reasoning/,
-                    src/knowledge/, src/mcp/, src/multiagent/, src/conversation/, src/api/, or
-                    src/health/ at all. TRANSPARENCY FINDING: src/providers/Logger.ts and
-                    src/providers/MetricsCollector.ts (pre-existing, frozen, P6-11A/P6-11E) were
-                    evaluated for reuse per this milestone's own 'reuse existing components'
-                    requirement. MetricsCollector IS genuinely reused directly (requestMetrics.ts
-                    calls its increment()/add() with zero storage logic of its own — its only
-                    honest limitation is no true histogram type, so duration is sum+count, not a
-                    fabricated percentile). Logger.ts is NOT reused: it is an in-memory
-                    query-later STORE with no output sink at all, a fundamentally different
-                    concern from 'emit structured lines a container/log-aggregator can capture' —
-                    a new, purpose-built structuredLogger.ts was written instead, mirroring
-                    Logger.ts's level-naming/filtering convention without reusing its
-                    store-and-query implementation. No @opentelemetry/* package is a direct
-                    dependency of this repository (only an undeclared transitive one, confirmed
-                    via package-lock.json, never imported) — the Tracer/Span abstraction is
-                    fully dependency-free, satisfying 'no vendor lock' literally. The DI-only
-                    touches to appConfig.ts/buildApplication.ts/httpServer.ts were verified
-                    (architecture guard) to still contain every one of their X.9.1 core lines —
-                    additive only, nothing removed or redesigned."
-  files_added: "7 implementation files + 8 test files (47 new tests + 2 X.9.1 test files updated
-               for the additive Application/AppConfig fields: structured logger [level filtering,
-               JSON/pretty format, nested child loggers], request/correlation ID resolution,
-               SimpleTracer + W3C traceparent parse/format round-trip, request metrics [parity:
-               genuine delegation to the real MetricsCollector], error mapper [validation, known
-               status codes, production redaction, never-throw], a true end-to-end observability
-               integration test suite against a real Application + real Fastify instance via
-               inject() [correlation ID echo/generation, traceparent propagation, real metrics
-               accumulation, structured stdout logging with matching requestId, 404 exception
-               mapping, replay determinism], and an architecture guard); a real smoke test
-               (actual process, actual socket, actual curl request with a custom
-               x-correlation-id) additionally verified structured JSON logs, correlation ID
-               echo, and traceparent generation all work outside the test harness."
-  full_suite_result: "505 test files, 14492 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 498 files / 14444 tests at the X.9.1 freeze baseline"
-  exit_criteria_met: "Unit tests prove structured logger level filtering and JSON/pretty
-                      formatting, nested .child() binding accumulation without parent mutation,
-                      correlation ID header resolution (honored/array-first-value/generated-when-
-                      absent-or-blank), SimpleTracer traceId inheritance and spanId uniqueness
-                      across sibling spans, idempotent span.end(), W3C traceparent round-trip
-                      parse/format and rejection of malformed headers, request metrics parity
-                      (spied against the real MetricsCollector, not a private store), and error
-                      mapper behavior (validation errors, known status codes preserved, 5xx
-                      message redaction in production only, 4xx messages always visible,
-                      out-of-range statusCode clamped to 500, never throws on null/undefined). A
-                      true end-to-end integration test exercises the complete chain — a real
-                      Application wired into a real Fastify instance via inject() — proving a
-                      caller-supplied x-correlation-id is echoed back, a fresh one is generated
-                      when absent, an incoming traceparent's traceId is honored and propagated, a
-                      new one is generated otherwise, real request/response counters accumulate
-                      on the Application's own MetricsCollector, structured JSON log lines
-                      capturing method/url/statusCode/durationMs share the same requestId across
-                      request-received/request-completed, an unregistered route maps to a
-                      consistent 404, and identical requests replay deterministically. A real
-                      smoke test (actual process, actual TCP socket, curl with a real
-                      x-correlation-id header) additionally verified all of the above outside the
-                      test harness. Architecture guard confirms zero new file imports
-                      src/reasoning/, src/knowledge/, src/mcp/, src/multiagent/,
-                      src/conversation/, src/api/, or src/health/; that requestMetrics.ts
-                      genuinely delegates to MetricsCollector; that tracer.ts/tracingTypes.ts/
-                      structuredLogger.ts have zero @opentelemetry dependency; that the three
-                      DI-touched frozen files still contain every X.9.1 core construction/route/
-                      validation line plus only the new X.9.2 additions; zero reimplemented
-                      RetryPolicy/ToolExecutor/ToolRegistry/MCPClient/CoordinatorAgent/reasoning-
-                      stage logic anywhere; and that every prior milestone's frozen-file marker
-                      (X.1 through X.9.1, plus restAdapter.ts and the pre-existing provider
-                      files) is unchanged."
+                    reimplemented anywhere — confirmed by architecture guard: sseTypes.ts/
+                    sseWriter.ts/streamRace.ts/requestAbortSignal.ts import nothing beyond Node
+                    builtins and their own types; reasoningStreamRoute.ts imports only
+                    detectIntent()/formatConversationResponse()/runToolCallingStage() — never an
+                    internal reasoning stage, MCP, or Multi-Agent module — and reuses
+                    app.logger/app.metrics/app.tracer from Application rather than constructing
+                    its own. SCOPE NOTE: only the single-question path is streamed. Streaming the
+                    Multi-Agent batch path would require CoordinatorAgent to expose a per-task
+                    progress callback, which its frozen X.8 implementation does not (run()
+                    resolves only once every wave finishes) — adding one would mean modifying
+                    the frozen src/multiagent/**, explicitly forbidden this milestone. Not built,
+                    not fabricated. HONEST SCOPE NOTE on 'AbortSignal propagation': the frozen
+                    reasoning/Tool Calling/MCP layers (ReasoningEnginePipeline.answer(),
+                    ToolExecutor.execute(), MCPClient.callTool()) accept no AbortSignal parameter
+                    of their own — adding one would mean modifying those frozen files. What this
+                    milestone actually does, transparently: stop the HTTP handler itself from
+                    waiting/writing further once the client disconnects or a timeout elapses
+                    (raceSignalAndTimeout()), not true mid-flight cancellation of frozen
+                    internals that have no such parameter. For this repository's in-memory,
+                    deterministic reasoning path this is a correct, low-overhead bound rather
+                    than a fabricated safety net; it would matter more once a real, slow,
+                    network-backed MCP server is configured. TOOLING FINDING (verified by a
+                    minimal reproduction against a bare Fastify instance, no Phase X code
+                    involved): Fastify's inject() does not support reply.hijack() +
+                    raw-response streaming — res.end(callback)'s callback never fires under the
+                    simulated response, hanging forever. Every SSE-related test therefore binds
+                    a real listening socket (port: 0) and uses real fetch() instead of inject() —
+                    a genuine, verified tooling limitation, not a workaround for a defect in this
+                    milestone's own code."
+  files_added: "5 implementation files + 6 test files (35 new tests + 2 X.9.1/X.9.2 test files
+               updated for the additive streamTimeoutMs field: SSE writer [event framing,
+               backpressure via a fake ServerResponse, closed detection, idempotent graceful
+               termination], client-disconnect detection [aborts before writableEnded, not
+               after, idempotent], cancellation race [success/timeout/abort paths, abort-before-
+               timeout precedence, listener cleanup], a true end-to-end integration test suite
+               against a REAL LISTENING SOCKET with real fetch() [happy-path stage/result event
+               sequence over the complete reasoning + Tool Calling chain, validation rejection,
+               replay determinism, real metrics accumulation, and a real client-disconnect
+               cancellation test using a deliberately delayed real answer to make the race
+               deterministic], and an architecture guard); a real smoke test (actual process,
+               actual socket, curl -N reading the live SSE stream) additionally verified genuine
+               streaming, structured logging, and clean shutdown outside the test harness."
+  full_suite_result: "510 test files, 14528 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 505 files / 14492 tests at the X.9.2 freeze baseline"
+  exit_criteria_met: "Unit tests prove SSE framing (event/data/id lines, blank-line terminator,
+                      correct JSON-escaping of embedded newlines), backpressure (write() 
+                      returning false is awaited via 'drain' before resolving), closed detection
+                      and idempotent close(), client-disconnect detection (fires only when
+                      'close' precedes writableEnded, never on normal completion, idempotent
+                      across repeated events), and the cancellation race (resolves on success,
+                      rejects with StreamTimeoutError on timeout, rejects with
+                      StreamAbortedError immediately if already aborted or when aborted
+                      mid-flight, abort takes precedence over a not-yet-elapsed timeout, no
+                      dangling abort listener after a clean resolution). A true end-to-end
+                      integration test — a real Application wired into a real Fastify instance
+                      bound to a real listening socket, exercised with real fetch() — proves the
+                      complete reasoning+formatting+Tool-Calling chain streams the correct stage
+                      sequence (reasoning started, reasoning completed, formatting completed,
+                      tool_calling completed) followed by a result event carrying a genuine
+                      ToolAugmentedResponse; that a missing question is rejected with 400 before
+                      any SSE framing begins; that two identical requests replay the same stage
+                      sequence and result markdown; that real request/response counters
+                      accumulate on the Application's own MetricsCollector
+                      (sse_streams_total/sse_streams_completed_total); and that a real client
+                      disconnect (AbortController aborting a real fetch() mid-flight against a
+                      deliberately delayed real answer) is detected and recorded as
+                      sse_streams_aborted_total without incrementing
+                      sse_streams_completed_total. A real smoke test (actual process, actual
+                      TCP socket, curl -N) additionally verified genuine incremental SSE
+                      delivery and structured stream-lifecycle logging outside the test harness.
+                      Architecture guard confirms the pure streaming/cancellation files import
+                      nothing beyond Node builtins; that reasoningStreamRoute.ts imports only
+                      top-level frozen entry points and reuses Application's own logger/
+                      metrics/tracer; zero reimplemented RetryPolicy/ToolExecutor/ToolRegistry/
+                      MCPClient/CoordinatorAgent/reasoning-stage logic anywhere; that the three
+                      DI-touched frozen files still contain every prior construction/route/
+                      validation line plus only the new X.9.3 additions; and that every prior
+                      milestone's frozen-file marker (X.1 through X.9.2, plus restAdapter.ts and
+                      the pre-existing provider files) is unchanged."
   frozen_interfaces_touched: "Three files touched, DI-only, per this milestone's explicit
-                              carve-out: src/config/appConfig.ts (+logFormat field/validation,
-                              additive), src/bootstrap/buildApplication.ts (+logger/metrics/
-                              tracer/nodeEnv on Application, three new constructor calls,
-                              additive), src/server/httpServer.ts (+one
-                              registerRequestLifecycleHooks() call, additive). Verified by
-                              architecture guard that every one of their pre-existing X.9.1 lines
-                              (repository/reasoningPipeline/toolRegistry/toolExecutor/coordinator
-                              construction; /live//ready//health/reasoning/coordinator route
-                              registration; PORT/NODE_ENV/SHUTDOWN_TIMEOUT_MS validation) is
-                              still present, unchanged. src/reasoning/**, src/knowledge/**,
-                              src/conversation/**, src/providers/**, src/mcp/**, src/multiagent/**,
-                              src/health/**, src/api/**, src/startup/**, and src/server/main.ts
-                              were not modified at all — verified by git diff and architecture
-                              guard."
+                              carve-out: src/config/appConfig.ts (+streamTimeoutMs field/
+                              validation, additive), src/bootstrap/buildApplication.ts
+                              (+streamTimeoutMs on Application, a plain config value, additive),
+                              src/server/httpServer.ts (+one registerReasoningStreamRoute()
+                              call, additive). Verified by architecture guard that every one of
+                              their pre-existing X.9.1/X.9.2 lines is still present, unchanged.
+                              src/reasoning/**, src/knowledge/**, src/conversation/**,
+                              src/providers/**, src/mcp/**, src/multiagent/**, src/health/**,
+                              src/api/**, src/startup/**, src/server/main.ts, src/logging/**,
+                              src/metrics/**, src/tracing/**, and src/middleware/** were not
+                              modified at all — verified by git diff and architecture guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.9.3 (Batch C — Streaming/SSE/Cancellation/Timeout/Retry-policy-
-                        integration at the HTTP layer) or any other later milestone — none
-                        authorized to begin without separate explicit approval"
-next_milestone_status: "NOT AUTHORIZED. Phase X.9.2's exit criteria confirmed met and frozen this
+next_active_milestone: "Phase X.9.4 (Batch D — Dockerfile/docker-compose/production config/
+                        secrets loading/environment validation) or any other later milestone —
+                        none authorized to begin without separate explicit approval"
+next_milestone_status: "NOT AUTHORIZED. Phase X.9.3's exit criteria confirmed met and frozen this
                          session, per explicit instruction to stop and wait after every frozen
-                         milestone. Batch B (Logging/Metrics/Tracing/Error Middleware) is
-                         complete: every request through the real HTTP server now carries a
-                         request ID, a correlation ID, and W3C trace context; is timed, logged as
-                         structured JSON, and counted; and any error is mapped to a consistent
-                         HTTP response. Remaining PRODUCTION_HARDENING_AUDIT.md findings not yet
-                         addressed: no streaming/SSE/HTTP-layer cancellation (Batch C), no
-                         Dockerfile/production config for the app itself (Batch D), no deployment
-                         scripts/operational runbook (Batch E). Also still open: no auth/
-                         permission layer on the API routes, no rate limiting on the API routes,
-                         ToolRegistry is empty by default (a deployment decision, not fabricated),
-                         no alerting (downstream of this milestone's own metrics — thresholds/
-                         routing are a separate, requirement-driven decision), the
-                         missingEvidence-reconciliation question, the superseded-item/decision
-                         gaps, and the still-open ResolvedKnowledge extension decision all remain
-                         unresolved, carried forward unchanged from earlier freezes."
+                         milestone. Batch C (Streaming/SSE/HTTP Cancellation) is complete: a
+                         single-question reasoning answer can be streamed over SSE with genuine
+                         backpressure handling, client-disconnect detection, and a timeout bound,
+                         reusing the exact same real reasoning/formatting/Tool-Calling chain and
+                         the X.9.2 logging/metrics/tracing already in place. Remaining
+                         PRODUCTION_HARDENING_AUDIT.md findings not yet addressed: no Dockerfile/
+                         production config for the app itself (Batch D), no deployment scripts/
+                         operational runbook (Batch E). Also still open: no auth/permission layer
+                         on the API routes, no rate limiting on the API routes, ToolRegistry is
+                         empty by default (a deployment decision, not fabricated), no alerting,
+                         Multi-Agent batch streaming was intentionally not built (CoordinatorAgent
+                         has no progress-callback API — would require modifying the frozen
+                         src/multiagent/**), true mid-flight cancellation of the frozen reasoning/
+                         Tool Calling/MCP internals remains an HTTP-layer-only bound (those layers
+                         accept no AbortSignal of their own), the missingEvidence-reconciliation
+                         question, the superseded-item/decision gaps, and the still-open
+                         ResolvedKnowledge extension decision all remain unresolved, carried
+                         forward unchanged from earlier freezes."
 next_milestone_blocker: "None technical. Requires its own explicit human authorization to
                          begin, separate from this freeze's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.9.3."
+                        to begin Phase X.9.4."
 
 do_not:
-  - "Do not begin Phase X.9.3 (or any later batch/milestone) without explicit approval."
+  - "Do not begin Phase X.9.4 (or any later batch/milestone) without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
@@ -159,17 +170,18 @@ do_not:
      application}/ (X.7, frozen), src/multiagent/{domain,application}/ (X.8, frozen),
      src/health/, src/api/, src/startup/, src/server/main.ts (X.9.1, frozen),
      src/logging/, src/metrics/, src/tracing/, src/middleware/ (X.9.2, frozen),
+     src/streaming/, src/http/, src/cancellation/ (X.9.3, frozen),
      src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
      (X.4, frozen) outside of a newly-approved milestone. src/config/appConfig.ts,
      src/bootstrap/buildApplication.ts, and src/server/httpServer.ts may be touched again ONLY
-     for additive dependency-injection wiring, exactly as X.9.2 itself did to X.9.1's files —
-     never a redesign of their X.9.1/X.9.2 logic."
+     for additive dependency-injection/wiring, exactly as X.9.2/X.9.3 themselves did — never a
+     redesign of their existing logic."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the pre-existing src/providers/*.ts files (the unrelated 'P6' track,
      e.g. ToolCallingAgent.ts, AgentRuntime.ts, MultiAgentCoordinator.ts, ProviderManager.ts), or
      src/interface/restAdapter.ts (Phase 14, unrelated, pre-existing Fastify pattern) — none of
      these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts/
-     MetricsCollector.ts are reused by X.6/X.7/X.8/X.9.1/X.9.2 but must remain unmodified."
+     MetricsCollector.ts are reused by X.6/X.7/X.8/X.9.1/X.9.2/X.9.3 but must remain unmodified."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -478,7 +490,30 @@ historical_sequence_to_reach_here:
      end-to-end observability integration test suite via Fastify inject(), a real smoke test
      (actual process, actual socket, curl with a real x-correlation-id header) confirming
      structured logs/correlation echo/traceparent generation all work outside the test harness,
-     architecture guard — full repo suite green (14492 tests) — FROZEN — you are here"
+     architecture guard — full repo suite green (14492 tests) — FROZEN"
+  - "Phase X.9.3 (Production Hardening: Streaming/SSE/HTTP Cancellation — Batch C) implemented:
+     sseTypes.ts + sseWriter.ts (SSEEvent/StreamWriter abstraction; SSEWriter — backpressure-
+     safe SSE framing over a raw ServerResponse, awaits 'drain', idempotent graceful close()),
+     streamRace.ts (raceSignalAndTimeout()/StreamAbortedError/StreamTimeoutError — the
+     HTTP-layer cancellation boundary, since the frozen reasoning/Tool Calling/MCP layers accept
+     no AbortSignal of their own), requestAbortSignal.ts (createAbortSignalForResponse() —
+     client-disconnect detection via Node's 'close before writableEnded' pattern),
+     reasoningStreamRoute.ts (registerReasoningStreamRoute() — POST /api/v1/reasoning/answer/
+     stream, streaming a single reasoning answer's lifecycle over SSE via the exact same real,
+     frozen chain X.9.1's reasoningRoutes.ts already calls; reuses Application's own
+     logger/metrics/tracer from X.9.2) — plus additive, DI-only wiring into three files
+     (appConfig.ts +streamTimeoutMs, buildApplication.ts +streamTimeoutMs on Application,
+     httpServer.ts +one route-registration call), verified by architecture guard to have left
+     every prior core line untouched. TOOLING FINDING (verified by direct reproduction, no
+     Phase X code involved): Fastify's inject() does not support reply.hijack() + raw-response
+     streaming — every SSE test therefore binds a real listening socket and uses real fetch()
+     instead. SCOPE NOTE: only the single-question path is streamed — Multi-Agent batch
+     streaming was not built since CoordinatorAgent has no per-task progress callback and adding
+     one would mean modifying the frozen src/multiagent/**. Unit tests, a true end-to-end
+     integration test suite against a real listening socket (happy-path event sequence,
+     validation, replay, metrics, and a real client-disconnect cancellation test), a real smoke
+     test (actual process, actual socket, curl -N reading the live stream), architecture guard —
+     full repo suite green (14528 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

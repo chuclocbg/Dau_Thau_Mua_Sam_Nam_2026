@@ -7,10 +7,32 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.9.2 — Production Hardening: Logging/Metrics/Tracing/Error Middleware — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.9.3 — Production Hardening: Streaming/SSE/HTTP Cancellation — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.9.2 — Production Hardening: Logging/Metrics/Tracing/Error Middleware — declared 2026-07-07 (superseded by X.9.3)
+
+**Evidence:** 505 test files, 14,492 tests, 0 failures at freeze time; architecture guard
+confirmed no new logging/metrics/tracing/middleware file imports `src/reasoning/`/`src/knowledge/`/
+`src/mcp/`/`src/multiagent/` at all, and that every prior milestone's frozen-file marker was
+unchanged.
+
+**Summary:** Implemented `structuredLogger.ts` (level-filtered JSON/pretty stdout lines,
+`.child()` context — NOT built on the frozen, unused `src/providers/Logger.ts`, which has no
+output sink at all), `requestContext.ts` (request/correlation ID resolution), `tracingTypes.ts` +
+`tracer.ts` (an OpenTelemetry-shaped, vendor-free `Tracer`/`Span` abstraction plus W3C
+`traceparent` propagation — zero `@opentelemetry` dependency), `requestMetrics.ts` (genuinely
+reuses the existing `MetricsCollector`), `errorMapper.ts` (HTTP exception mapping, production
+5xx redaction), and `requestLifecycleHooks.ts` (the one Fastify wiring point for
+timing/correlation/trace/logging/metrics/error-handling). DI-only additions to
+`appConfig.ts`/`buildApplication.ts`/`httpServer.ts`, verified to leave every X.9.1 core line
+untouched. A real smoke test (actual process, actual socket, curl with a real
+`x-correlation-id` header) confirmed structured logs/correlation echo/traceparent generation
+all work outside the test harness.
 
 ---
 
