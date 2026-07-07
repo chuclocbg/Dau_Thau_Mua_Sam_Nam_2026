@@ -1,4 +1,4 @@
-// ── Application Config — Phase X.9.1, extended Phase X.9.2 ────────────────────
+// ── Application Config — Phase X.9.1, extended X.9.2, extended X.9.3 ──────────
 // Server-level configuration only (port/host/env/log level+format/shutdown timeout).
 // Deliberately separate from src/providers/env.ts (frozen, LLM-provider-API-key loading only) —
 // no overlap, no duplication: this file has never read OPENAI_API_KEY/ANTHROPIC_API_KEY/
@@ -8,8 +8,10 @@
 // applied here for consistency, not because any frozen file is imported.
 //
 // X.9.2 addition: logFormat ('json'|'pretty'), consumed by src/logging/structuredLogger.ts.
-// src/config/ is an explicitly allowed directory for X.9.2 — this extension is authorized, not
-// a frozen-file violation.
+// X.9.3 addition: streamTimeoutMs, consumed by src/http/reasoningStreamRoute.ts's
+// raceSignalAndTimeout() bound on each SSE stage. src/config/ is an explicitly allowed
+// directory for both X.9.2 and X.9.3 — these extensions are authorized, not frozen-file
+// violations.
 
 export type NodeEnv = 'development' | 'production' | 'test'
 export type LogFormat = 'json' | 'pretty'
@@ -21,10 +23,12 @@ export interface AppConfig {
   readonly logLevel: 'debug' | 'info' | 'warn' | 'error'
   readonly logFormat: LogFormat
   readonly shutdownTimeoutMs: number
+  readonly streamTimeoutMs: number
 }
 
 export type AppConfigErrorCode =
-  | 'INVALID_PORT' | 'INVALID_NODE_ENV' | 'INVALID_LOG_LEVEL' | 'INVALID_LOG_FORMAT' | 'INVALID_SHUTDOWN_TIMEOUT'
+  | 'INVALID_PORT' | 'INVALID_NODE_ENV' | 'INVALID_LOG_LEVEL' | 'INVALID_LOG_FORMAT'
+  | 'INVALID_SHUTDOWN_TIMEOUT' | 'INVALID_STREAM_TIMEOUT'
 
 export interface AppConfigError {
   readonly code: AppConfigErrorCode
@@ -46,6 +50,7 @@ const DEFAULTS = {
   logLevel: 'info' as const,
   logFormat: 'json' as const,
   shutdownTimeoutMs: 10_000,
+  streamTimeoutMs: 30_000,
 }
 
 export function loadAppConfigFromEnv(env: Record<string, string | undefined> = process.env): AppConfigResult {
@@ -98,5 +103,15 @@ export function loadAppConfigFromEnv(env: Record<string, string | undefined> = p
     shutdownTimeoutMs = parsed
   }
 
-  return { ok: true, value: { port, host, nodeEnv, logLevel, logFormat, shutdownTimeoutMs } }
+  const streamTimeoutRaw = env['STREAM_TIMEOUT_MS']?.trim()
+  let streamTimeoutMs = DEFAULTS.streamTimeoutMs
+  if (streamTimeoutRaw !== undefined && streamTimeoutRaw !== '') {
+    const parsed = Number(streamTimeoutRaw)
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return { ok: false, error: { code: 'INVALID_STREAM_TIMEOUT', message: `STREAM_TIMEOUT_MS must be a positive integer; received: '${streamTimeoutRaw}'.` } }
+    }
+    streamTimeoutMs = parsed
+  }
+
+  return { ok: true, value: { port, host, nodeEnv, logLevel, logFormat, shutdownTimeoutMs, streamTimeoutMs } }
 }
