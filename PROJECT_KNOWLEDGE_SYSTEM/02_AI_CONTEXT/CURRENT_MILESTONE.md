@@ -19,117 +19,128 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.9.1 - Production Hardening: HTTP Server & Bootstrap - FROZEN"
+current_milestone: "Phase X.9.2 - Production Hardening: Logging/Metrics/Tracing/Error Middleware - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-07
 milestone_evidence:
-  scope: "src/config/appConfig.ts (loadAppConfigFromEnv() — PORT/HOST/NODE_ENV/LOG_LEVEL/
-         SHUTDOWN_TIMEOUT_MS, never-throw, deliberately separate from frozen src/providers/env.ts);
-         src/bootstrap/buildApplication.ts (the composition root — constructs, never modifies, a
-         real memory-backed IKnowledgePlatform + LegalProvider, ReasoningEnginePipeline,
-         ToolRegistry/ToolExecutor, CoordinatorAgent, and an optional caller-supplied MCPClient);
-         src/health/healthCheck.ts (checkLiveness()/checkReadiness()/checkHealth() — pure
-         functions over an already-built Application); src/api/reasoningRoutes.ts +
-         coordinatorRoutes.ts (POST /api/v1/reasoning/answer and /reasoning/batch — thin HTTP
-         adapters over the real X.4-X.8 chain); src/server/httpServer.ts (buildHttpServer() — a
-         pure Fastify-instance builder with /live, /ready, /health, and the API routes, no
-         .listen() call inside it, mirroring src/interface/restAdapter.ts's own established
-         pattern); src/server/main.ts (the one file that calls server.listen(), guarded by an
-         import.meta.url entrypoint check); src/startup/gracefulShutdown.ts
-         (createShutdownHandler()/registerGracefulShutdown() — SIGTERM/SIGINT close the listener
-         and disconnect an optional MCPClient, racing a hard timeout)."
+  scope: "src/logging/structuredLogger.ts (createStructuredLogger() — level-filtered JSON/pretty
+         lines to stdout, .child() for request-scoped context); src/logging/requestContext.ts
+         (generateRequestId()/resolveCorrelationId()); src/tracing/tracingTypes.ts +
+         src/tracing/tracer.ts (TraceContext/Span/Tracer — an OpenTelemetry-shaped, vendor-free
+         abstraction; SimpleTracer; parseTraceParent()/formatTraceParent() — W3C Trace Context);
+         src/metrics/requestMetrics.ts (recordRequestStart()/recordRequestCompletion() — a thin
+         naming layer over the existing, unmodified MetricsCollector); src/middleware/
+         errorMapper.ts (mapErrorToHttpResponse() — HTTP exception mapping, production message
+         redaction for 5xx); src/middleware/requestLifecycleHooks.ts
+         (registerRequestLifecycleHooks() — the one Fastify wiring point: request timing,
+         correlation ID, trace propagation, structured logging, metrics, global error handler).
+         DI-only additions to three X.9.1 files, per this milestone's explicit carve-out:
+         appConfig.ts (+logFormat), buildApplication.ts (+logger/metrics/tracer/nodeEnv on
+         Application), httpServer.ts (+one call to registerRequestLifecycleHooks())."
   scope_exclusion: "Zero reasoning, retrieval, ranking, conflict resolution, confidence
                     computation, citation generation, Tool Calling, MCP, or Multi-Agent logic
-                    reimplemented anywhere — confirmed by architecture guard: config/health/
-                    server/startup files never import src/reasoning/, src/knowledge/, src/mcp/,
-                    or src/multiagent/ directly; buildApplication.ts is the only composition
-                    point; the API layer imports only top-level, already-frozen entry points
-                    (detectIntent, formatConversationResponse, runToolCallingStage,
-                    buildReasoningWorkerTask, CoordinatorAgent.run), never an internal reasoning
-                    stage. TRANSPARENCY FINDING: a real, working Fastify HTTP adapter already
-                    existed before this milestone — src/interface/restAdapter.ts ('Phase 14'),
-                    wiring an older, unrelated set of governance services to real routes — but
-                    grep confirmed `.listen(` was called nowhere in the repository, and
-                    package.json had no start script; PRODUCTION_HARDENING_AUDIT.md's own
-                    findings #1/#2/#9 (later renumbered) are the direct basis for this
-                    milestone's scope. buildHttpServer() deliberately mirrors restAdapter.ts's
-                    thin-handler pattern rather than inventing a new one. A real smoke test
-                    (`npm run server`, curl against a real socket) caught and fixed a genuine bug:
-                    the initial string-comparison entrypoint guard silently failed under tsx on
-                    this platform, so main() never ran and no server ever started; replaced with
-                    pathToFileURL(process.argv[1]).href and re-verified live — a real
-                    POST /api/v1/reasoning/answer returned a genuine ConversationResponse over an
-                    actual network socket."
-  files_added: "8 implementation files + 6 test files (38 tests: app-config validation, graceful-
-               shutdown unit tests including a force-exit-on-timeout case, health-check unit
-               tests, a true end-to-end HTTP integration test suite exercising a real
-               Application — real memory-backed IKnowledgePlatform + LegalProvider, complete
-               ReasoningEnginePipeline, real ToolExecutor, real CoordinatorAgent — via Fastify's
-               own inject(), covering liveness/readiness/health, a real answer through the
-               complete reasoning + Tool Calling chain, a real batch through the complete
-               Multi-Agent chain, request validation, and deterministic replay, plus an
-               architecture guard); 1 package.json script added ('server')"
-  full_suite_result: "498 test files, 14444 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 493 files / 14406 tests at the X.8 freeze baseline"
-  exit_criteria_met: "Unit tests prove config validation (defaults, overrides, and rejection of
-                      invalid PORT/NODE_ENV/LOG_LEVEL/SHUTDOWN_TIMEOUT_MS, never throwing on
-                      garbage input), graceful shutdown (close+onShutdown+exit ordering,
-                      concurrent-signal dedup, timeout force-exit via a race rather than a
-                      sequential await so the handler's own promise always settles, tolerance for
-                      a missing onShutdown callback), and health/readiness/liveness (liveness
-                      always ok; readiness true with no MCP client configured, true/false
-                      matching a configured MCP client's real CONNECTED/DISCONNECTED status —
-                      never a fabricated check against a dependency that doesn't exist). A true
-                      end-to-end integration test exercises the complete chain — a real
-                      Application wired into a real Fastify instance via inject() — for
-                      liveness/readiness/health, a real question answered through the complete
-                      Reasoning Engine + Output Formatting + Tool Calling stack, a real batch of
-                      questions coordinated through the complete Multi-Agent stack, request
-                      validation rejection, and deterministic replay (identical markdown for an
-                      identical question asked twice). A real smoke test (actual process,
-                      actual TCP socket, actual curl requests) additionally verified the server
-                      genuinely runs outside the test harness — not just via inject() — and
-                      shuts down cleanly. Architecture guard confirms config/health/server/
-                      startup files never import src/reasoning/, src/knowledge/, src/mcp/, or
-                      src/multiagent/ directly; that buildApplication.ts is the only file
-                      constructing (never modifying) the frozen X.3-X.8 components; that
-                      reasoningRoutes.ts/coordinatorRoutes.ts import only top-level frozen entry
-                      points, never an internal stage (ruleEvaluationStage/
-                      conflictResolutionStage/confidenceEvaluationStage/citationGenerationStage/
-                      reasoningAnswerStage/ruleEngine/legalReasoningEngine/citationFormatter/
-                      answerComposer/finalKnowledgeResolutionPipeline/mcpClient/mcpToolAdapter);
-                      zero reimplemented reasoning/ranking/conflict/confidence/citation/answer-
-                      composition/Tool-Calling/MCP/Multi-Agent logic anywhere; that main.ts is
-                      the only file calling .listen(); and that every prior milestone's
-                      frozen-file marker (X.1 through X.8, plus restAdapter.ts and the
-                      pre-existing ToolExecutor/ToolRegistry/RetryPolicy provider files) is
-                      unchanged."
-  frozen_interfaces_touched: "None. src/reasoning/**, src/knowledge/**, src/conversation/**,
-                              src/providers/**, src/mcp/**, and src/multiagent/** were not
-                              modified — verified by git diff and architecture guard.
-                              buildApplication.ts and the API routes only CONSTRUCT/CALL
-                              already-frozen, already-exported public functions/constructors;
-                              nothing in this milestone edited a frozen file's contents."
+                    reimplemented anywhere — confirmed by architecture guard: no new
+                    logging/metrics/tracing/middleware file imports src/reasoning/,
+                    src/knowledge/, src/mcp/, src/multiagent/, src/conversation/, src/api/, or
+                    src/health/ at all. TRANSPARENCY FINDING: src/providers/Logger.ts and
+                    src/providers/MetricsCollector.ts (pre-existing, frozen, P6-11A/P6-11E) were
+                    evaluated for reuse per this milestone's own 'reuse existing components'
+                    requirement. MetricsCollector IS genuinely reused directly (requestMetrics.ts
+                    calls its increment()/add() with zero storage logic of its own — its only
+                    honest limitation is no true histogram type, so duration is sum+count, not a
+                    fabricated percentile). Logger.ts is NOT reused: it is an in-memory
+                    query-later STORE with no output sink at all, a fundamentally different
+                    concern from 'emit structured lines a container/log-aggregator can capture' —
+                    a new, purpose-built structuredLogger.ts was written instead, mirroring
+                    Logger.ts's level-naming/filtering convention without reusing its
+                    store-and-query implementation. No @opentelemetry/* package is a direct
+                    dependency of this repository (only an undeclared transitive one, confirmed
+                    via package-lock.json, never imported) — the Tracer/Span abstraction is
+                    fully dependency-free, satisfying 'no vendor lock' literally. The DI-only
+                    touches to appConfig.ts/buildApplication.ts/httpServer.ts were verified
+                    (architecture guard) to still contain every one of their X.9.1 core lines —
+                    additive only, nothing removed or redesigned."
+  files_added: "7 implementation files + 8 test files (47 new tests + 2 X.9.1 test files updated
+               for the additive Application/AppConfig fields: structured logger [level filtering,
+               JSON/pretty format, nested child loggers], request/correlation ID resolution,
+               SimpleTracer + W3C traceparent parse/format round-trip, request metrics [parity:
+               genuine delegation to the real MetricsCollector], error mapper [validation, known
+               status codes, production redaction, never-throw], a true end-to-end observability
+               integration test suite against a real Application + real Fastify instance via
+               inject() [correlation ID echo/generation, traceparent propagation, real metrics
+               accumulation, structured stdout logging with matching requestId, 404 exception
+               mapping, replay determinism], and an architecture guard); a real smoke test
+               (actual process, actual socket, actual curl request with a custom
+               x-correlation-id) additionally verified structured JSON logs, correlation ID
+               echo, and traceparent generation all work outside the test harness."
+  full_suite_result: "505 test files, 14492 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 498 files / 14444 tests at the X.9.1 freeze baseline"
+  exit_criteria_met: "Unit tests prove structured logger level filtering and JSON/pretty
+                      formatting, nested .child() binding accumulation without parent mutation,
+                      correlation ID header resolution (honored/array-first-value/generated-when-
+                      absent-or-blank), SimpleTracer traceId inheritance and spanId uniqueness
+                      across sibling spans, idempotent span.end(), W3C traceparent round-trip
+                      parse/format and rejection of malformed headers, request metrics parity
+                      (spied against the real MetricsCollector, not a private store), and error
+                      mapper behavior (validation errors, known status codes preserved, 5xx
+                      message redaction in production only, 4xx messages always visible,
+                      out-of-range statusCode clamped to 500, never throws on null/undefined). A
+                      true end-to-end integration test exercises the complete chain — a real
+                      Application wired into a real Fastify instance via inject() — proving a
+                      caller-supplied x-correlation-id is echoed back, a fresh one is generated
+                      when absent, an incoming traceparent's traceId is honored and propagated, a
+                      new one is generated otherwise, real request/response counters accumulate
+                      on the Application's own MetricsCollector, structured JSON log lines
+                      capturing method/url/statusCode/durationMs share the same requestId across
+                      request-received/request-completed, an unregistered route maps to a
+                      consistent 404, and identical requests replay deterministically. A real
+                      smoke test (actual process, actual TCP socket, curl with a real
+                      x-correlation-id header) additionally verified all of the above outside the
+                      test harness. Architecture guard confirms zero new file imports
+                      src/reasoning/, src/knowledge/, src/mcp/, src/multiagent/,
+                      src/conversation/, src/api/, or src/health/; that requestMetrics.ts
+                      genuinely delegates to MetricsCollector; that tracer.ts/tracingTypes.ts/
+                      structuredLogger.ts have zero @opentelemetry dependency; that the three
+                      DI-touched frozen files still contain every X.9.1 core construction/route/
+                      validation line plus only the new X.9.2 additions; zero reimplemented
+                      RetryPolicy/ToolExecutor/ToolRegistry/MCPClient/CoordinatorAgent/reasoning-
+                      stage logic anywhere; and that every prior milestone's frozen-file marker
+                      (X.1 through X.9.1, plus restAdapter.ts and the pre-existing provider
+                      files) is unchanged."
+  frozen_interfaces_touched: "Three files touched, DI-only, per this milestone's explicit
+                              carve-out: src/config/appConfig.ts (+logFormat field/validation,
+                              additive), src/bootstrap/buildApplication.ts (+logger/metrics/
+                              tracer/nodeEnv on Application, three new constructor calls,
+                              additive), src/server/httpServer.ts (+one
+                              registerRequestLifecycleHooks() call, additive). Verified by
+                              architecture guard that every one of their pre-existing X.9.1 lines
+                              (repository/reasoningPipeline/toolRegistry/toolExecutor/coordinator
+                              construction; /live//ready//health/reasoning/coordinator route
+                              registration; PORT/NODE_ENV/SHUTDOWN_TIMEOUT_MS validation) is
+                              still present, unchanged. src/reasoning/**, src/knowledge/**,
+                              src/conversation/**, src/providers/**, src/mcp/**, src/multiagent/**,
+                              src/health/**, src/api/**, src/startup/**, and src/server/main.ts
+                              were not modified at all — verified by git diff and architecture
+                              guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.9.2 (Batch B — Logging/Metrics/Tracing/Error middleware) or any
-                        other later milestone — none authorized to begin without separate
-                        explicit approval"
-next_milestone_status: "NOT AUTHORIZED. Phase X.9.1's exit criteria confirmed met and frozen this
+next_active_milestone: "Phase X.9.3 (Batch C — Streaming/SSE/Cancellation/Timeout/Retry-policy-
+                        integration at the HTTP layer) or any other later milestone — none
+                        authorized to begin without separate explicit approval"
+next_milestone_status: "NOT AUTHORIZED. Phase X.9.2's exit criteria confirmed met and frozen this
                          session, per explicit instruction to stop and wait after every frozen
-                         milestone. Batch A (HTTP Server & Bootstrap) is complete: a real,
-                         runnable HTTP server now exists with health/readiness/liveness and two
-                         real API routes over the real X.4-X.8 chain. Remaining PRODUCTION_
-                         HARDENING_AUDIT.md findings not yet addressed: no structured
-                         logging/metrics/tracing on the request path (Batch B), no streaming/SSE/
-                         cancellation-through-the-HTTP-layer (Batch C), no Dockerfile/production
-                         config for the app itself (Batch D), no deployment scripts/operational
-                         runbook (Batch E). Also still open: no auth/permission layer on the new
-                         API routes (correctly deferred per the audit's own sequencing — there
-                         was nothing to protect until this milestone built the entry point; now
-                         that it exists, this becomes the natural next co-requirement), no rate
-                         limiting on the API routes, ToolRegistry is empty by default (no real
-                         tools registered — a deployment decision, not fabricated), the
+                         milestone. Batch B (Logging/Metrics/Tracing/Error Middleware) is
+                         complete: every request through the real HTTP server now carries a
+                         request ID, a correlation ID, and W3C trace context; is timed, logged as
+                         structured JSON, and counted; and any error is mapped to a consistent
+                         HTTP response. Remaining PRODUCTION_HARDENING_AUDIT.md findings not yet
+                         addressed: no streaming/SSE/HTTP-layer cancellation (Batch C), no
+                         Dockerfile/production config for the app itself (Batch D), no deployment
+                         scripts/operational runbook (Batch E). Also still open: no auth/
+                         permission layer on the API routes, no rate limiting on the API routes,
+                         ToolRegistry is empty by default (a deployment decision, not fabricated),
+                         no alerting (downstream of this milestone's own metrics — thresholds/
+                         routing are a separate, requirement-driven decision), the
                          missingEvidence-reconciliation question, the superseded-item/decision
                          gaps, and the still-open ResolvedKnowledge extension decision all remain
                          unresolved, carried forward unchanged from earlier freezes."
@@ -137,24 +148,28 @@ next_milestone_blocker: "None technical. Requires its own explicit human authori
                          begin, separate from this freeze's own approval."
 
 immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.9.2."
+                        to begin Phase X.9.3."
 
 do_not:
-  - "Do not begin Phase X.9.2 (or any later batch/milestone) without explicit approval."
+  - "Do not begin Phase X.9.3 (or any later batch/milestone) without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
      X.4.7 + Final X.4 Integration + X.5 + X.6, frozen), src/mcp/{domain,infrastructure,
      application}/ (X.7, frozen), src/multiagent/{domain,application}/ (X.8, frozen),
-     src/config/, src/bootstrap/, src/health/, src/server/, src/api/, src/startup/ (X.9.1,
-     frozen), src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or
-     src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
+     src/health/, src/api/, src/startup/, src/server/main.ts (X.9.1, frozen),
+     src/logging/, src/metrics/, src/tracing/, src/middleware/ (X.9.2, frozen),
+     src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
+     (X.4, frozen) outside of a newly-approved milestone. src/config/appConfig.ts,
+     src/bootstrap/buildApplication.ts, and src/server/httpServer.ts may be touched again ONLY
+     for additive dependency-injection wiring, exactly as X.9.2 itself did to X.9.1's files —
+     never a redesign of their X.9.1/X.9.2 logic."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the pre-existing src/providers/*.ts files (the unrelated 'P6' track,
      e.g. ToolCallingAgent.ts, AgentRuntime.ts, MultiAgentCoordinator.ts, ProviderManager.ts), or
      src/interface/restAdapter.ts (Phase 14, unrelated, pre-existing Fastify pattern) — none of
-     these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts are
-     reused by X.6/X.7/X.8/X.9.1 but must remain unmodified."
+     these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts/
+     MetricsCollector.ts are reused by X.6/X.7/X.8/X.9.1/X.9.2 but must remain unmodified."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -445,7 +460,25 @@ historical_sequence_to_reach_here:
      integration test suite against a real Application via Fastify inject(), a real smoke test
      (actual process, actual socket, actual curl requests) that caught and fixed a genuine
      entrypoint-detection bug before freeze, architecture guard — full repo suite green
-     (14444 tests) — FROZEN — you are here"
+     (14444 tests) — FROZEN"
+  - "Phase X.9.2 (Production Hardening: Logging/Metrics/Tracing/Error Middleware — Batch B)
+     implemented: structuredLogger.ts (createStructuredLogger() — level-filtered JSON/pretty
+     stdout lines, .child() context; NOT built on the frozen, unused src/providers/Logger.ts,
+     which has no output sink at all), requestContext.ts (generateRequestId()/
+     resolveCorrelationId()), tracingTypes.ts + tracer.ts (an OpenTelemetry-shaped, vendor-free
+     Tracer/Span abstraction; SimpleTracer; W3C traceparent parse/format — zero @opentelemetry
+     dependency), requestMetrics.ts (recordRequestStart()/recordRequestCompletion() — genuinely
+     reuses the existing, unmodified MetricsCollector), errorMapper.ts
+     (mapErrorToHttpResponse() — HTTP exception mapping, production 5xx message redaction),
+     requestLifecycleHooks.ts (registerRequestLifecycleHooks() — the one Fastify wiring point
+     for timing/correlation/trace/logging/metrics/error-handling) — plus additive,
+     DI-only wiring into three X.9.1 files (appConfig.ts +logFormat, buildApplication.ts
+     +logger/metrics/tracer/nodeEnv, httpServer.ts +one hook-registration call), verified by
+     architecture guard to have left every X.9.1 core line untouched — unit tests, a true
+     end-to-end observability integration test suite via Fastify inject(), a real smoke test
+     (actual process, actual socket, curl with a real x-correlation-id header) confirming
+     structured logs/correlation echo/traceparent generation all work outside the test harness,
+     architecture guard — full repo suite green (14492 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

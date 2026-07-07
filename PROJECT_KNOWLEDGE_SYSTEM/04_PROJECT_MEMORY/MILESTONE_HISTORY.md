@@ -7,10 +7,31 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.9.1 — Production Hardening: HTTP Server & Bootstrap — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.9.2 — Production Hardening: Logging/Metrics/Tracing/Error Middleware — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.9.1 — Production Hardening: HTTP Server & Bootstrap — declared 2026-07-07 (superseded by X.9.2)
+
+**Evidence:** 498 test files, 14,444 tests, 0 failures at freeze time; architecture guard
+confirmed config/health/server/startup never import `src/reasoning/`/`src/knowledge/`/`src/mcp/`/
+`src/multiagent/` directly, that `buildApplication.ts` is the only composition point, and that
+every prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `appConfig.ts` (`loadAppConfigFromEnv()`), `buildApplication.ts` (the
+composition root — constructs a real memory-backed `IKnowledgePlatform` + `LegalProvider`,
+`ReasoningEnginePipeline`, `ToolRegistry`/`ToolExecutor`, `CoordinatorAgent`), `healthCheck.ts`
+(`checkLiveness()`/`checkReadiness()`/`checkHealth()`), `reasoningRoutes.ts` + `coordinatorRoutes.ts`
+(`POST /api/v1/reasoning/answer` and `/reasoning/batch` — thin adapters over the real X.4-X.8
+chain, mirroring the pre-existing `src/interface/restAdapter.ts` Fastify pattern),
+`httpServer.ts` (`buildHttpServer()` — `/live`/`/ready`/`/health` + API routes, no `.listen()`
+inside it), `main.ts` (the one file calling `.listen()`), `gracefulShutdown.ts` (SIGTERM/SIGINT).
+A real smoke test (`npm run server`, curl over an actual socket) caught and fixed a genuine bug:
+the initial entrypoint guard silently failed under `tsx` on this platform, so the server never
+started; replaced with `pathToFileURL(process.argv[1]).href` and re-verified live.
 
 ---
 
