@@ -7,10 +7,30 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.4 — Reasoning Engine Wiring: COMPLETE (Final Integration) — declared 2026-07-06 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.5 — Output Formatting — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.4 — Reasoning Engine Wiring: COMPLETE (Final Integration) — declared 2026-07-06 (superseded by X.5)
+
+**Evidence:** 477 test files, 14,272 tests, 0 failures at freeze time; full X.4-track diff-scope
+check from the pre-X.4 baseline (commit `4bcbf47`): 41 files added, 4,635 insertions, zero
+existing lines modified.
+
+**Summary:** Phase X.4 (X.4.1 through X.4.7 plus the Final Integration) built a complete,
+native, deterministic Reasoning Engine — `ReasoningEnginePipeline` (the one public entry point)
+wires X.3.7's `FinalKnowledgeResolutionPipeline` through X.4.2's `assembleReasoningContext()`,
+X.4.3's `evaluateRules()`, X.4.4's `resolveConflicts()`, X.4.5's `evaluateConfidence()`, X.4.6's
+`generateCitations()`, and X.4.7's `composeAnswer()` — proven end-to-end against a real
+Knowledge Platform, with deterministic replay verified. `ReasoningOrchestrator` (X.4.1,
+Batch-A-backed) and `ReasoningEnginePipeline` (native, X.4.2-X.4.7-backed) coexist as two
+separate, valid entry points. Three carried-forward open questions remain: the
+missingEvidence-reconciliation question, the superseded-item/decision gaps (both requiring
+`RuleEvaluationResult` as a stated input to close), and the still-open `ResolvedKnowledge`
+extension decision for checklists/cases/bestpractice/risk.
 
 ---
 
