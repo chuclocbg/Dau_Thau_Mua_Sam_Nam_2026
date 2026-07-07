@@ -10,7 +10,12 @@ import { ToolRegistry } from '../providers/ToolRegistry.ts'
 import { ToolExecutor } from '../providers/ToolExecutor.ts'
 import { CoordinatorAgent } from '../multiagent/application/coordinatorAgent.ts'
 import type { MCPClient } from '../mcp/application/mcpClient.ts'
-import type { AppConfig } from '../config/appConfig.ts'
+import type { AppConfig, NodeEnv } from '../config/appConfig.ts'
+import { createStructuredLogger } from '../logging/structuredLogger.ts'
+import type { StructuredLogger } from '../logging/structuredLogger.ts'
+import { MetricsCollector } from '../providers/MetricsCollector.ts'
+import { SimpleTracer } from '../tracing/tracer.ts'
+import type { Tracer } from '../tracing/tracingTypes.ts'
 
 // ── Application Bootstrap — Phase X.9.1 ────────────────────────────────────────
 // The composition root: the ONE place that constructs the real, frozen X.3-X.8 components and
@@ -33,6 +38,12 @@ import type { AppConfig } from '../config/appConfig.ts'
 // reasoning already applied in X.6/X.7 — see toolCallingStage.ts's own neverInvokeTool default).
 // An MCPClient is only constructed and connected when the caller explicitly supplies one via
 // options — this bootstrap never fabricates a default MCP server endpoint.
+//
+// X.9.2 ADDITION (dependency-injection wiring, per that milestone's explicit carve-out to touch
+// this frozen file only for DI): logger/metrics/tracer/nodeEnv are constructed here from the
+// same AppConfig already passed in, and threaded through Application so
+// server/httpServer.ts's request-lifecycle hooks can consume them — no reasoning/retrieval/
+// Tool Calling/MCP/Multi-Agent logic added, only three more constructor calls.
 
 export interface Application {
   readonly repository: IKnowledgeRepository
@@ -42,6 +53,10 @@ export interface Application {
   readonly coordinator: CoordinatorAgent
   readonly mcpClient?: MCPClient
   readonly startedAt: number
+  readonly logger: StructuredLogger
+  readonly metrics: MetricsCollector
+  readonly tracer: Tracer
+  readonly nodeEnv: NodeEnv
 }
 
 export interface BuildApplicationOptions {
@@ -49,7 +64,7 @@ export interface BuildApplicationOptions {
 }
 
 export async function buildApplication(
-  _config: AppConfig, options: BuildApplicationOptions = {},
+  config: AppConfig, options: BuildApplicationOptions = {},
 ): Promise<Application> {
   const repos = buildMemoryKnowledgeRepositories()
   const graph = new KnowledgeGraphService(repos.relations)
@@ -63,9 +78,14 @@ export async function buildApplication(
   const toolExecutor = new ToolExecutor(toolRegistry)
   const coordinator = new CoordinatorAgent()
 
+  const logger = createStructuredLogger({ level: config.logLevel, format: config.logFormat })
+  const metrics = new MetricsCollector()
+  const tracer = new SimpleTracer()
+
   const application: Application = {
     repository, reasoningPipeline, toolRegistry, toolExecutor, coordinator,
     startedAt: Date.now(),
+    logger, metrics, tracer, nodeEnv: config.nodeEnv,
     ...(options.mcpClient !== undefined ? { mcpClient: options.mcpClient } : {}),
   }
   return application
