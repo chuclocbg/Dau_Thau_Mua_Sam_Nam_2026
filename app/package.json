@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "build:legal": "tsx scripts/buildLegalKB.ts",
-    "build:index": "tsx scripts/buildLegalIndex.ts"
+    "build:index": "tsx scripts/buildLegalIndex.ts",
+    "server": "tsx src/server/main.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
