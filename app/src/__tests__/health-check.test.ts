@@ -11,6 +11,10 @@ function fakeApp(overrides: Partial<Application> = {}): Application {
     toolExecutor: {} as Application['toolExecutor'],
     coordinator: {} as Application['coordinator'],
     startedAt: Date.now() - 5000,
+    logger: {} as Application['logger'],
+    metrics: {} as Application['metrics'],
+    tracer: {} as Application['tracer'],
+    nodeEnv: 'test',
     ...overrides,
   }
 }
