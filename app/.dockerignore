@@ -1,0 +1,16 @@
+# Phase X.9.4 — keeps the Docker build context small and prevents leaking local
+# secrets/state into an image layer. Additive only; does not affect anything
+# outside the Docker build process.
+
+node_modules
+.git
+.env
+.env.local
+.env.*.local
+dist
+build
+coverage
+*.log
+.DS_Store
+.vscode
+.idea
