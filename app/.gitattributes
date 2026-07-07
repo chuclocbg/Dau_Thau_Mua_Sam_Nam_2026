@@ -1,0 +1,7 @@
+# Phase X.9.4 — force LF line endings for files executed inside Linux (Alpine)
+# containers, regardless of the checking-out machine's core.autocrlf setting.
+# Without this, a Windows checkout with autocrlf=true would write CRLF into
+# these files, breaking `#!/bin/sh` execution inside the container (COPY reads
+# the working-tree file as-is, not the git-normalized blob).
+*.sh text eol=lf
+Dockerfile text eol=lf
