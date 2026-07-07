@@ -7,10 +7,30 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.9.4 — Production Hardening: Docker/Production Configuration/Secrets — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.9.5 — Production Hardening: Deployment/Operations/Production Readiness — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.9.4 — Production Hardening: Docker/Production Configuration/Secrets — declared 2026-07-07 (superseded by X.9.5)
+
+**Evidence:** 515 test files, 14,560 tests, 0 failures at freeze time; architecture guard
+confirmed ZERO frozen-file modification — not even under the DI carve-out X.9.2/X.9.3 used.
+
+**Summary:** Implemented a multi-stage `Dockerfile` (deps -> runtime, runs the server via `tsx`,
+non-root user, real `HEALTHCHECK`), extended `docker-compose.yml` additively with opt-in
+`app`/`app-dev` Compose-profile services (Phase M0 default behavior unchanged), `configProfiles.ts`
+(env-var overlay, not a second parser), `environmentValidator.ts` (genuinely delegates to the
+real `loadAppConfigFromEnv()`), `loadEnvironmentSecrets.ts` (reuses the already-installed,
+previously-unused `dotenv`), `configDiagnostics.ts`, and `scripts/validateEnvironment.ts`/
+`start-prod.sh`/`start-dev.sh`. USER-DIRECTED MID-MILESTONE CORRECTION: repository inspection
+found an existing `docker-compose.yml` and `scripts/` convention; reused and extended rather than
+introducing a second compose-file set. Docker itself unavailable in this environment — what WAS
+verified for real: YAML syntax, and `scripts/start-prod.sh` executed end-to-end (validated
+environment, started the real server, answered a real HTTP request) — found and fixed a real bug
+(`dotenv`'s own stdout banner, fixed via its documented `quiet:true` option).
 
 ---
 

@@ -19,160 +19,118 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.9.4 - Production Hardening: Docker/Production Configuration/Secrets - FROZEN"
+current_milestone: "Phase X.9.5 - Production Hardening: Deployment/Operations/Production Readiness - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-07
 milestone_evidence:
-  scope: "Dockerfile (repo root — two-stage build, deps -> runtime, non-root user, HEALTHCHECK
-         against the real /live endpoint, runs the server via tsx, no new bundler); .dockerignore
-         (new); docker-compose.yml extended additively with two opt-in Compose-profile services
-         (app, app-dev) joining the existing dtmsn_internal network — the Phase M0 default
-         (no-profile) behavior is unchanged; src/config/configProfiles.ts
-         (resolveProfile()/applyProfileDefaults() — an env-var overlay, not a second parser);
-         src/config/environmentValidator.ts (validateEnvironment()/formatEnvironmentReport() —
-         genuinely delegates to the real, unmodified loadAppConfigFromEnv()); src/startup/
-         loadEnvironmentSecrets.ts (a thin wrapper around the already-installed, previously-
-         unused dotenv dependency); src/startup/configDiagnostics.ts (buildConfigDiagnostics()/
-         formatConfigDiagnostics() — a redacted config summary); scripts/validateEnvironment.ts
-         (standalone CLI), scripts/start-prod.sh (the Dockerfile's CMD), scripts/start-dev.sh
-         (the app-dev service's command, tsx watch); .gitattributes (new, forces LF for *.sh/
-         Dockerfile); .env.example extended with the new app-level env vars (commented, all
-         optional); docs/infrastructure.md extended with an 'Application Container' section."
-  scope_exclusion: "ZERO frozen files modified this milestone — not even under the
-                    dependency-injection carve-out X.9.2/X.9.3 used (verified: git status shows
-                    no changes to src/config/appConfig.ts, src/bootstrap/buildApplication.ts, or
-                    src/server/httpServer.ts at all — this milestone's config/startup additions
-                    are pure overlays around the existing, unmodified loadAppConfigFromEnv(),
-                    and secrets loading/diagnostics are only ever invoked by the new scripts,
-                    never by the frozen src/server/main.ts). USER-DIRECTED SCOPE CORRECTION
-                    (mid-milestone): the initial plan (before repository inspection) considered
-                    creating separate docker-compose.dev.yml/docker-compose.prod.yml files and a
-                    docker/ subdirectory. Direct inspection found an existing, working
-                    docker-compose.yml (Phase M0) and an existing scripts/ directory (tsx-script
-                    convention) already in place — per explicit instruction, these were REUSED
-                    and EXTENDED (Compose 'profiles' on the same file; new scripts following the
-                    same tsx-script convention) rather than introducing a second, competing
-                    compose file set or directory convention. No packages were installed (dotenv
-                    was already a dependency, unused; npx js-yaml was used only as a one-off,
-                    project-state-unmodifying syntax check, the same precedent Phase M0 itself
-                    already established); package.json was not modified (the new CLI script is
-                    directly invokable via `npx tsx scripts/validateEnvironment.ts` without a
-                    script alias). HONEST BUILD-TOOLING NOTE: no dedicated backend bundler exists
-                    in this repository, so the container runs TypeScript directly via tsx
-                    (already a devDependency), the same path `npm run server` already uses on
-                    the host — documented as a deliberate, minimal-footprint choice, not an
-                    oversight; a full-project `tsc --noEmit` build-time gate was considered and
-                    deliberately excluded since pre-existing, unrelated type errors (confirmed
-                    during the Production Hardening Audit) would fail the image build through no
-                    fault of the containerized code. HONEST VERIFICATION LIMITATION: Docker is
-                    not installed in this environment (re-confirmed: `docker --version` ->
-                    command not found) — the 'production Docker build' and 'container smoke
-                    test' verification items could NOT be literally executed. What WAS verified
-                    for real: YAML syntax (`npx js-yaml docker-compose.yml`, the same one-off
-                    check Phase M0 already used), the full existing test suite, the environment-
-                    validation CLI script running live across development/production/invalid
-                    scenarios, and — critically — scripts/start-prod.sh itself actually executed
-                    end-to-end (validated environment, then started the real server, which
-                    answered a real HTTP request on the configured port) — proving the exact
-                    command sequence the Dockerfile's CMD runs is correct, independent of Docker
-                    itself being available. A real bug was found and fixed this way: dotenv 17.x
-                    prints its own promotional banner to stdout on every load (confirmed in the
-                    installed package's own source), which would have polluted structured JSON
-                    logs; fixed with dotenv's own documented quiet:true option."
-  files_added: "13 new files (Dockerfile, .dockerignore, .gitattributes, 2 config modules, 2
-               startup modules, 3 scripts) + 2 additively-extended files (docker-compose.yml,
-               .env.example) + 1 additively-extended doc (docs/infrastructure.md) + 5 test files
-               (32 new tests: profile resolution/defaulting with explicit-env-always-wins,
-               environment validator parity [spied genuine delegation to the real
-               loadAppConfigFromEnv], real dotenv-backed secrets loading against a real scratch
-               .env file plus graceful missing-file handling, config diagnostics field
-               listing/redaction, and an architecture guard proving zero frozen-file
-               modification and additive-only Docker/Compose structure)."
-  full_suite_result: "515 test files, 14560 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 510 files / 14528 tests at the X.9.3 freeze baseline. One
-                      pre-existing, untouched X.9.3 real-socket timing test
-                      (reasoning-stream-integration.test.ts's cancellation test) flaked once
-                      under heavy full-suite parallel load during this milestone's work, and
-                      passed cleanly on immediate retry and on the final two full-suite runs —
-                      a known characteristic of real-timing-based tests under system load, not a
-                      regression (zero X.9.3 files were touched this milestone, confirmed by git
-                      status)."
-  exit_criteria_met: "Unit tests prove profile resolution (production/test map directly,
-                      anything else defaults to development) and defaulting (profile defaults
-                      fill in only unset/blank env vars, explicit values always win), that
-                      validateEnvironment() genuinely calls the real loadAppConfigFromEnv() (spy-
-                      verified, not reimplemented) and correctly threads profile-aware defaults
-                      through it, that loadEnvironmentSecrets() genuinely loads a real .env-style
-                      file via the real dotenv package (never throwing when the file is absent),
-                      and that configDiagnostics lists every AppConfig field with redaction never
-                      throwing. A live CLI run (`npx tsx scripts/validateEnvironment.ts`) was
-                      exercised for real across the development profile (defaults: debug/pretty),
-                      the production profile (defaults: info/json), and an invalid PORT (correct
-                      exit code 1) — not merely unit-tested. scripts/start-prod.sh was executed
-                      for real end-to-end: validated the environment, then started the actual
-                      server, which answered a real GET /live over an actual socket on the
-                      configured port — the exact command sequence the Dockerfile's CMD runs.
-                      Architecture guard confirms zero new file imports any frozen source
-                      directory (reasoning/knowledge/mcp/multiagent/server/bootstrap/api/health/
-                      logging/metrics/tracing/middleware/streaming/cancellation); zero
-                      reimplemented RetryPolicy/health-check/logging-init/tracing-init logic;
-                      zero frozen-file modification at all this milestone (git status confirmed
-                      clean for every src/reasoning/**, src/knowledge/**, src/conversation/**,
-                      src/providers/**, src/mcp/**, src/multiagent/**, src/server/**,
-                      src/bootstrap/**, src/api/**, src/health/**, src/logging/**,
-                      src/metrics/**, src/tracing/**, src/middleware/**, src/streaming/**,
-                      src/cancellation/** file, including the three files X.9.2/X.9.3 touched
-                      under the DI carve-out — this milestone touches them zero further times);
-                      that docker-compose.yml still defines every Phase M0 service unchanged
-                      plus exactly one network; and that every prior milestone's frozen-file
-                      marker (X.1 through X.9.3, plus restAdapter.ts and the pre-existing
+  scope: "src/startup/waitForReady.ts (waitForReady() — polls a URL until 2xx or retry budget
+         exhausted, genuinely reuses the existing RetryPolicy for backoff); src/startup/
+         smokeChecks.ts (runSmokeChecks() — 6 black-box HTTP checks against a real running
+         deployment: /live, /ready, /health, POST /api/v1/reasoning/answer, /reasoning/batch,
+         /reasoning/answer/stream; imports nothing from src/ at all — verifies the deployed
+         artifact from outside, never by calling the server's own in-process functions);
+         scripts/waitForReady.ts + scripts/smokeTest.ts (thin CLI wrappers); deployment/deploy.sh
+         (validate -> build+start -> wait-for-ready -> smoke-test) and deployment/rollback.sh
+         (checkout ref -> validate -> rebuild -> wait-for-ready -> smoke-test — stateless server,
+         so rollback is just 'redeploy a previous ref'); docs/RUNBOOK.md, docs/DISASTER_RECOVERY.md,
+         docs/RELEASE_CHECKLIST.md, docs/PRODUCTION_READINESS.md (the final Phase X.9 capstone,
+         explicitly requested)."
+  scope_exclusion: "ZERO frozen files modified this milestone — the strictest freeze-compliance
+                    record of any X.9.x milestone, matching X.9.4's own record (git status
+                    confirmed clean for every frozen src/ directory including all of X.9.1-X.9.4's
+                    own files). waitForReady.ts imports only the existing RetryPolicy;
+                    smokeChecks.ts imports nothing from src/ at all (deliberately black-box —
+                    verifying a deployment from outside is a fundamentally different guarantee
+                    than calling the same in-process health-check function the server already
+                    calls). SELF-CAUGHT CORRECTION: the architecture guard's own first run caught
+                    that deployment/rollback.sh did not call scripts/validateEnvironment.ts
+                    before rebuilding (only deploy.sh did) — fixed by adding the same fail-fast
+                    validation step to rollback.sh, for consistency, not merely to satisfy the
+                    test. HONEST VERIFICATION LIMITATION (unchanged from X.9.4): Docker remains
+                    unavailable in this environment (re-confirmed). What WAS verified for real
+                    this milestone: scripts/waitForReady.ts and scripts/smokeTest.ts both run
+                    live against a real server on this host — all 6 smoke checks pass, and the
+                    negative case (nothing listening) correctly reports failure with a non-zero
+                    exit code."
+  files_added: "9 new files (2 startup modules, 2 CLI scripts, 2 deployment scripts, 4 docs:
+               RUNBOOK.md/DISASTER_RECOVERY.md/RELEASE_CHECKLIST.md/PRODUCTION_READINESS.md) +
+               4 test files (27 new tests:
+               waitForReady success/retry/exhausted-budget/network-error paths plus a
+               RetryPolicy.sleep() parity test, smokeChecks all-healthy plus one failure-mode
+               test per check including the 503-with-valid-body-is-healthy edge case, a real-
+               server integration test suite proving both functions genuinely pass against a
+               real Application on a real socket and are deterministic across repeated runs, and
+               an architecture guard)."
+  full_suite_result: "519 test files, 14587 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 515 files / 14560 tests at the X.9.4 freeze baseline."
+  exit_criteria_met: "Unit tests prove waitForReady resolves immediately on first success,
+                      retries until success within budget, reports ready:false with the last
+                      status/error after exhausting the retry budget, and genuinely delegates
+                      backoff timing to RetryPolicy.prototype.sleep() (spy-verified). Unit tests
+                      prove every one of the 6 smoke checks both passes when healthy and fails
+                      with a descriptive detail message for its specific failure mode (non-ok
+                      status, missing expected field, malformed response envelope, missing SSE
+                      result frame), that a 503 /ready response with a valid ready:false body is
+                      correctly treated as a successful CHECK (the endpoint answered correctly,
+                      readiness itself being false is not a check failure), and that the whole
+                      suite never throws even when fetch itself rejects. A true end-to-end
+                      integration test — a real Application wired into a real Fastify instance
+                      on a real listening socket — proves runSmokeChecks() and waitForReady()
+                      both genuinely pass against the complete real X.9.1-X.9.3 chain,
+                      deterministically across repeated runs. A live CLI run on this host
+                      confirmed both scripts/waitForReady.ts and scripts/smokeTest.ts work
+                      end-to-end against a real running server (all 6 checks PASS) and correctly
+                      report failure for a URL nothing is listening on. Architecture guard
+                      confirms waitForReady.ts imports only RetryPolicy; smokeChecks.ts imports
+                      nothing from src/ at all; zero reimplemented RetryPolicy/health-check/
+                      config-loading/startup/logging/metrics logic; deployment/*.sh genuinely
+                      reuse (not duplicate) the existing validateEnvironment/waitForReady/
+                      smokeTest scripts; zero frozen-file modification at all this milestone,
+                      including every X.9.4 file; docker-compose.yml still defines every Phase
+                      M0 + X.9.4 service unchanged; and every prior milestone's frozen-file
+                      marker (X.1 through X.9.4, plus restAdapter.ts and the pre-existing
                       provider files) is unchanged."
-  frozen_interfaces_touched: "None at all — the strictest freeze-compliance record of any X.9.x
-                              milestone so far. src/config/appConfig.ts,
-                              src/bootstrap/buildApplication.ts, and src/server/httpServer.ts
-                              (the three files X.9.2/X.9.3 touched under the DI carve-out) were
-                              NOT touched this milestone — configProfiles.ts/
-                              environmentValidator.ts compose around loadAppConfigFromEnv() from
-                              the outside, without editing it. Verified by git status (zero diff
-                              in any frozen src/ directory) and architecture guard."
+  frozen_interfaces_touched: "None at all. Verified by git status (zero diff in any frozen src/
+                              directory, including every file X.9.2/X.9.3/X.9.4 previously
+                              touched under their respective DI carve-outs) and architecture
+                              guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Phase X.9.5 (Batch E — deployment scripts/production startup/health
-                        verification/smoke tests/operational runbook) or any other later
-                        milestone — none authorized to begin without separate explicit approval"
-next_milestone_status: "NOT AUTHORIZED. Phase X.9.4's exit criteria confirmed met and frozen this
-                         session, per explicit instruction to stop and wait after every frozen
-                         milestone. Batch D (Docker/Production Configuration/Secrets) is
-                         complete: the backend server can now be built and run as a container
-                         (opt-in, alongside the existing Phase M0 backing services, never
-                         replacing the host-run path), with profile-aware configuration,
-                         environment validation, and secrets loading all reusing the existing,
-                         unmodified config parser. UNVERIFIED (Docker unavailable in this
-                         environment): the Dockerfile has never actually been built into an
-                         image, the app/app-dev Compose services have never actually been
-                         started, and the container HEALTHCHECK has never actually run — the
-                         First-Run Checklist in docs/infrastructure.md tracks this honestly, not
-                         marked done. Remaining PRODUCTION_HARDENING_AUDIT.md findings not yet
-                         addressed: no deployment scripts/operational runbook beyond what this
-                         milestone's start-prod.sh/start-dev.sh provide (Batch E), no auth/
-                         permission layer on the API routes, no rate limiting, no alerting,
-                         Multi-Agent batch streaming intentionally not built, true mid-flight
-                         cancellation of the frozen reasoning/Tool Calling/MCP internals remains
-                         an HTTP-layer-only bound, the missingEvidence-reconciliation question,
-                         the superseded-item/decision gaps, and the still-open ResolvedKnowledge
-                         extension decision all remain unresolved, carried forward unchanged
-                         from earlier freezes."
-next_milestone_blocker: "None technical for further code milestones. The container smoke test
-                         and production Docker build specifically remain blocked on Docker
-                         becoming available in whatever environment next attempts them — not a
-                         blocker for X.9.5's own scope (deployment scripts/runbook), which does
-                         not require a live container any more than X.9.4's own verification did."
+next_active_milestone: "None currently proposed. Phase X.9 (Production Hardening, Batches A-E)
+                        is now COMPLETE per this milestone's explicit closing summary
+                        (docs/PRODUCTION_READINESS.md). Any future work is a new, separately-
+                        scoped and separately-authorized phase — not an automatic X.9.6."
+next_milestone_status: "NOT AUTHORIZED — and no specific next milestone is even proposed yet.
+                         Phase X.9.5's exit criteria confirmed met and frozen this session, per
+                         explicit instruction to stop immediately and not begin any new phase
+                         automatically. docs/PRODUCTION_READINESS.md is the requested final
+                         production readiness summary: Architecture readiness 8.5 -> 9/10,
+                         Production readiness 3 -> 7/10 (up from the original
+                         PRODUCTION_HARDENING_AUDIT.md baseline). The single most consequential
+                         remaining gap, stated explicitly and not softened: no authentication/
+                         authorization layer exists on the now-real, now-reachable HTTP+SSE
+                         server. Also still open, all carried forward unchanged and listed in
+                         full in docs/PRODUCTION_READINESS.md: two competing retry abstractions
+                         in the unrelated P6 track, no alerting, no mid-flight cancellation of
+                         frozen reasoning/Tool-Calling/MCP internals, no circuit breaker for a
+                         failing MCP server, no rate limiting, no reasoning-result caching, no
+                         dedicated sustained-load test, no CI/CD pipeline, and Docker itself
+                         still never actually built/run in this environment. The
+                         missingEvidence-reconciliation question, the superseded-item/decision
+                         gaps, and the still-open ResolvedKnowledge extension decision remain
+                         unresolved, carried forward unchanged from the X.4 freeze."
+next_milestone_blocker: "N/A — no next milestone proposed. Authentication/authorization is named
+                         as the natural next priority in docs/PRODUCTION_READINESS.md, but
+                         beginning any new work requires its own explicit human authorization
+                         and scoping, per this milestone's explicit instruction not to continue
+                         automatically."
 
-immediate_next_action: "None assigned as of this writing. Waiting for explicit human approval
-                        to begin Phase X.9.5."
+immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
+                        after Phase X.9."
 
 do_not:
-  - "Do not begin Phase X.9.5 (or any later batch/milestone) without explicit approval."
+  - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
+     there is no pre-agreed 'next batch' after X.9.5."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
@@ -184,25 +142,30 @@ do_not:
      src/config/configProfiles.ts, src/config/environmentValidator.ts,
      src/startup/loadEnvironmentSecrets.ts, src/startup/configDiagnostics.ts, Dockerfile,
      docker-compose.yml, scripts/start-prod.sh, scripts/start-dev.sh,
-     scripts/validateEnvironment.ts (X.9.4, frozen), or
+     scripts/validateEnvironment.ts (X.9.4, frozen), src/startup/waitForReady.ts,
+     src/startup/smokeChecks.ts, scripts/waitForReady.ts, scripts/smokeTest.ts,
+     deployment/deploy.sh, deployment/rollback.sh (X.9.5, frozen), or
      src/ai/{domain,application,infrastructure}/ (X.2 Batch B, frozen), or src/ai/validation/
      (X.4, frozen) outside of a newly-approved milestone. src/config/appConfig.ts,
      src/bootstrap/buildApplication.ts, and src/server/httpServer.ts may be touched again ONLY
      for additive dependency-injection/wiring, exactly as X.9.2/X.9.3 themselves did — never a
-     redesign of their existing logic. docker-compose.yml/docs/infrastructure.md may be extended
-     again additively (new services/sections) but the existing Phase M0 + X.9.4 content must
-     never be replaced or redesigned."
+     redesign of their existing logic. docker-compose.yml/docs/infrastructure.md/the docs/ files
+     added this milestone may be extended again additively but existing content must never be
+     replaced or redesigned."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
      track), or any of the pre-existing src/providers/*.ts files (the unrelated 'P6' track,
      e.g. ToolCallingAgent.ts, AgentRuntime.ts, MultiAgentCoordinator.ts, ProviderManager.ts), or
      src/interface/restAdapter.ts (Phase 14, unrelated, pre-existing Fastify pattern) — none of
      these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts/
-     MetricsCollector.ts are reused by X.6/X.7/X.8/X.9.1/X.9.2/X.9.3 but must remain unmodified.
-     dotenv (already a dependency) is reused by X.9.4; do not add any new package."
+     MetricsCollector.ts are reused by X.6/X.7/X.8/X.9.1/X.9.2/X.9.3/X.9.5 but must remain
+     unmodified. dotenv (already a dependency) is reused by X.9.4; do not add any new package."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
-     live database. Do not claim the X.9.4 Docker image/containers are 'verified' — Docker is
-     unavailable in this environment; only the underlying scripts/config were verified for
-     real, never an actual container build/run."
+     live database. Do not claim Docker images/containers are 'verified' — Docker is
+     unavailable in this environment across X.9.4 and X.9.5; only the underlying scripts/
+     config/CLI tools were verified for real, never an actual container build/run. Do not claim
+     this server is safe for untrusted traffic — no authentication/authorization layer exists;
+     docs/PRODUCTION_READINESS.md states this explicitly and it must not be softened in any
+     future summary without a real auth milestone actually being built first."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -556,7 +519,28 @@ historical_sequence_to_reach_here:
      found and fixed a real bug this way (dotenv's own stdout banner polluting structured logs,
      fixed via its documented quiet:true option). Unit tests, architecture guard (zero
      frozen-file modification, additive-only Docker/Compose structure) — full repo suite green
-     (14560 tests) — FROZEN — you are here"
+     (14560 tests) — FROZEN"
+  - "Phase X.9.5 (Production Hardening: Deployment/Operations/Production Readiness — Batch E)
+     implemented: waitForReady.ts (polls a URL until ready, genuinely reuses RetryPolicy),
+     smokeChecks.ts (6 black-box HTTP checks against a real deployment — /live, /ready, /health,
+     the three reasoning/coordinator/streaming endpoints — imports nothing from src/ at all),
+     scripts/waitForReady.ts + scripts/smokeTest.ts (CLI wrappers), deployment/deploy.sh +
+     deployment/rollback.sh (validate -> build/deploy -> wait-for-ready -> smoke-test; stateless
+     server means rollback is just 'redeploy a previous ref'), docs/RUNBOOK.md,
+     docs/DISASTER_RECOVERY.md (makes the server's statelessness explicit — RPO/RTO reduce to
+     redeploy time), docs/RELEASE_CHECKLIST.md, and docs/PRODUCTION_READINESS.md — the final
+     Phase X.9 capstone, explicitly requested: Architecture readiness 8.5 -> 9/10, Production
+     readiness 3 -> 7/10, every one of PRODUCTION_HARDENING_AUDIT.md's 20 original findings
+     re-assessed as resolved/clarified/still-open, with authentication/authorization named
+     explicitly as the single most consequential remaining gap, not softened. SELF-CAUGHT FIX:
+     the architecture guard's own first run caught that rollback.sh was missing the same
+     fail-fast environment validation deploy.sh already had — fixed for real consistency, not
+     just to pass the test. ZERO frozen files modified — matches X.9.4's strictest-yet record.
+     Docker still unavailable in this environment; what WAS verified for real: both new CLI
+     scripts run live against a real server (all 6 smoke checks PASS; the negative case
+     correctly reports failure with exit code 1). Unit tests, a true end-to-end integration
+     test suite against a real listening socket, architecture guard — full repo suite green
+     (14587 tests) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
