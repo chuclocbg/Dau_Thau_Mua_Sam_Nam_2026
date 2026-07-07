@@ -8,23 +8,23 @@ describe('loadAppConfigFromEnv — defaults', () => {
       ok: true,
       value: {
         port: 3000, host: '0.0.0.0', nodeEnv: 'development', logLevel: 'info', logFormat: 'json',
-        shutdownTimeoutMs: 10_000,
+        shutdownTimeoutMs: 10_000, streamTimeoutMs: 30_000,
       },
     })
   })
 })
 
 describe('loadAppConfigFromEnv — overrides', () => {
-  it('reads PORT/HOST/NODE_ENV/LOG_LEVEL/LOG_FORMAT/SHUTDOWN_TIMEOUT_MS from the given env map', () => {
+  it('reads PORT/HOST/NODE_ENV/LOG_LEVEL/LOG_FORMAT/SHUTDOWN_TIMEOUT_MS/STREAM_TIMEOUT_MS from the given env map', () => {
     const result = loadAppConfigFromEnv({
       PORT: '8080', HOST: '127.0.0.1', NODE_ENV: 'production', LOG_LEVEL: 'debug', LOG_FORMAT: 'pretty',
-      SHUTDOWN_TIMEOUT_MS: '5000',
+      SHUTDOWN_TIMEOUT_MS: '5000', STREAM_TIMEOUT_MS: '15000',
     })
     expect(result).toEqual({
       ok: true,
       value: {
         port: 8080, host: '127.0.0.1', nodeEnv: 'production', logLevel: 'debug', logFormat: 'pretty',
-        shutdownTimeoutMs: 5000,
+        shutdownTimeoutMs: 5000, streamTimeoutMs: 15_000,
       },
     })
   })
@@ -64,6 +64,12 @@ describe('loadAppConfigFromEnv — validation', () => {
     const result = loadAppConfigFromEnv({ SHUTDOWN_TIMEOUT_MS: '-1' })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('INVALID_SHUTDOWN_TIMEOUT')
+  })
+
+  it('rejects a non-positive STREAM_TIMEOUT_MS', () => {
+    const result = loadAppConfigFromEnv({ STREAM_TIMEOUT_MS: '0' })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe('INVALID_STREAM_TIMEOUT')
   })
 
   it('never throws for a garbage env map', () => {

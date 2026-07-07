@@ -15,6 +15,7 @@ function fakeApp(overrides: Partial<Application> = {}): Application {
     metrics: {} as Application['metrics'],
     tracer: {} as Application['tracer'],
     nodeEnv: 'test',
+    streamTimeoutMs: 30_000,
     ...overrides,
   }
 }
