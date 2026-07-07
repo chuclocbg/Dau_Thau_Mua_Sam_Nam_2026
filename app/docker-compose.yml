@@ -8,6 +8,17 @@ name: dtmsn
 # All credentials come from .env (git-ignored). Copy .env.example (full local
 # dev) or .env.template (infra-only, e.g. for a VPS) to .env before running:
 #   docker compose up -d
+#
+# ── Phase X.9.4 addition — Application Container ──────────────────────────────
+# Two OPT-IN services (Compose "profiles", never started by a bare `docker compose up -d`):
+#   app      (profile: app) — the built production image (Dockerfile, target "runtime")
+#   app-dev  (profile: dev) — the same image's dependency layer, source bind-mounted, run
+#            directly via tsx for iteration without a rebuild
+# Both join the SAME dtmsn_internal network as the existing backing services — no new network,
+# no second compose file, no competing container strategy. Run with:
+#   docker compose --profile app up -d --build   # production-shaped run
+#   docker compose --profile dev up app-dev       # iterative development run
+# Default `docker compose up -d` behavior (backing services only) is completely unchanged.
 
 networks:
   dtmsn_internal:
@@ -123,3 +134,63 @@ services:
       exit 0
       "
     restart: "no"
+
+  # ── Phase X.9.4: application container (opt-in, profile "app") ────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: dtmsn_app
+    restart: unless-stopped
+    profiles: ["app"]
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      HOST: 0.0.0.0
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-10000}
+      STREAM_TIMEOUT_MS: ${STREAM_TIMEOUT_MS:-30000}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - dtmsn_internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Phase X.9.4: application container, development variant (opt-in, profile "dev") ──
+  # Source bind-mounted for fast iteration; runs the exact same src/server/main.ts entrypoint
+  # via the exact same tsx runtime as `npm run server` on the host — no separate dev-only code
+  # path, only a different launch context (container vs. host) and NODE_ENV.
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    container_name: dtmsn_app_dev
+    restart: "no"
+    profiles: ["dev"]
+    working_dir: /app
+    command: ["sh", "scripts/start-dev.sh"]
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-10000}
+      STREAM_TIMEOUT_MS: ${STREAM_TIMEOUT_MS:-30000}
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.app.json:/app/tsconfig.app.json
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - dtmsn_internal
