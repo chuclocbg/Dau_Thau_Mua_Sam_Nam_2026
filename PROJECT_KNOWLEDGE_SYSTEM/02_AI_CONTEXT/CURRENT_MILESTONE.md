@@ -19,77 +19,98 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.5 - Output Formatting - FROZEN"
+current_milestone: "Phase X.6 - Tool Calling - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-07
 milestone_evidence:
-  scope: "src/reasoning/domain/conversationResponseTypes.ts (ConversationResponse,
-         ResponseSection, FormattingOptions — reuses ConfidenceLabel [Batch A] as-is);
-         src/reasoning/application/outputFormatter.ts (formatConversationResponse() — a pure
-         presentation function consuming X.4.7's ReasoningAnswerResult; reuses
-         answerComposer.ts's buildExplanation() and determineHumanReview() [Batch A, frozen,
-         already exported, never called by the native pipeline before now] directly)."
+  scope: "src/reasoning/domain/toolCallingTypes.ts (ToolInvocationDecision, ToolDecider,
+         NormalizedToolResult, ToolAugmentedResponse — reuses ToolCall [src/providers/
+         ToolRegistry.ts] and ConversationResponse/ReasoningAnswerResult as-is);
+         src/reasoning/application/toolCallingStage.ts (runToolCallingStage(),
+         neverInvokeTool — a thin orchestration stage consuming X.5's ConversationResponse;
+         genuinely reuses src/providers/ToolExecutor.ts's ToolExecutor.execute() [constructor-
+         injected, never constructed by this milestone] and src/providers/RetryPolicy.ts's
+         RetryPolicy constructor + .sleep() timing directly, with a NEW tool-execution-specific
+         retryable-error-code set since RetryPolicy's own isTransient()/isNonRetryable() classify
+         a different, LLM-provider vocabulary)."
   scope_exclusion: "Zero reasoning, retrieval, ranking, conflict resolution, confidence
-                    computation, citation generation, MCP, Tool Calling, Multi-Agent — confirmed
-                    absent by architecture guard. TRANSPARENCY FINDING (direct inspection, not
-                    assumed from documentation): 'the existing Output Formatter'
-                    (src/ai/validation/responseFormatter.ts's formatFinalAnswer()) is NOT
-                    reusable here — it operates on LLMOutput + AIValidationResult + AIContext
-                    (the OLD, LLM-generated-text validation path), a completely different shape
-                    with no overlapping fields to ReasoningAnswerResult. Not imported anywhere
-                    in this milestone. buildExplanation()'s appliedArticles parameter is
-                    honestly passed as [] (verified its function body never reads that
-                    parameter at all); determineHumanReview() is called with honest empty
-                    missingEvidence/unresolvedExceptionCount/primaryItemConfidences — confidence
-                    and conflicts, the two signals this milestone actually has, still correctly
-                    drive its output. NUMBERING NOTE: PHASE_X_EXECUTION_PLAN.md already assigns
-                    X.5 to Tool Calling — the same kind of collision already reconciled once for
-                    X.4; recorded transparently, tracked under the user's own 'Phase X.5
-                    (Output Formatting)' label for this session."
-  files_added: "2 implementation files + 4 test files (31 tests: 13 unit section-structure/
-               citation-placement/localization/immutability/determinism, 5 parity tests proving
-               reuse fidelity against buildExplanation()/determineHumanReview() called
-               directly, 4 true end-to-end integration + replay tests against a real
-               IKnowledgePlatform through the complete ReasoningEnginePipeline, 9 architecture
-               guard)"
-  full_suite_result: "481 test files, 14303 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 477 files / 14272 tests at the Final X.4 Integration baseline"
-  exit_criteria_met: "Parity tests prove the decision-section body is byte-for-byte
-                      buildExplanation().summary and warnings are exactly
-                      determineHumanReview()'s reason string split for display — both called
-                      directly with the same inputs and asserted equal, not reimplemented. Unit
-                      tests prove section structure (decision/confidence always present,
-                      primary/supporting/disputed conditional), citation placement/ordering
-                      (never re-sorted), localization (vi default, en supported), markdown
-                      assembly, deep immutability, non-mutation, determinism. A true end-to-end
-                      integration test exercises the complete chain — a real intent detector, a
-                      real memory-backed IKnowledgePlatform + LegalProvider, the complete native
-                      Reasoning Engine (ReasoningEnginePipeline), and formatConversationResponse()
-                      — for an uncontested question, a real hierarchy conflict (disputed section
-                      + warning + reduced confidence), and an empty platform; deterministic
-                      replay confirmed through the full chain. Architecture guard confirms zero
-                      src/knowledge/, src/mcp/, src/conversation/, or src/ai/ import (critically
-                      including src/ai/validation/, the existing but unrelated formatter); that
-                      the only production dependency is answerComposer.ts; zero MCP/Tool
-                      Calling/Multi-Agent/PromptBuilder/LLM adapter/Output Validation reference;
-                      zero reasoning/retrieval/ranking/conflict/confidence/citation logic; and
-                      that every prior milestone's frozen-file marker (X.3.1 through the Final
-                      X.4 Integration, plus answerComposer.ts and responseFormatter.ts) is
-                      unchanged."
+                    computation, citation generation, MCP, Multi-Agent, LLM Adapter, Prompt
+                    Building, Output Validation, Production Hardening — confirmed absent by
+                    architecture guard. TRANSPARENCY FINDING (direct inspection, not assumed
+                    from documentation): src/providers/ToolCallingAgent.ts and
+                    src/providers/AgentRuntime.ts already exist under the pre-existing,
+                    unrelated 'P6' provider-layer track, but both require an actual LLM call via
+                    ProviderManager.chat() and detect tool-call syntax embedded in raw LLM
+                    response text — neither applies to Phase X's deterministic, non-LLM-driven
+                    pipeline and neither is imported. src/providers/ToolRegistry.ts and
+                    src/providers/ToolExecutor.ts ARE genuinely reusable (fully generic, no LLM
+                    coupling) and are reused directly, unmodified. Tool REGISTRATION (which real
+                    tools exist) is entirely the caller's concern — this milestone never
+                    constructs a ToolRegistry or registers a tool of its own; the default
+                    ToolDecider (neverInvokeTool) always declines, honestly reflecting that no
+                    real tool trigger rule exists yet for this domain rather than fabricating
+                    one. NUMBERING NOTE: PHASE_X_EXECUTION_PLAN.md's own X.5 already means Tool
+                    Calling (MCP-based) — this milestone's 'Tool Calling' is explicitly distinct
+                    from MCP, the same kind of collision already reconciled for X.4/X.5;
+                    recorded transparently, tracked under the user's own 'Phase X.6 (Tool
+                    Calling)' label for this session. Also noted:
+                    PHASE_X4_FINAL_ARCHITECTURE_AUDIT.md, named in this milestone's required
+                    reading list, does not exist — only PHASE_X3_FINAL_ARCHITECTURE_AUDIT.md
+                    does; flagged transparently, not fabricated."
+  files_added: "2 implementation files + 4 test files (30 tests: 12 unit decision/retry/
+               normalization/immutability/determinism/timeout, 5 parity tests proving genuine
+               delegation to ToolExecutor.execute() and RetryPolicy.sleep()/.maxAttempts rather
+               than reimplementation, 3 true end-to-end integration tests against a real
+               ToolRegistry/ToolExecutor through the complete ReasoningEnginePipeline +
+               formatConversationResponse(), 10 architecture guard)"
+  full_suite_result: "485 test files, 14333 tests, 0 failures (pool=forks, full repo, no filter);
+                      up from 481 files / 14303 tests at the X.5 freeze baseline"
+  exit_criteria_met: "Parity tests prove every invocation attempt is a real
+                      ToolExecutor.execute() call (spied, asserted called with the exact ToolCall
+                      the decider produced, once per retry attempt) and that backoff sleeps
+                      delegate to RetryPolicy.prototype.sleep() (spied, asserted called
+                      maxAttempts-1 times with the correct attempt indices) — not reimplemented.
+                      Unit tests prove decision logic (default decider never invokes; injected
+                      decider's call is honored; shouldInvoke:true with no call is treated as a
+                      decline), retry behavior (retryable TOOL_EXECUTION_FAILED retried up to
+                      maxAttempts; non-retryable INVALID_ARGUMENTS never retried; retry stops
+                      immediately on success), normalization (success/failure shape,
+                      errorMessage present only on failure), timeout wiring (timeoutMs passed
+                      through to the executor, surfaces as a TIMEOUT failure), deep immutability,
+                      non-mutation of the input ConversationResponse, and determinism. A true
+                      end-to-end integration test exercises the complete chain — a real intent
+                      detector, a real memory-backed IKnowledgePlatform + LegalProvider, the
+                      complete native Reasoning Engine, the real Output Formatter, and a real
+                      ToolRegistry/ToolExecutor with an actual registered tool — for a
+                      tool-declined default path, a real tool invocation, and an empty platform.
+                      Architecture guard confirms zero src/knowledge/, src/mcp/,
+                      src/conversation/, or src/ai/ import; that the only src/providers/ imports
+                      are ToolExecutor.ts/ToolRegistry.ts/RetryPolicy.ts — never
+                      ToolCallingAgent/AgentRuntime/ProviderManager/ProviderRegistry/
+                      ConversationMemory/ConversationBuilder/MultiAgentCoordinator; zero MCP/
+                      Multi-Agent/Anthropic/OpenAI/Gemini/PromptBuilder/LLM adapter/Output
+                      Validation reference; zero reasoning/retrieval/ranking/conflict/confidence/
+                      citation/answer-composition/output-formatting logic; zero mutation of the
+                      input ConversationResponse/ReasoningAnswerResult; and that every prior
+                      milestone's frozen-file marker (X.3.1 through X.5, plus answerComposer.ts,
+                      responseFormatter.ts, and the pre-existing ToolRegistry/ToolExecutor/
+                      RetryPolicy provider files) is unchanged."
   frozen_interfaces_touched: "None. Does not import ReasoningEnginePipeline, any X.4.x stage,
-                              or src/ai/validation/ at all — consumes only a
-                              ReasoningAnswerResult as a plain value — verified by git diff and
-                              architecture guard."
+                              outputFormatter.ts, answerComposer.ts, or src/ai/validation/ at
+                              all — consumes only a ConversationResponse and
+                              ReasoningAnswerResult as plain values, and a caller-injected
+                              ToolExecutor instance — verified by git diff and architecture
+                              guard. Zero modification to src/providers/ToolRegistry.ts,
+                              ToolExecutor.ts, or RetryPolicy.ts."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "Tool Calling, MCP, Multi-Agent, or Production Hardening — none
-                        authorized to begin without separate explicit approval — or any other
-                        later milestone"
-next_milestone_status: "NOT AUTHORIZED. Phase X.5's exit criteria confirmed met and frozen this
-                         session. ConversationResponse exists but is not yet consumed anywhere
-                         — wiring formatConversationResponse() into an actual conversation
-                         session/API entry point (using Conversation Core's
-                         AdvisoryConversationMessage) remains open, not-yet-authorized work. The
+next_active_milestone: "MCP, Multi-Agent, or Production Hardening — none authorized to begin
+                        without separate explicit approval — or any other later milestone"
+next_milestone_status: "NOT AUTHORIZED. Phase X.6's exit criteria confirmed met and frozen this
+                         session. ToolAugmentedResponse exists but is not yet consumed anywhere
+                         — wiring runToolCallingStage() into an actual conversation session/API
+                         entry point, and deciding on a real ToolDecider for this domain (no
+                         tool trigger rule exists yet), remain open, not-yet-authorized work. The
                          missingEvidence-reconciliation question, the superseded-item/decision
                          gaps (both requiring RuleEvaluationResult as a stated input to close),
                          and the still-open ResolvedKnowledge extension decision all remain
@@ -101,17 +122,18 @@ immediate_next_action: "None assigned as of this writing. Waiting for explicit h
                         to begin the next milestone."
 
 do_not:
-  - "Do not begin Tool Calling, MCP, Multi-Agent, or Production Hardening without explicit
-     approval."
+  - "Do not begin MCP, Multi-Agent, or Production Hardening without explicit approval."
   - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
-     X.4.7 + Final X.4 Integration + X.5, frozen), src/ai/{domain,application,infrastructure}/
+     X.4.7 + Final X.4 Integration + X.5 + X.6, frozen), src/ai/{domain,application,infrastructure}/
      (X.2 Batch B, frozen), or
      src/ai/validation/ (X.4, frozen) outside of a newly-approved milestone."
   - "Do not modify src/reasoning/reasoningEngine.ts or src/reasoning/decisionModel.ts (Phase 15
-     track), or any of the 32 pre-existing flat src/ai/*.ts files (the unrelated '8-G' track,
-     e.g. llmBridge.ts) — none of these belong to Phase X."
+     track), or any of the pre-existing src/providers/*.ts files (the unrelated 'P6' track,
+     e.g. ToolCallingAgent.ts, AgentRuntime.ts, ProviderManager.ts) — none of these belong to
+     Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts are reused by X.6 but must remain
+     unmodified."
   - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
      live database."
 
@@ -326,7 +348,22 @@ historical_sequence_to_reach_here:
      LLM-text-validation path, not reusable for ReasoningAnswerResult) — unit tests, parity
      tests proving reuse fidelity, true end-to-end integration + replay tests through the
      complete ReasoningEnginePipeline against a real IKnowledgePlatform, architecture guard —
-     full repo suite green (14303 tests) — FROZEN — you are here"
+     full repo suite green (14303 tests) — FROZEN"
+  - "Phase X.6 (Tool Calling) implemented: toolCallingTypes.ts (ToolInvocationDecision,
+     ToolDecider, NormalizedToolResult, ToolAugmentedResponse — reuses ToolCall from the
+     pre-existing, unrelated 'P6' src/providers/ToolRegistry.ts as-is), toolCallingStage.ts
+     (runToolCallingStage(), neverInvokeTool — reuses src/providers/ToolExecutor.ts's
+     ToolExecutor.execute() [constructor-injected] and src/providers/RetryPolicy.ts's
+     RetryPolicy constructor + .sleep() timing directly; supplies its own tool-execution-
+     specific retryable-error-code set since RetryPolicy's own isTransient()/isNonRetryable()
+     classify a different, LLM-provider-specific vocabulary; found by direct inspection that
+     src/providers/ToolCallingAgent.ts/AgentRuntime.ts are NOT reusable — both require an actual
+     LLM call via ProviderManager.chat(), out of scope) — unit tests, parity tests proving
+     genuine delegation to ToolExecutor.execute()/RetryPolicy.sleep() rather than
+     reimplementation, real-platform end-to-end integration tests (real ToolRegistry/
+     ToolExecutor with an actual registered tool, through the complete ReasoningEnginePipeline +
+     formatConversationResponse()), architecture guard — full repo suite green (14333 tests) —
+     FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

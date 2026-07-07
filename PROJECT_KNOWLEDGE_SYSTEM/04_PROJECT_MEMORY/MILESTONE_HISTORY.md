@@ -7,10 +7,34 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.5 — Output Formatting — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.6 — Tool Calling — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.5 — Output Formatting — declared 2026-07-07 (superseded by X.6)
+
+**Evidence:** 481 test files, 14,303 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/mcp/`/`src/conversation/`/`src/ai/` import (critically
+including `src/ai/validation/`, the existing but unrelated formatter) and that every prior
+milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `conversationResponseTypes.ts` (`ConversationResponse`,
+`ResponseSection`, `FormattingOptions` — reused `ConfidenceLabel`) and `outputFormatter.ts`
+(`formatConversationResponse()` — a pure presentation function consuming X.4.7's
+`ReasoningAnswerResult`; reused `answerComposer.ts`'s `buildExplanation()`/
+`determineHumanReview()` directly, both never called by the native pipeline before now). Found
+by direct inspection that "the existing Output Formatter"
+(`src/ai/validation/responseFormatter.ts`'s `formatFinalAnswer()`) is unrelated — it operates on
+the OLD `LLMOutput`/`AIValidationResult`/`AIContext` LLM-text-validation path, not reusable for
+`ReasoningAnswerResult`. Parity tests proved the decision section body is byte-for-byte
+`buildExplanation().summary` and warnings are exactly `determineHumanReview()`'s reason string
+split for display. A true end-to-end integration test proved the complete chain — real intent
+detector, real memory-backed `IKnowledgePlatform` + `LegalProvider`, complete
+`ReasoningEnginePipeline`, `formatConversationResponse()` — for an uncontested question, a real
+hierarchy conflict, and an empty platform; deterministic replay confirmed.
 
 ---
 
