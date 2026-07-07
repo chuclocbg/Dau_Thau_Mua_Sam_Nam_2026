@@ -19,7 +19,11 @@ export interface LoadSecretsResult {
 }
 
 export function loadEnvironmentSecrets(path?: string): LoadSecretsResult {
-  const result = loadDotEnv(path !== undefined ? { path } : {})
+  // quiet:true suppresses dotenv's own stdout banner (a promotional "tip" line the package
+  // itself prints on every successful load, confirmed in node_modules/dotenv/lib/main.js) so it
+  // never pollutes structured JSON log output — a real, verified option on the installed
+  // version, not a workaround for anything this file does.
+  const result = loadDotEnv({ quiet: true, ...(path !== undefined ? { path } : {}) })
   if (result.error !== undefined) {
     return { loaded: false, error: result.error.message }
   }
