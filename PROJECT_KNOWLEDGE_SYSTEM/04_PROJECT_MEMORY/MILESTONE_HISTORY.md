@@ -7,10 +7,29 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.9.3 — Production Hardening: Streaming/SSE/HTTP Cancellation — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.9.4 — Production Hardening: Docker/Production Configuration/Secrets — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.9.3 — Production Hardening: Streaming/SSE/HTTP Cancellation — declared 2026-07-07 (superseded by X.9.4)
+
+**Evidence:** 510 test files, 14,528 tests, 0 failures at freeze time; architecture guard
+confirmed the pure streaming/cancellation files import nothing beyond Node builtins, and that
+every prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `sseTypes.ts`/`sseWriter.ts` (backpressure-safe SSE framing),
+`streamRace.ts` (the HTTP-layer cancellation/timeout boundary), `requestAbortSignal.ts`
+(client-disconnect detection), and `reasoningStreamRoute.ts`
+(`POST /api/v1/reasoning/answer/stream` — streams a single reasoning answer's lifecycle over SSE
+via the exact same real, frozen chain X.9.1's `reasoningRoutes.ts` already calls). DI-only
+additions to `appConfig.ts`/`buildApplication.ts`/`httpServer.ts` (+`streamTimeoutMs`, +route
+registration). TOOLING FINDING (verified by direct reproduction): Fastify's `inject()` does not
+support `reply.hijack()` + raw-response streaming — every SSE test binds a real listening socket
+instead. A real smoke test (actual process, actual socket, `curl -N`) confirmed genuine
+incremental SSE delivery.
 
 ---
 
