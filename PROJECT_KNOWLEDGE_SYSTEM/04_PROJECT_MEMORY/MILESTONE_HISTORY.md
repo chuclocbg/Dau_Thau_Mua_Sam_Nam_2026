@@ -7,10 +7,35 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.7 — MCP Integration — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.8 — Multi-Agent Orchestration — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.7 — MCP Integration — declared 2026-07-07 (superseded by X.8)
+
+**Evidence:** 489 test files, 14,366 tests, 0 failures at freeze time; architecture guard
+confirmed zero `src/knowledge/`/`src/ai/`/`src/conversation/` import, that
+`mcpTypes.ts`/`mcpClient.ts`/`httpMCPTransport.ts` never import `src/reasoning/` at all, and
+that every prior milestone's frozen-file marker was unchanged.
+
+**Summary:** Implemented `mcpTypes.ts` (`MCPToolDescriptor`, `MCPRequest`, `MCPResponse<T>`,
+`MCPClientError(Code)`, `MCPClientResult<T>`, `MCPTransport` — reused `ToolParameter` for
+`inputSchema` as-is), `httpMCPTransport.ts` (`HttpMCPTransport` — reused `RestClient.post()` for
+the network call), `mcpClient.ts` (`MCPClient` — connection lifecycle, capability discovery,
+tool execution; reused `RetryPolicy`'s constructor + `.sleep()` with its own MCP-transport-
+specific retryable-code set), and `mcpToolAdapter.ts` (`registerMCPTools()` — the single
+composition point: discovers remote tools and registers each as an ordinary `ToolDefinition`
+into the SAME, already-frozen `ToolRegistry` that local tools use, so `ToolExecutor`/
+`ToolCallingStage` needed zero MCP-awareness and zero changes). Found by direct inspection that
+`PHASE_X_EXECUTION_PLAN.md`'s own pre-planned `MCPToolRegistry`/`MCPGateway` design, drafted
+before Phase X.6 existed, would have duplicated Tool Calling/`ToolRegistry` — not built; the
+`src/mcp/` directory reservation was honored, the internal design was not. A true end-to-end
+integration test proved discovery + invocation through a fake-but-protocol-faithful in-memory MCP
+server, a real `ToolRegistry`/`ToolExecutor`, the complete `ReasoningEnginePipeline`, and the real
+Output Formatter.
 
 ---
 
