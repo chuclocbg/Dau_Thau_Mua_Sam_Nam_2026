@@ -44,6 +44,10 @@ import type { Tracer } from '../tracing/tracingTypes.ts'
 // same AppConfig already passed in, and threaded through Application so
 // server/httpServer.ts's request-lifecycle hooks can consume them — no reasoning/retrieval/
 // Tool Calling/MCP/Multi-Agent logic added, only three more constructor calls.
+//
+// X.9.3 ADDITION (same DI-only carve-out): streamTimeoutMs is threaded through Application so
+// src/http/reasoningStreamRoute.ts can bound each SSE stage without buildHttpServer()'s own
+// signature changing — a plain config value, no new construction, no new logic.
 
 export interface Application {
   readonly repository: IKnowledgeRepository
@@ -57,6 +61,7 @@ export interface Application {
   readonly metrics: MetricsCollector
   readonly tracer: Tracer
   readonly nodeEnv: NodeEnv
+  readonly streamTimeoutMs: number
 }
 
 export interface BuildApplicationOptions {
@@ -85,7 +90,7 @@ export async function buildApplication(
   const application: Application = {
     repository, reasoningPipeline, toolRegistry, toolExecutor, coordinator,
     startedAt: Date.now(),
-    logger, metrics, tracer, nodeEnv: config.nodeEnv,
+    logger, metrics, tracer, nodeEnv: config.nodeEnv, streamTimeoutMs: config.streamTimeoutMs,
     ...(options.mcpClient !== undefined ? { mcpClient: options.mcpClient } : {}),
   }
   return application
