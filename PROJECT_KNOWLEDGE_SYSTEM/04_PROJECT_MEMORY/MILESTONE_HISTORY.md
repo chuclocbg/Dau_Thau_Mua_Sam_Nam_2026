@@ -7,10 +7,33 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.12 — Conversation HTTP Entry Verification — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.13 — Conversation Persistence Recovery & Crash Resilience — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.12 — Conversation HTTP Entry Verification — declared 2026-07-10 (superseded by X.13)
+
+**Evidence:** 531 test files, 14,679 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-gated
+tests, unaffected), 0 failures at freeze time; architecture guard confirmed zero frozen-file
+modification and purely additive httpServer.ts wiring.
+
+**Summary:** Verification-first milestone. Inspected src/api/**, src/server/**, src/bootstrap/**,
+src/conversation/**, src/runtime/**, src/reasoning/** before assuming anything was missing.
+Found reasoningRoutes.ts (X.9.1) reaches 4 of 5 required steps but is entirely stateless; a
+repo-wide grep confirmed runConversationTurn()/RuntimeSessionBuilder/RuntimeContext were
+referenced nowhere in the HTTP/bootstrap layers. Determination: NO complete HTTP entry existed.
+Built the smallest compatible HTTP composition root: `src/api/conversationRoutes.ts` (new file,
+`POST /api/v1/conversation/turn`, a pure request/response mapper importing ONLY
+`runConversationTurn()`/`RuntimeContext`) plus two additive lines in `src/server/httpServer.ts`
+(constructs one RuntimeContext, registers the new route — the same "wiring only" DI carve-out
+X.9.2/X.9.3 already used). Zero duplication: no second orchestration layer, no redesign of
+reasoningRoutes.ts/coordinatorRoutes.ts (both unmodified, still work side by side with the new
+route). A real end-to-end HTTP integration test proved a second call with the same sessionId
+resumes the session over real HTTP. `PHASE_X12_HTTP_ENTRY_REPORT.md` documents the full
+dependency graph.
 
 ---
 
