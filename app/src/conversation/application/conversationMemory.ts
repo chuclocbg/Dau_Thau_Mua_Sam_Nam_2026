@@ -28,6 +28,17 @@ export class AdvisoryConversationMemory {
     return this.history
   }
 
+  /**
+   * Rehydrates memory from a previously-persisted history (Phase X.11 — Application Runtime
+   * needs to resume a session across requests; the constructor only ever builds a fresh, empty
+   * history). Additive: does not change the constructor or any existing method.
+   */
+  static fromHistory(history: AdvisoryConversationHistory): AdvisoryConversationMemory {
+    const memory = new AdvisoryConversationMemory(history.sessionId)
+    memory.history = history
+    return memory
+  }
+
   append(message: AdvisoryConversationMessage): AdvisoryConversationHistory {
     this.history = { ...this.history, messages: [...this.history.messages, message] }
     return this.history

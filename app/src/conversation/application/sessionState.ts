@@ -27,6 +27,24 @@ export class SessionStateManager {
     return this.state
   }
 
+  /**
+   * Rehydrates a manager from a previously-persisted state (Phase X.11 — Application Runtime
+   * needs to resume a session across requests; the constructor only ever builds a fresh
+   * CREATED session). Additive: does not change the constructor or any existing method.
+   */
+  static fromState(state: AdvisorySessionState): SessionStateManager {
+    const manager = new SessionStateManager(state.sessionId)
+    manager.state = state
+    return manager
+  }
+
+  /** Appends an attachment reference id (Phase X.11 — Attachment persistence wiring). */
+  addAttachmentRef(attachmentId: string): AdvisorySessionState {
+    if (this.state.attachmentRefs.includes(attachmentId)) return this.state
+    this.state = { ...this.state, attachmentRefs: [...this.state.attachmentRefs, attachmentId] }
+    return this.state
+  }
+
   /** Records activity (e.g., a new turn) — updates lastActivityAt and moves CREATED/IDLE -> ACTIVE. */
   recordActivity(advisorId?: string): AdvisorySessionState {
     const nextStatus: AdvisorySessionStatus = this.state.status === 'ARCHIVED' ? 'ARCHIVED' : 'ACTIVE'
