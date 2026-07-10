@@ -19,91 +19,104 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.10 - Business Foundation: Prisma & Persistence - FROZEN"
+current_milestone: "Phase X.11 - Application Runtime - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-10
 milestone_evidence:
-  scope: "NOT a greenfield implementation, per explicit user correction mid-milestone (see
-         01_PROJECT_DOCS/PHASE_X10_PRISMA_FOUNDATION_REPORT.md for the full verbatim
-         instruction). Inspection found a substantially complete, pre-existing 'Phase M1
-         Production Prisma Layer' already covering: Prisma schema (prisma/schema.prisma, 82
-         models/48 enums), Prisma client provider (src/persistence/prismaClient.ts,
-         getPrismaClient() singleton, driver-adapter pattern), repository interfaces
-         (src/shared/repository/IBaseRepository.ts + 11 per-module interface files), repository
-         implementations (67 classes across 11 prisma*Repositories.ts/prismaMasterData.ts
-         files), migration infrastructure (prisma.config.ts + prisma/migrations/). ALL treated
-         as canonical and reused unmodified. Only 4 genuinely-missing pieces were built:
-         src/persistence/prismaTransaction.ts (withTransaction() — thin pass-through to
-         getPrismaClient().$transaction(), typed via Prisma's own Prisma.TransactionClient);
-         src/persistence/databaseConnectivity.ts (verifyDatabaseConnection() — a SELECT 1 probe
-         returning a result object, never throwing; waitForDatabaseReady() — retry-until-ready,
-         genuinely reuses the existing RetryPolicy for backoff); src/persistence/
-         testDatabaseBootstrap.ts (hasTestDatabase()/buildTestPrismaClient()/
-         closeTestDatabase() — reads TEST_DATABASE_URL, deliberately does not reuse
-         getPrismaClient()'s singleton since a test database is a different logical connection);
-         prisma/seed.ts (a real, runnable seed entrypoint that seeds nothing, per CLAUDE.md's
-         Demo Data Principles and this milestone's own 'no business logic yet' scope — only
-         verifies connectivity)."
-  scope_exclusion: "Exactly one line added to one pre-existing file: prisma.config.ts's
-                    migrations object gained `seed: 'tsx prisma/seed.ts'`, required because
-                    Prisma 7 does not auto-discover a seed script by convention (confirmed via
-                    @prisma/config's own MigrationsConfigShape type). No other line of that file,
-                    and no other pre-existing file anywhere in the repo — including every one of
-                    the Phase M1 Prisma files (schema, client provider, all 11
-                    prisma*Repositories.ts files, all repository interfaces) and every frozen
-                    Phase X.1-X.9 file — was touched. Verified by git status (exactly 7 new files
-                    + 1 one-line-modified file) and by architecture guard."
-  files_added: "7 new files (3 persistence-infrastructure modules, 1 seed entrypoint, 3 test
-               files: unit tests, migration+integration tests, architecture guard) + 1 modified
-               file (prisma.config.ts, one additive line). 26 new tests: 14 unit tests
-               (withTransaction surfacing the real DATABASE_URL-missing error;
-               verifyDatabaseConnection/waitForDatabaseReady returning result objects with exact
-               attempt-count verification; hasTestDatabase/buildTestPrismaClient across
-               unset/blank/set TEST_DATABASE_URL), 1 migration test (real `npx prisma validate`
-               CLI run), 3 integration tests (gated behind TEST_DATABASE_URL via
-               describe.skipIf — skip honestly since Docker/Postgres is unavailable in this
-               environment), 8 architecture-guard assertions (dependency direction, genuine
-               reuse vs. duplication, zero frozen-file modification, zero Phase M1
-               duplication)."
-  full_suite_result: "522 test files, 14610 tests passed, 3 skipped (the TEST_DATABASE_URL-gated
-                      integration tests), 0 failures (pool=forks, full repo, no filter); up from
-                      519 files / 14587 tests at the X.9.5 freeze baseline. tsc --noEmit clean."
-  exit_criteria_met: "Every requested deliverable accounted for: Prisma schema, database
-                      bootstrap, Prisma client provider, repository interfaces, repository
-                      implementations, migration infrastructure — all confirmed pre-existing
-                      (Phase M1) and reused unmodified, not rebuilt. Transaction helper, seed
-                      infrastructure, and test database bootstrap — confirmed genuinely missing
-                      and built as small, additive files. Unit/architecture-guard/integration/
-                      migration tests all present and passing. tsc --noEmit and the full
-                      repository test suite both verified with zero regressions. git status
-                      confirms zero frozen-file modification anywhere, including every
-                      pre-existing Phase M1 Prisma file."
-  frozen_interfaces_touched: "None. getPrismaClient() (src/persistence/prismaClient.ts) and
-                              IBaseRepository (src/shared/repository/IBaseRepository.ts) — the
-                              two canonical Phase M1 contracts — are byte-for-byte unmodified,
-                              verified by architecture guard. All 67 existing repository classes
-                              across the 11 prisma*Repositories.ts/prismaMasterData.ts files are
-                              untouched."
+  scope: "Confirmed first: X.3-X.10 are frozen (per this milestone's own explicit instruction,
+         which deliberately does NOT include X.1/X.2 in that list). Built the runtime layer
+         connecting the frozen AI Engine to real, persisted application conversations. Reused
+         rather than rebuilt: Phase X.1's SessionStateManager/AdvisoryConversationMemory
+         (lifecycle + pruning logic), the frozen X.9.1 Application composition and the exact
+         reasoning chain src/api/reasoningRoutes.ts already calls (detectIntent ->
+         reasoningPipeline.answer -> formatConversationResponse -> runToolCallingStage), and the
+         pre-existing Storage module's module-agnostic AttachmentReference infrastructure. New:
+         src/conversation/infrastructure/prismaSessionRepository.ts (Conversation persistence,
+         same ISessionRepository interface MemorySessionRepository already satisfies), a new
+         additive ConversationSession Prisma model (sessionState/history as JSON, mirroring
+         AdvisoryConversationSession's own shape exactly), src/runtime/ (ConversationSession
+         aggregate, RuntimeSessionBuilder, RuntimeContext/buildRuntimeContext, session
+         attachments, conversation entry orchestration/runConversationTurn). Two small, additive
+         extensions to Phase X.1 (SessionStateManager.fromState()/.addAttachmentRef(),
+         AdvisoryConversationMemory.fromHistory() — rehydration support the in-process-only
+         original design never needed) — zero existing lines changed, authorized because X.1 is
+         not in this milestone's own frozen list."
+  scope_exclusion: "HTTP wiring (registering conversation entry orchestration as a new server
+                    route) was deliberately NOT built — it is not among this milestone's eight
+                    listed deliverables (ConversationSession, Session lifecycle, Conversation
+                    persistence, Attachment persistence, RuntimeContext, RuntimeSessionBuilder,
+                    Conversation entry orchestration, Runtime dependency composition), and
+                    src/api/** was inspect-only for this milestone, not implement-only. No AI/
+                    reasoning/MCP/Tool-Calling/Output/Prisma-redesign logic introduced anywhere.
+                    src/mcp/ and src/multiagent/ are imported nowhere in src/runtime/ (not
+                    needed for a single conversational turn), verified by architecture guard."
+  files_added: "11 new files (1 Prisma repository, 5 src/runtime/ modules, 1 migration, 4 test
+               files: unit, integration+replay, architecture guard) + 3 modified files
+               (sessionState.ts/conversationMemory.ts — additive methods only; schema.prisma —
+               one new model appended). 53 new tests: unit tests for ConversationSession/
+               RuntimeSessionBuilder/RuntimeContext/session attachments/PrismaSessionRepository
+               (33 tests, including parity checks proving rehydrated X.1 managers still apply
+               the EXISTING transition/pruning rules, not reimplemented ones), integration +
+               replay tests against a REAL Application (7 tests — a second
+               runConversationTurn() call resumes the same session, turnNumber advances,
+               history accumulates, replay is deterministic), architecture guard (13 tests)."
+  full_suite_result: "529 test files, 14663 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-
+                      gated integration tests, unaffected), 0 failures (pool=forks, full repo,
+                      no filter); up from 522 files / 14610 tests at the X.10 freeze baseline
+                      (+7 files, +53 tests, exactly the new X.11 test files). tsc --noEmit
+                      clean. Phase X.1's own pre-existing architecture guard
+                      (conversation-architecture.test.ts) re-verified passing after the
+                      additive extensions."
+  exit_criteria_met: "Every requested deliverable built, reusing before creating: repoId/
+                      sessionId kept deliberately distinct, matching ISessionRepository's own
+                      pre-existing design (create() never lets a caller supply its own id) —
+                      not a defect worked around. Conversation persistence and Attachment
+                      persistence both reuse pre-existing interfaces/infrastructure
+                      (ISessionRepository, IAttachmentReferenceRepository) rather than inventing
+                      new ones. RuntimeContext mirrors buildApplication()'s own composition-root
+                      pattern exactly, composing Application wholesale. Conversation entry
+                      orchestration calls the exact same public, already-frozen reasoning/
+                      formatting/tool-calling functions reasoningRoutes.ts already calls,
+                      verified by architecture guard via exact import-statement matching. tsc
+                      --noEmit and the full repository test suite both verified with zero
+                      regressions. git status confirms only the 2 additive X.1 files and
+                      schema.prisma (1 new model) were touched among all pre-existing files."
+  frozen_interfaces_touched: "None among X.3-X.10. buildApplication.ts's Application interface,
+                              prismaClient.ts, and IBaseRepository.ts remain byte-for-byte
+                              unmodified, verified by architecture guard. Phase X.1 (not frozen
+                              for this milestone) received two additive methods on
+                              SessionStateManager and one on AdvisoryConversationMemory — zero
+                              existing lines changed, byte-checked by architecture guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "None currently proposed. Phase X.10 (Business Foundation — Prisma &
-                        Persistence) is now COMPLETE. Any future work — including any
-                        business-domain milestone such as X.10.1 — is a new, separately-scoped
-                        and separately-authorized phase, not automatic."
+next_active_milestone: "None currently proposed. Phase X.11 (Application Runtime) is now
+                        COMPLETE. Any future work — including HTTP wiring for conversation entry
+                        orchestration, or any business-domain milestone such as X.12 — is a new,
+                        separately-scoped and separately-authorized phase, not automatic."
 next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per this
                          milestone's explicit closing instruction, work stops here and no
                          business-domain milestone begins automatically."
-next_milestone_blocker: "N/A — no next milestone proposed. Beginning any new work (business-
-                         domain repositories/services built atop this persistence foundation)
-                         requires its own explicit human authorization and scoping."
+next_milestone_blocker: "N/A — no next milestone proposed. Beginning any new work (HTTP routes
+                         over runConversationTurn(), or business-domain modules built atop this
+                         runtime) requires its own explicit human authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.10."
+                        after Phase X.11."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
      there is no pre-agreed 'next batch' after X.9.5."
-  - "Do not modify any file under src/conversation/ (X.1, frozen), src/reasoning/{domain,
+  - "CORRECTION (X.11): src/conversation/ was previously listed below as fully 'frozen' — that
+     was accurate through X.10 but is now superseded. X.11's own governing instruction listed
+     only X.3-X.10 as frozen, deliberately excluding X.1/X.2, and X.11 used that opening to add
+     two small, additive methods to SessionStateManager and one to AdvisoryConversationMemory
+     (rehydration support). Going forward: src/conversation/'s EXISTING methods/behavior
+     (recordActivity, transitionTo, isDueForIdle/isDueForArchive, pruneToTokenBudget,
+     groupIntoTurns, the ConversationContextManager class, conversationTypes.ts's shapes,
+     memorySessionRepository.ts) must not be modified or redesigned outside a newly-approved
+     milestone; further ADDITIVE extensions (new methods, zero existing lines changed) remain
+     permissible on the same reasoning X.11 used, but must be verified by an architecture guard
+     the same way X.11's was. Do not modify src/reasoning/{domain,
      application,infrastructure,testing}/ (X.2 Batch A + X.3.1 + X.3.2 + X.3.3 + X.3.4 + X.3.5 +
      X.3.6 + X.3.7 + Pre-X.3.8 API Cleanup + X.4.1 + X.4.2 + X.4.3 + X.4.4 + X.4.5 + X.4.6 +
      X.4.7 + Final X.4 Integration + X.5 + X.6, frozen), src/mcp/{domain,infrastructure,
@@ -142,13 +155,20 @@ do_not:
      states this explicitly and it must not be softened in any future summary without a real
      auth milestone actually being built first."
   - "Do not create a second Prisma schema, a second PrismaClient singleton, duplicate
-     repositories, or duplicate migrations. Do not modify prisma/schema.prisma,
+     repositories, or duplicate migrations. Do not modify any of the 82 pre-X.11 models,
      src/persistence/prismaClient.ts, src/shared/repository/IBaseRepository.ts, or any of the
-     11 existing prisma*Repositories.ts/prismaMasterData.ts files (Phase M1, canonical,
-     predates Phase X, reused unmodified by X.10) outside of a newly-approved milestone. Do not
-     modify src/persistence/prismaTransaction.ts, src/persistence/databaseConnectivity.ts,
-     src/persistence/testDatabaseBootstrap.ts, or prisma/seed.ts (X.10, frozen) outside of a
-     newly-approved milestone."
+     11 pre-X.11 prisma*Repositories.ts/prismaMasterData.ts files (Phase M1, canonical, predates
+     Phase X, reused unmodified by X.10/X.11) outside of a newly-approved milestone. New models
+     may still be appended additively (X.11 added ConversationSession this way) but no existing
+     model may be altered. Do not modify src/persistence/prismaTransaction.ts,
+     src/persistence/databaseConnectivity.ts, src/persistence/testDatabaseBootstrap.ts, or
+     prisma/seed.ts (X.10, frozen) outside of a newly-approved milestone."
+  - "Do not modify src/runtime/ (conversationSession.ts, runtimeSessionBuilder.ts,
+     runtimeContext.ts, conversationEntryOrchestrator.ts, sessionAttachments.ts),
+     src/conversation/infrastructure/prismaSessionRepository.ts, or the ConversationSession
+     Prisma model (X.11, frozen) outside of a newly-approved milestone. Do not register
+     runConversationTurn() as an HTTP route without a newly-approved milestone — X.11 explicitly
+     left HTTP wiring out of scope (src/api/** was inspect-only, not implement-only, for X.11)."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -542,7 +562,34 @@ historical_sequence_to_reach_here:
      integration tests (honestly skipped — Docker/Postgres unavailable in this environment),
      architecture guard confirming zero duplication of the Phase M1 layer and zero frozen-file
      modification — full repo suite green (522 files, 14610 tests, 3 skipped, 0 failures) —
-     FROZEN — you are here"
+     FROZEN"
+  - "Phase X.11 (Application Runtime) implemented: confirmed X.3-X.10 frozen (X.1/X.2
+     deliberately excluded from that list by this milestone's own instruction). Inspection found
+     src/api/reasoningRoutes.ts (X.9.1) entirely stateless (no session concept), Phase X.1's
+     SessionStateManager/AdvisoryConversationMemory fully implementing lifecycle/pruning but with
+     no rehydration path, and the pre-existing Storage module's module-agnostic
+     AttachmentReference infrastructure as the correct reuse target for attachments. Built:
+     src/conversation/infrastructure/prismaSessionRepository.ts (Conversation persistence, same
+     ISessionRepository interface MemorySessionRepository already satisfies), a new additive
+     ConversationSession Prisma model (sessionState/history as JSON, mirroring
+     AdvisoryConversationSession's shape exactly), src/runtime/conversationSession.ts (the
+     Runtime aggregate — tracks repoId and sessionId as deliberately distinct identifiers,
+     matching ISessionRepository's own pre-existing design), runtimeSessionBuilder.ts
+     (create/resume/persist, reuses findBySessionId() and the existing idle/archive lifecycle
+     checks), runtimeContext.ts (buildRuntimeContext() — mirrors buildApplication()'s own
+     composition-root pattern, composes Application wholesale), sessionAttachments.ts (reuses
+     buildAttachmentReference() with moduleType='CONVERSATION_SESSION'),
+     conversationEntryOrchestrator.ts (runConversationTurn() — calls the exact same frozen
+     detectIntent -> reasoningPipeline.answer -> formatConversationResponse ->
+     runToolCallingStage chain reasoningRoutes.ts already calls). Two small, additive extensions
+     to Phase X.1 (SessionStateManager.fromState()/.addAttachmentRef(),
+     AdvisoryConversationMemory.fromHistory()) — zero existing lines changed, authorized since
+     X.1 was not in this milestone's own frozen list. HTTP wiring deliberately left out of scope
+     (not among the eight listed deliverables). Unit tests, a real-Application integration +
+     replay test suite (proves a second runConversationTurn() call resumes the same session,
+     deterministically), architecture guard confirming zero frozen-file modification and
+     additive-only X.1 extensions — full repo suite green (529 files, 14663 tests, 3 skipped, 0
+     failures) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

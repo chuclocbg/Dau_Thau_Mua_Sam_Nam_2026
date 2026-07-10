@@ -7,10 +7,33 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.10 — Business Foundation: Prisma & Persistence — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.11 — Application Runtime — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.10 — Business Foundation: Prisma & Persistence — declared 2026-07-10 (superseded by X.11)
+
+**Evidence:** 522 test files, 14,610 tests passed, 3 skipped (TEST_DATABASE_URL-gated, honestly
+skipped — Docker/Postgres unavailable), 0 failures at freeze time; architecture guard confirmed
+zero duplication of the pre-existing Phase M1 Prisma layer and zero frozen-file modification.
+
+**Summary:** NOT a greenfield implementation, per an explicit mid-milestone user correction.
+Inspection found a substantially complete, pre-existing "Phase M1 Production Prisma Layer"
+(schema, client provider, repository interfaces/implementations, migration infrastructure)
+already covering most of the milestone's original request — treated as canonical and reused
+unmodified. Only four genuinely-missing pieces were built, each reusing existing infrastructure:
+`src/persistence/prismaTransaction.ts` (`withTransaction()` — thin pass-through to
+`getPrismaClient().$transaction()`), `src/persistence/databaseConnectivity.ts`
+(`verifyDatabaseConnection()`/`waitForDatabaseReady()` — reuses the existing `RetryPolicy`),
+`src/persistence/testDatabaseBootstrap.ts` (`TEST_DATABASE_URL`-based test client, deliberately
+separate from the `getPrismaClient()` singleton), `prisma/seed.ts` (a real, empty seed
+entrypoint, per CLAUDE.md's Demo Data Principles), plus one additive line in `prisma.config.ts`
+registering the seed script — the only pre-existing file touched. Produced
+`PHASE_X10_PRISMA_FOUNDATION_REPORT.md`, itemizing what already existed vs. what was genuinely
+missing and why each new file was necessary.
 
 ---
 
