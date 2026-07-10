@@ -2060,3 +2060,33 @@ model ConversationSession {
 
   @@map("conversation_sessions")
 }
+
+// ─── Phase X.13 — Conversation Persistence Recovery & Crash Resilience ────────
+// Persists src/runtime/recovery/recoveryTypes.ts's RecoveryMarker exactly as designed there.
+// One row per conversational-turn attempt, PENDING until the turn completes or fails -- a row
+// left PENDING after a process restart is the crash-recovery signal (see recoveryTypes.ts's own
+// header comment for the full rationale). Independent of ConversationSession's own status field
+// by design: turn-in-flight bookkeeping and session lifecycle are different concerns.
+
+enum RecoveryMarkerStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model ConversationRecoveryMarker {
+  id          String               @id @default(uuid())
+  sessionId   String?
+  question    String
+  asOfDate    String?
+  status      RecoveryMarkerStatus @default(PENDING)
+  startedAt   DateTime
+  completedAt DateTime?
+  error       String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([status])
+  @@index([sessionId])
+  @@map("conversation_recovery_markers")
+}
