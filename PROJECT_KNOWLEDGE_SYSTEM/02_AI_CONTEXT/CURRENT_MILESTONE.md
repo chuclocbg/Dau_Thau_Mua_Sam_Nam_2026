@@ -14,119 +14,91 @@ before trusting anything else in this session.*
 ## Machine Context
 
 ```yaml
-as_of: 2026-07-07
+as_of: 2026-07-10
 status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.9.5 - Production Hardening: Deployment/Operations/Production Readiness - FROZEN"
+current_milestone: "Phase X.10 - Business Foundation: Prisma & Persistence - FROZEN"
 documentation_track_status: "CLOSED"
-milestone_declared: 2026-07-07
+milestone_declared: 2026-07-10
 milestone_evidence:
-  scope: "src/startup/waitForReady.ts (waitForReady() — polls a URL until 2xx or retry budget
-         exhausted, genuinely reuses the existing RetryPolicy for backoff); src/startup/
-         smokeChecks.ts (runSmokeChecks() — 6 black-box HTTP checks against a real running
-         deployment: /live, /ready, /health, POST /api/v1/reasoning/answer, /reasoning/batch,
-         /reasoning/answer/stream; imports nothing from src/ at all — verifies the deployed
-         artifact from outside, never by calling the server's own in-process functions);
-         scripts/waitForReady.ts + scripts/smokeTest.ts (thin CLI wrappers); deployment/deploy.sh
-         (validate -> build+start -> wait-for-ready -> smoke-test) and deployment/rollback.sh
-         (checkout ref -> validate -> rebuild -> wait-for-ready -> smoke-test — stateless server,
-         so rollback is just 'redeploy a previous ref'); docs/RUNBOOK.md, docs/DISASTER_RECOVERY.md,
-         docs/RELEASE_CHECKLIST.md, docs/PRODUCTION_READINESS.md (the final Phase X.9 capstone,
-         explicitly requested)."
-  scope_exclusion: "ZERO frozen files modified this milestone — the strictest freeze-compliance
-                    record of any X.9.x milestone, matching X.9.4's own record (git status
-                    confirmed clean for every frozen src/ directory including all of X.9.1-X.9.4's
-                    own files). waitForReady.ts imports only the existing RetryPolicy;
-                    smokeChecks.ts imports nothing from src/ at all (deliberately black-box —
-                    verifying a deployment from outside is a fundamentally different guarantee
-                    than calling the same in-process health-check function the server already
-                    calls). SELF-CAUGHT CORRECTION: the architecture guard's own first run caught
-                    that deployment/rollback.sh did not call scripts/validateEnvironment.ts
-                    before rebuilding (only deploy.sh did) — fixed by adding the same fail-fast
-                    validation step to rollback.sh, for consistency, not merely to satisfy the
-                    test. HONEST VERIFICATION LIMITATION (unchanged from X.9.4): Docker remains
-                    unavailable in this environment (re-confirmed). What WAS verified for real
-                    this milestone: scripts/waitForReady.ts and scripts/smokeTest.ts both run
-                    live against a real server on this host — all 6 smoke checks pass, and the
-                    negative case (nothing listening) correctly reports failure with a non-zero
-                    exit code."
-  files_added: "9 new files (2 startup modules, 2 CLI scripts, 2 deployment scripts, 4 docs:
-               RUNBOOK.md/DISASTER_RECOVERY.md/RELEASE_CHECKLIST.md/PRODUCTION_READINESS.md) +
-               4 test files (27 new tests:
-               waitForReady success/retry/exhausted-budget/network-error paths plus a
-               RetryPolicy.sleep() parity test, smokeChecks all-healthy plus one failure-mode
-               test per check including the 503-with-valid-body-is-healthy edge case, a real-
-               server integration test suite proving both functions genuinely pass against a
-               real Application on a real socket and are deterministic across repeated runs, and
-               an architecture guard)."
-  full_suite_result: "519 test files, 14587 tests, 0 failures (pool=forks, full repo, no filter);
-                      up from 515 files / 14560 tests at the X.9.4 freeze baseline."
-  exit_criteria_met: "Unit tests prove waitForReady resolves immediately on first success,
-                      retries until success within budget, reports ready:false with the last
-                      status/error after exhausting the retry budget, and genuinely delegates
-                      backoff timing to RetryPolicy.prototype.sleep() (spy-verified). Unit tests
-                      prove every one of the 6 smoke checks both passes when healthy and fails
-                      with a descriptive detail message for its specific failure mode (non-ok
-                      status, missing expected field, malformed response envelope, missing SSE
-                      result frame), that a 503 /ready response with a valid ready:false body is
-                      correctly treated as a successful CHECK (the endpoint answered correctly,
-                      readiness itself being false is not a check failure), and that the whole
-                      suite never throws even when fetch itself rejects. A true end-to-end
-                      integration test — a real Application wired into a real Fastify instance
-                      on a real listening socket — proves runSmokeChecks() and waitForReady()
-                      both genuinely pass against the complete real X.9.1-X.9.3 chain,
-                      deterministically across repeated runs. A live CLI run on this host
-                      confirmed both scripts/waitForReady.ts and scripts/smokeTest.ts work
-                      end-to-end against a real running server (all 6 checks PASS) and correctly
-                      report failure for a URL nothing is listening on. Architecture guard
-                      confirms waitForReady.ts imports only RetryPolicy; smokeChecks.ts imports
-                      nothing from src/ at all; zero reimplemented RetryPolicy/health-check/
-                      config-loading/startup/logging/metrics logic; deployment/*.sh genuinely
-                      reuse (not duplicate) the existing validateEnvironment/waitForReady/
-                      smokeTest scripts; zero frozen-file modification at all this milestone,
-                      including every X.9.4 file; docker-compose.yml still defines every Phase
-                      M0 + X.9.4 service unchanged; and every prior milestone's frozen-file
-                      marker (X.1 through X.9.4, plus restAdapter.ts and the pre-existing
-                      provider files) is unchanged."
-  frozen_interfaces_touched: "None at all. Verified by git status (zero diff in any frozen src/
-                              directory, including every file X.9.2/X.9.3/X.9.4 previously
-                              touched under their respective DI carve-outs) and architecture
-                              guard."
+  scope: "NOT a greenfield implementation, per explicit user correction mid-milestone (see
+         01_PROJECT_DOCS/PHASE_X10_PRISMA_FOUNDATION_REPORT.md for the full verbatim
+         instruction). Inspection found a substantially complete, pre-existing 'Phase M1
+         Production Prisma Layer' already covering: Prisma schema (prisma/schema.prisma, 82
+         models/48 enums), Prisma client provider (src/persistence/prismaClient.ts,
+         getPrismaClient() singleton, driver-adapter pattern), repository interfaces
+         (src/shared/repository/IBaseRepository.ts + 11 per-module interface files), repository
+         implementations (67 classes across 11 prisma*Repositories.ts/prismaMasterData.ts
+         files), migration infrastructure (prisma.config.ts + prisma/migrations/). ALL treated
+         as canonical and reused unmodified. Only 4 genuinely-missing pieces were built:
+         src/persistence/prismaTransaction.ts (withTransaction() — thin pass-through to
+         getPrismaClient().$transaction(), typed via Prisma's own Prisma.TransactionClient);
+         src/persistence/databaseConnectivity.ts (verifyDatabaseConnection() — a SELECT 1 probe
+         returning a result object, never throwing; waitForDatabaseReady() — retry-until-ready,
+         genuinely reuses the existing RetryPolicy for backoff); src/persistence/
+         testDatabaseBootstrap.ts (hasTestDatabase()/buildTestPrismaClient()/
+         closeTestDatabase() — reads TEST_DATABASE_URL, deliberately does not reuse
+         getPrismaClient()'s singleton since a test database is a different logical connection);
+         prisma/seed.ts (a real, runnable seed entrypoint that seeds nothing, per CLAUDE.md's
+         Demo Data Principles and this milestone's own 'no business logic yet' scope — only
+         verifies connectivity)."
+  scope_exclusion: "Exactly one line added to one pre-existing file: prisma.config.ts's
+                    migrations object gained `seed: 'tsx prisma/seed.ts'`, required because
+                    Prisma 7 does not auto-discover a seed script by convention (confirmed via
+                    @prisma/config's own MigrationsConfigShape type). No other line of that file,
+                    and no other pre-existing file anywhere in the repo — including every one of
+                    the Phase M1 Prisma files (schema, client provider, all 11
+                    prisma*Repositories.ts files, all repository interfaces) and every frozen
+                    Phase X.1-X.9 file — was touched. Verified by git status (exactly 7 new files
+                    + 1 one-line-modified file) and by architecture guard."
+  files_added: "7 new files (3 persistence-infrastructure modules, 1 seed entrypoint, 3 test
+               files: unit tests, migration+integration tests, architecture guard) + 1 modified
+               file (prisma.config.ts, one additive line). 26 new tests: 14 unit tests
+               (withTransaction surfacing the real DATABASE_URL-missing error;
+               verifyDatabaseConnection/waitForDatabaseReady returning result objects with exact
+               attempt-count verification; hasTestDatabase/buildTestPrismaClient across
+               unset/blank/set TEST_DATABASE_URL), 1 migration test (real `npx prisma validate`
+               CLI run), 3 integration tests (gated behind TEST_DATABASE_URL via
+               describe.skipIf — skip honestly since Docker/Postgres is unavailable in this
+               environment), 8 architecture-guard assertions (dependency direction, genuine
+               reuse vs. duplication, zero frozen-file modification, zero Phase M1
+               duplication)."
+  full_suite_result: "522 test files, 14610 tests passed, 3 skipped (the TEST_DATABASE_URL-gated
+                      integration tests), 0 failures (pool=forks, full repo, no filter); up from
+                      519 files / 14587 tests at the X.9.5 freeze baseline. tsc --noEmit clean."
+  exit_criteria_met: "Every requested deliverable accounted for: Prisma schema, database
+                      bootstrap, Prisma client provider, repository interfaces, repository
+                      implementations, migration infrastructure — all confirmed pre-existing
+                      (Phase M1) and reused unmodified, not rebuilt. Transaction helper, seed
+                      infrastructure, and test database bootstrap — confirmed genuinely missing
+                      and built as small, additive files. Unit/architecture-guard/integration/
+                      migration tests all present and passing. tsc --noEmit and the full
+                      repository test suite both verified with zero regressions. git status
+                      confirms zero frozen-file modification anywhere, including every
+                      pre-existing Phase M1 Prisma file."
+  frozen_interfaces_touched: "None. getPrismaClient() (src/persistence/prismaClient.ts) and
+                              IBaseRepository (src/shared/repository/IBaseRepository.ts) — the
+                              two canonical Phase M1 contracts — are byte-for-byte unmodified,
+                              verified by architecture guard. All 67 existing repository classes
+                              across the 11 prisma*Repositories.ts/prismaMasterData.ts files are
+                              untouched."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "None currently proposed. Phase X.9 (Production Hardening, Batches A-E)
-                        is now COMPLETE per this milestone's explicit closing summary
-                        (docs/PRODUCTION_READINESS.md). Any future work is a new, separately-
-                        scoped and separately-authorized phase — not an automatic X.9.6."
-next_milestone_status: "NOT AUTHORIZED — and no specific next milestone is even proposed yet.
-                         Phase X.9.5's exit criteria confirmed met and frozen this session, per
-                         explicit instruction to stop immediately and not begin any new phase
-                         automatically. docs/PRODUCTION_READINESS.md is the requested final
-                         production readiness summary: Architecture readiness 8.5 -> 9/10,
-                         Production readiness 3 -> 7/10 (up from the original
-                         PRODUCTION_HARDENING_AUDIT.md baseline). The single most consequential
-                         remaining gap, stated explicitly and not softened: no authentication/
-                         authorization layer exists on the now-real, now-reachable HTTP+SSE
-                         server. Also still open, all carried forward unchanged and listed in
-                         full in docs/PRODUCTION_READINESS.md: two competing retry abstractions
-                         in the unrelated P6 track, no alerting, no mid-flight cancellation of
-                         frozen reasoning/Tool-Calling/MCP internals, no circuit breaker for a
-                         failing MCP server, no rate limiting, no reasoning-result caching, no
-                         dedicated sustained-load test, no CI/CD pipeline, and Docker itself
-                         still never actually built/run in this environment. The
-                         missingEvidence-reconciliation question, the superseded-item/decision
-                         gaps, and the still-open ResolvedKnowledge extension decision remain
-                         unresolved, carried forward unchanged from the X.4 freeze."
-next_milestone_blocker: "N/A — no next milestone proposed. Authentication/authorization is named
-                         as the natural next priority in docs/PRODUCTION_READINESS.md, but
-                         beginning any new work requires its own explicit human authorization
-                         and scoping, per this milestone's explicit instruction not to continue
-                         automatically."
+next_active_milestone: "None currently proposed. Phase X.10 (Business Foundation — Prisma &
+                        Persistence) is now COMPLETE. Any future work — including any
+                        business-domain milestone such as X.10.1 — is a new, separately-scoped
+                        and separately-authorized phase, not automatic."
+next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per this
+                         milestone's explicit closing instruction, work stops here and no
+                         business-domain milestone begins automatically."
+next_milestone_blocker: "N/A — no next milestone proposed. Beginning any new work (business-
+                         domain repositories/services built atop this persistence foundation)
+                         requires its own explicit human authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.9."
+                        after Phase X.10."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -159,13 +131,24 @@ do_not:
      these belong to Phase X. ToolRegistry.ts/ToolExecutor.ts/RetryPolicy.ts/RestClient.ts/
      MetricsCollector.ts are reused by X.6/X.7/X.8/X.9.1/X.9.2/X.9.3/X.9.5 but must remain
      unmodified. dotenv (already a dependency) is reused by X.9.4; do not add any new package."
-  - "Do not claim Phase M1 (Prisma) is 'verified' — it is implemented, unverified against a
-     live database. Do not claim Docker images/containers are 'verified' — Docker is
-     unavailable in this environment across X.9.4 and X.9.5; only the underlying scripts/
-     config/CLI tools were verified for real, never an actual container build/run. Do not claim
-     this server is safe for untrusted traffic — no authentication/authorization layer exists;
-     docs/PRODUCTION_READINESS.md states this explicitly and it must not be softened in any
-     future summary without a real auth milestone actually being built first."
+  - "Do not claim Phase M1 (Prisma) is 'verified against a live database' — X.10 added
+     connectivity/readiness/transaction/test-DB-bootstrap infrastructure, but Docker/Postgres
+     remain unavailable in this environment, so none of it has actually run against a real
+     database yet (the 3 TEST_DATABASE_URL-gated integration tests still skip). Do not claim
+     Docker images/containers are 'verified' — Docker is unavailable in this environment across
+     X.9.4, X.9.5, and X.10; only the underlying scripts/config/CLI tools were verified for
+     real, never an actual container build/run. Do not claim this server is safe for untrusted
+     traffic — no authentication/authorization layer exists; docs/PRODUCTION_READINESS.md
+     states this explicitly and it must not be softened in any future summary without a real
+     auth milestone actually being built first."
+  - "Do not create a second Prisma schema, a second PrismaClient singleton, duplicate
+     repositories, or duplicate migrations. Do not modify prisma/schema.prisma,
+     src/persistence/prismaClient.ts, src/shared/repository/IBaseRepository.ts, or any of the
+     11 existing prisma*Repositories.ts/prismaMasterData.ts files (Phase M1, canonical,
+     predates Phase X, reused unmodified by X.10) outside of a newly-approved milestone. Do not
+     modify src/persistence/prismaTransaction.ts, src/persistence/databaseConnectivity.ts,
+     src/persistence/testDatabaseBootstrap.ts, or prisma/seed.ts (X.10, frozen) outside of a
+     newly-approved milestone."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -540,7 +523,26 @@ historical_sequence_to_reach_here:
      scripts run live against a real server (all 6 smoke checks PASS; the negative case
      correctly reports failure with exit code 1). Unit tests, a true end-to-end integration
      test suite against a real listening socket, architecture guard — full repo suite green
-     (14587 tests) — FROZEN — you are here"
+     (14587 tests) — FROZEN — Phase X.9 (Production Hardening, Batches A-E) is now COMPLETE"
+  - "Phase X.10 (Business Foundation: Prisma & Persistence) implemented: inspection before any
+     code was written found a substantially complete, pre-existing 'Phase M1 Production Prisma
+     Layer' (schema, client provider, repository interfaces/implementations, migration
+     infrastructure) already covering most of the milestone's original request. USER-DIRECTED
+     CORRECTION: an explicit instruction reframed the milestone as verify-and-document rather
+     than greenfield build — treat the existing layer as canonical, do not duplicate, add only
+     genuinely-missing infrastructure. Built: prismaTransaction.ts (withTransaction() — reuses
+     getPrismaClient().$transaction() and Prisma's own Prisma.TransactionClient type),
+     databaseConnectivity.ts (verifyDatabaseConnection()/waitForDatabaseReady() — reuses the
+     existing RetryPolicy for backoff, same class already proven for this role in X.9.5's
+     waitForReady.ts), testDatabaseBootstrap.ts (TEST_DATABASE_URL-based client factory,
+     deliberately separate from the getPrismaClient() singleton), prisma/seed.ts (a real,
+     runnable entrypoint seeding nothing, per CLAUDE.md's Demo Data Principles). One additive
+     line to prisma.config.ts (migrations.seed registration) — the only pre-existing file
+     touched. Unit tests, a real `prisma validate` migration test, TEST_DATABASE_URL-gated
+     integration tests (honestly skipped — Docker/Postgres unavailable in this environment),
+     architecture guard confirming zero duplication of the Phase M1 layer and zero frozen-file
+     modification — full repo suite green (522 files, 14610 tests, 3 skipped, 0 failures) —
+     FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

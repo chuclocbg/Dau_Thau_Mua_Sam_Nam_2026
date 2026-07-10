@@ -7,10 +7,37 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.9.5 — Production Hardening: Deployment/Operations/Production Readiness — declared 2026-07-07 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.10 — Business Foundation: Prisma & Persistence — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.9.5 — Production Hardening: Deployment/Operations/Production Readiness — declared 2026-07-07 (superseded by X.10)
+
+**Evidence:** 519 test files, 14,587 tests, 0 failures at freeze time; architecture guard
+confirmed ZERO frozen-file modification — the strictest freeze-compliance record of any X.9.x
+milestone.
+
+**Summary:** Implemented `waitForReady.ts` (polls a URL until ready, genuinely reuses
+`RetryPolicy`), `smokeChecks.ts` (6 black-box HTTP checks against a real deployment — `/live`,
+`/ready`, `/health`, the three reasoning/coordinator/streaming endpoints — imports nothing from
+`src/` at all), `scripts/waitForReady.ts` + `scripts/smokeTest.ts` (CLI wrappers),
+`deployment/deploy.sh` + `deployment/rollback.sh` (validate -> build/deploy -> wait-for-ready ->
+smoke-test; stateless server means rollback is just "redeploy a previous ref"),
+`docs/RUNBOOK.md`, `docs/DISASTER_RECOVERY.md` (makes the server's statelessness explicit —
+RPO/RTO reduce to redeploy time), `docs/RELEASE_CHECKLIST.md`, and `docs/PRODUCTION_READINESS.md`
+— the final Phase X.9 capstone, explicitly requested: Architecture readiness 8.5 -> 9/10,
+Production readiness 3 -> 7/10, every one of `PRODUCTION_HARDENING_AUDIT.md`'s 20 original
+findings re-assessed as resolved/clarified/still-open, with authentication/authorization named
+explicitly as the single most consequential remaining gap, not softened. SELF-CAUGHT FIX: the
+architecture guard's own first run caught that `rollback.sh` was missing the same fail-fast
+environment validation `deploy.sh` already had — fixed for real consistency, not just to pass
+the test. Docker still unavailable in this environment; what WAS verified for real: both new CLI
+scripts run live against a real server (all 6 smoke checks PASS; the negative case correctly
+reports failure with exit code 1). This closed out Phase X.9 (Production Hardening, Batches A-E)
+in full.
 
 ---
 
