@@ -2042,3 +2042,21 @@ model PaymentDocument {
   @@index([requestId])
   @@map("payment_documents")
 }
+
+// ─── Phase X.11 — Application Runtime: Conversation Session ──────────────────
+// Persists src/conversation/domain/conversationTypes.ts's AdvisoryConversationSession
+// (Phase X.1, frozen shape: { id, createdAt, updatedAt, sessionState, history }) exactly as
+// designed there — sessionState/history stored as JSON since they are already plain,
+// self-contained value objects with no independent query need of their own fields (matching
+// this module's own MemorySessionRepository, which stores the identical shape as a single
+// value per key). No new domain concept invented; this is the storage of an existing one.
+
+model ConversationSession {
+  id           String   @id @default(uuid())
+  sessionState Json
+  history      Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("conversation_sessions")
+}
