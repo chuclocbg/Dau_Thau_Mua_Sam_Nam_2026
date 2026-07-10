@@ -7,10 +7,31 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.11 — Application Runtime — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.12 — Conversation HTTP Entry Verification — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.11 — Application Runtime — declared 2026-07-10 (superseded by X.12)
+
+**Evidence:** 529 test files, 14,663 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-gated
+tests, unaffected), 0 failures at freeze time; architecture guard confirmed zero frozen-file
+modification and additive-only X.1 extensions.
+
+**Summary:** Built the runtime layer connecting the frozen AI Engine to real, persisted
+application conversations. Reused rather than rebuilt: Phase X.1's SessionStateManager/
+AdvisoryConversationMemory, the frozen X.9.1 Application composition, and the exact reasoning
+chain reasoningRoutes.ts already calls. New: `prismaSessionRepository.ts` (Conversation
+persistence), a new additive `ConversationSession` Prisma model, `src/runtime/`
+(`ConversationSession` aggregate, `RuntimeSessionBuilder`, `RuntimeContext`/
+`buildRuntimeContext`, session attachments, `runConversationTurn` conversation entry
+orchestration). Two small additive extensions to Phase X.1
+(`SessionStateManager.fromState()`/`.addAttachmentRef()`,
+`AdvisoryConversationMemory.fromHistory()`) — authorized because X.1 was not in this milestone's
+own frozen list (X.3–X.10 only). **HTTP wiring was deliberately left out of scope** — not among
+the eight listed deliverables — which became X.12's own starting finding.
 
 ---
 

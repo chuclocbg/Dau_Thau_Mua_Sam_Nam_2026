@@ -19,89 +19,78 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.11 - Application Runtime - FROZEN"
+current_milestone: "Phase X.12 - Conversation HTTP Entry Verification - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-10
 milestone_evidence:
-  scope: "Confirmed first: X.3-X.10 are frozen (per this milestone's own explicit instruction,
-         which deliberately does NOT include X.1/X.2 in that list). Built the runtime layer
-         connecting the frozen AI Engine to real, persisted application conversations. Reused
-         rather than rebuilt: Phase X.1's SessionStateManager/AdvisoryConversationMemory
-         (lifecycle + pruning logic), the frozen X.9.1 Application composition and the exact
-         reasoning chain src/api/reasoningRoutes.ts already calls (detectIntent ->
-         reasoningPipeline.answer -> formatConversationResponse -> runToolCallingStage), and the
-         pre-existing Storage module's module-agnostic AttachmentReference infrastructure. New:
-         src/conversation/infrastructure/prismaSessionRepository.ts (Conversation persistence,
-         same ISessionRepository interface MemorySessionRepository already satisfies), a new
-         additive ConversationSession Prisma model (sessionState/history as JSON, mirroring
-         AdvisoryConversationSession's own shape exactly), src/runtime/ (ConversationSession
-         aggregate, RuntimeSessionBuilder, RuntimeContext/buildRuntimeContext, session
-         attachments, conversation entry orchestration/runConversationTurn). Two small, additive
-         extensions to Phase X.1 (SessionStateManager.fromState()/.addAttachmentRef(),
-         AdvisoryConversationMemory.fromHistory() — rehydration support the in-process-only
-         original design never needed) — zero existing lines changed, authorized because X.1 is
-         not in this milestone's own frozen list."
-  scope_exclusion: "HTTP wiring (registering conversation entry orchestration as a new server
-                    route) was deliberately NOT built — it is not among this milestone's eight
-                    listed deliverables (ConversationSession, Session lifecycle, Conversation
-                    persistence, Attachment persistence, RuntimeContext, RuntimeSessionBuilder,
-                    Conversation entry orchestration, Runtime dependency composition), and
-                    src/api/** was inspect-only for this milestone, not implement-only. No AI/
-                    reasoning/MCP/Tool-Calling/Output/Prisma-redesign logic introduced anywhere.
-                    src/mcp/ and src/multiagent/ are imported nowhere in src/runtime/ (not
-                    needed for a single conversational turn), verified by architecture guard."
-  files_added: "11 new files (1 Prisma repository, 5 src/runtime/ modules, 1 migration, 4 test
-               files: unit, integration+replay, architecture guard) + 3 modified files
-               (sessionState.ts/conversationMemory.ts — additive methods only; schema.prisma —
-               one new model appended). 53 new tests: unit tests for ConversationSession/
-               RuntimeSessionBuilder/RuntimeContext/session attachments/PrismaSessionRepository
-               (33 tests, including parity checks proving rehydrated X.1 managers still apply
-               the EXISTING transition/pruning rules, not reimplemented ones), integration +
-               replay tests against a REAL Application (7 tests — a second
-               runConversationTurn() call resumes the same session, turnNumber advances,
-               history accumulates, replay is deterministic), architecture guard (13 tests)."
-  full_suite_result: "529 test files, 14663 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-
-                      gated integration tests, unaffected), 0 failures (pool=forks, full repo,
-                      no filter); up from 522 files / 14610 tests at the X.10 freeze baseline
-                      (+7 files, +53 tests, exactly the new X.11 test files). tsc --noEmit
-                      clean. Phase X.1's own pre-existing architecture guard
-                      (conversation-architecture.test.ts) re-verified passing after the
-                      additive extensions."
-  exit_criteria_met: "Every requested deliverable built, reusing before creating: repoId/
-                      sessionId kept deliberately distinct, matching ISessionRepository's own
-                      pre-existing design (create() never lets a caller supply its own id) —
-                      not a defect worked around. Conversation persistence and Attachment
-                      persistence both reuse pre-existing interfaces/infrastructure
-                      (ISessionRepository, IAttachmentReferenceRepository) rather than inventing
-                      new ones. RuntimeContext mirrors buildApplication()'s own composition-root
-                      pattern exactly, composing Application wholesale. Conversation entry
-                      orchestration calls the exact same public, already-frozen reasoning/
-                      formatting/tool-calling functions reasoningRoutes.ts already calls,
-                      verified by architecture guard via exact import-statement matching. tsc
+  scope: "Verification-first milestone, per its own explicit instruction: inspect before
+         assuming anything is missing. Inspected src/api/**, src/server/**, src/bootstrap/**,
+         src/conversation/**, src/runtime/**, src/reasoning/** (src/output/** and
+         src/toolcalling/** confirmed not to exist — that logic lives in
+         src/reasoning/application/). Found reasoningRoutes.ts (X.9.1) reaches 4 of 5 required
+         steps (detectIntent -> reasoningPipeline.answer -> formatConversationResponse ->
+         runToolCallingStage) but is entirely stateless — no RuntimeSessionBuilder, no
+         ConversationSession, no session persistence. Repo-wide grep confirmed
+         runConversationTurn()/RuntimeSessionBuilder/RuntimeContext/buildRuntimeContext were
+         referenced nowhere in src/api/, src/server/, or src/bootstrap/ before this milestone.
+         Determination: NO complete HTTP entry existed. Built the smallest compatible HTTP
+         composition root: src/api/conversationRoutes.ts (new file — registers
+         POST /api/v1/conversation/turn, a pure request/response mapper importing ONLY
+         runConversationTurn()/RuntimeContext, never the orchestrator's own internal
+         dependencies) plus two additive lines in src/server/httpServer.ts (constructs one
+         RuntimeContext via buildRuntimeContext({ application: app }), registers the new route)
+         — the same 'wiring only' DI carve-out X.9.2/X.9.3 already used on that file."
+  scope_exclusion: "Zero duplication: no second orchestration layer, no second RuntimeContext
+                    type, no second ConversationSession, no redesign of reasoningRoutes.ts or
+                    coordinatorRoutes.ts (both byte-for-byte unmodified, still work unchanged
+                    side by side with the new route). Every src/runtime/ file (X.11) is
+                    byte-for-byte unmodified — X.12 only calls it, never edits it."
+  files_added: "3 new files (1 HTTP route, 2 test files: integration, architecture guard) + 1
+               modified file (httpServer.ts — 2 new imports + 2 new lines only). 16 new tests:
+               6 integration tests via Fastify inject() against a real Application/HTTP server
+               (validation, first-turn reaching the complete chain, a SECOND real HTTP call
+               resuming the same session — turnNumber advances to 2 — an unknown sessionId
+               gracefully starting a new session, and the pre-existing stateless
+               /api/v1/reasoning/answer route still working unchanged side by side), 10
+               architecture-guard assertions (import-statement-exact reuse verification, wiring
+               additivity counted not just presence-checked, zero frozen-file modification)."
+  full_suite_result: "531 test files, 14679 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-
+                      gated tests, unaffected), 0 failures (pool=forks, full repo, no filter);
+                      up from 529 files / 14663 tests at the X.11 freeze baseline (+2 files, +16
+                      tests, exactly the new X.12 test files). tsc --noEmit clean."
+  exit_criteria_met: "The dependency graph documented in PHASE_X12_HTTP_ENTRY_REPORT.md is
+                      verified end-to-end over real HTTP (Fastify inject(), not just in-process
+                      function calls): POST /api/v1/conversation/turn -> runConversationTurn ->
+                      RuntimeSessionBuilder -> detectIntent -> reasoningPipeline.answer ->
+                      formatConversationResponse -> runToolCallingStage -> persist. A second
+                      HTTP call with the same sessionId genuinely resumes the session. tsc
                       --noEmit and the full repository test suite both verified with zero
-                      regressions. git status confirms only the 2 additive X.1 files and
-                      schema.prisma (1 new model) were touched among all pre-existing files."
-  frozen_interfaces_touched: "None among X.3-X.10. buildApplication.ts's Application interface,
-                              prismaClient.ts, and IBaseRepository.ts remain byte-for-byte
-                              unmodified, verified by architecture guard. Phase X.1 (not frozen
-                              for this milestone) received two additive methods on
-                              SessionStateManager and one on AdvisoryConversationMemory — zero
-                              existing lines changed, byte-checked by architecture guard."
+                      regressions. git status confirms only httpServer.ts was modified among
+                      all pre-existing files, and git diff confirms that change is purely
+                      additive (2 import lines + 2 body lines, zero existing lines touched)."
+  frozen_interfaces_touched: "None. buildHttpServer()'s exported signature is unchanged.
+                              RuntimeContext's exported shape is unchanged (X.12 consumes it,
+                              never extends it). Every src/runtime/ file (X.11),
+                              reasoningRoutes.ts, and coordinatorRoutes.ts (X.9.1) remain
+                              byte-for-byte unmodified, verified by architecture guard."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
 
-next_active_milestone: "None currently proposed. Phase X.11 (Application Runtime) is now
-                        COMPLETE. Any future work — including HTTP wiring for conversation entry
-                        orchestration, or any business-domain milestone such as X.12 — is a new,
-                        separately-scoped and separately-authorized phase, not automatic."
+next_active_milestone: "None currently proposed. Phase X.12 (Conversation HTTP Entry
+                        Verification) is now COMPLETE — the Conversation Runtime is reachable
+                        over real HTTP. Any future work — including authentication/authorization
+                        on the new route, or any business-domain milestone such as X.13 — is a
+                        new, separately-scoped and separately-authorized phase, not automatic."
 next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per this
                          milestone's explicit closing instruction, work stops here and no
                          business-domain milestone begins automatically."
-next_milestone_blocker: "N/A — no next milestone proposed. Beginning any new work (HTTP routes
-                         over runConversationTurn(), or business-domain modules built atop this
-                         runtime) requires its own explicit human authorization and scoping."
+next_milestone_blocker: "N/A — no next milestone proposed. POST /api/v1/conversation/turn has
+                         no authentication/authorization layer, same standing gap named since
+                         docs/PRODUCTION_READINESS.md (X.9.5) for every other route on this
+                         server — not new to X.12, not resolved by it either. Beginning any new
+                         work requires its own explicit human authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.11."
+                        after Phase X.12."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -166,9 +155,16 @@ do_not:
   - "Do not modify src/runtime/ (conversationSession.ts, runtimeSessionBuilder.ts,
      runtimeContext.ts, conversationEntryOrchestrator.ts, sessionAttachments.ts),
      src/conversation/infrastructure/prismaSessionRepository.ts, or the ConversationSession
-     Prisma model (X.11, frozen) outside of a newly-approved milestone. Do not register
-     runConversationTurn() as an HTTP route without a newly-approved milestone — X.11 explicitly
-     left HTTP wiring out of scope (src/api/** was inspect-only, not implement-only, for X.11)."
+     Prisma model (X.11, frozen) outside of a newly-approved milestone.
+     UPDATE (X.12): runConversationTurn() IS now registered as an HTTP route —
+     POST /api/v1/conversation/turn, via src/api/conversationRoutes.ts + two additive lines in
+     src/server/httpServer.ts (X.12, frozen). Do not modify conversationRoutes.ts or that
+     httpServer.ts wiring outside of a newly-approved milestone. Do not add a second HTTP route
+     over runConversationTurn(), a second RuntimeContext construction inside buildHttpServer(),
+     or any authentication/authorization to this route without a newly-approved milestone — none
+     of the routes on this server have an auth layer yet (see docs/PRODUCTION_READINESS.md,
+     X.9.5), and adding one only to this route would be an inconsistent, undocumented partial
+     fix."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -589,7 +585,29 @@ historical_sequence_to_reach_here:
      replay test suite (proves a second runConversationTurn() call resumes the same session,
      deterministically), architecture guard confirming zero frozen-file modification and
      additive-only X.1 extensions — full repo suite green (529 files, 14663 tests, 3 skipped, 0
-     failures) — FROZEN — you are here"
+     failures) — FROZEN"
+  - "Phase X.12 (Conversation HTTP Entry Verification) implemented: per its own explicit
+     instruction, inspected src/api/**, src/server/**, src/bootstrap/**, src/conversation/**,
+     src/runtime/**, src/reasoning/** before assuming anything was missing (src/output/** and
+     src/toolcalling/** confirmed not to exist). Found reasoningRoutes.ts (X.9.1) reaches 4 of 5
+     required steps but is entirely stateless; a repo-wide grep confirmed runConversationTurn()/
+     RuntimeSessionBuilder/RuntimeContext were referenced nowhere in src/api/, src/server/, or
+     src/bootstrap/ before this milestone. Determination: NO complete HTTP entry existed. Built
+     the smallest compatible HTTP composition root: src/api/conversationRoutes.ts (new file,
+     POST /api/v1/conversation/turn, a pure request/response mapper importing ONLY
+     runConversationTurn()/RuntimeContext, never the orchestrator's own internal dependencies)
+     plus two additive lines in src/server/httpServer.ts (constructs one RuntimeContext,
+     registers the new route — the same 'wiring only' DI carve-out X.9.2/X.9.3 already used on
+     that file). Zero duplication: no second orchestration layer, no second RuntimeContext type,
+     no second ConversationSession, no redesign of reasoningRoutes.ts/coordinatorRoutes.ts (both
+     byte-for-byte unmodified, still work unchanged side by side with the new route). A real
+     end-to-end HTTP integration test suite (Fastify inject(), not just in-process calls) proves
+     a second HTTP call with the same sessionId genuinely resumes the session over real HTTP.
+     PHASE_X12_HTTP_ENTRY_REPORT.md documents the full dependency graph as verified.
+     Architecture guard confirming zero frozen-file modification (every src/runtime/ file, both
+     pre-existing X.9.1 routes) and additive-only httpServer.ts wiring (counted, not just
+     presence-checked) — full repo suite green (531 files, 14679 tests, 3 skipped, 0 failures) —
+     FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
