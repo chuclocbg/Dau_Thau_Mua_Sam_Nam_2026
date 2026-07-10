@@ -3,9 +3,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { checkLiveness, checkReadiness, checkHealth } from '../health/healthCheck.ts'
 import { registerReasoningRoutes } from '../api/reasoningRoutes.ts'
 import { registerCoordinatorRoutes } from '../api/coordinatorRoutes.ts'
+import { registerConversationRoutes } from '../api/conversationRoutes.ts'
 import { registerRequestLifecycleHooks } from '../middleware/requestLifecycleHooks.ts'
 import { registerReasoningStreamRoute } from '../http/reasoningStreamRoute.ts'
 import type { Application } from '../bootstrap/buildApplication.ts'
+import { buildRuntimeContext } from '../runtime/runtimeContext.ts'
 
 // ── HTTP Server — Phase X.9.1, extended X.9.2 and X.9.3 (DI/wiring only) ──────
 // Mirrors the exact Fastify-factory pattern already established by
@@ -27,6 +29,13 @@ import type { Application } from '../bootstrap/buildApplication.ts'
 // X.9.3 ADDITION (wiring only, per this milestone's explicit "src/server/** (wiring only)"
 // carve-out): registers the SSE streaming route via registerReasoningStreamRoute()
 // (src/http/) — one call, no logic added here.
+//
+// X.12 ADDITION (wiring only, same carve-out): before X.12, no HTTP entry reached the complete
+// Phase X.11 Conversation Runtime (RuntimeSessionBuilder/session persistence was never wired in
+// — reasoningRoutes.ts is stateless by design). Constructs one RuntimeContext via
+// buildRuntimeContext({ application: app }) (memory-backed by default, exactly mirroring how
+// buildApplication() itself defaults to memory-backed knowledge repositories) and registers
+// registerConversationRoutes() (src/api/) — one call, no orchestration/session logic added here.
 
 export function buildHttpServer(app: Application): FastifyInstance {
   const server = Fastify({ logger: false })
@@ -52,6 +61,9 @@ export function buildHttpServer(app: Application): FastifyInstance {
   registerReasoningRoutes(server, app)
   registerCoordinatorRoutes(server, app)
   registerReasoningStreamRoute(server, app, { streamTimeoutMs: app.streamTimeoutMs })
+
+  const runtime = buildRuntimeContext({ application: app })
+  registerConversationRoutes(server, runtime)
 
   return server
 }
