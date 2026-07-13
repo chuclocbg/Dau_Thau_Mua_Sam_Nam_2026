@@ -1,8 +1,10 @@
 import type { FastifyRequest } from 'fastify'
 import { buildUserContext, buildAnonymousContext } from '../identity/application/authenticationContext.ts'
 import type { AuthenticationContext } from '../identity/application/authenticationContext.ts'
+import { verifyToken } from './credentialToken.ts'
+import { loadAppConfigFromEnv } from '../config/appConfig.ts'
 
-// ── HTTP Principal Resolver — Phase X.15 ───────────────────────────────────────
+// ── HTTP Principal Resolver — Phase X.15, extended X.16 Step 2 ─────────────────
 // Per ADR_X15_ARCHITECTURE_DECISION.md: bridges a FastifyRequest to an AuthenticationContext by
 // reading the caller-supplied `x-client-id` header, reusing buildUserContext()/
 // buildAnonymousContext() (Phase X.14, unmodified) -- this file shapes no identity of its own,
@@ -20,26 +22,51 @@ import type { AuthenticationContext } from '../identity/application/authenticati
 // The dependency graph is unchanged: src/api/ already depends on src/identity/ under this ADR;
 // this file is simply the concrete location of that one edge.
 //
-// x-client-id is NOT a credential and NOT authentication. It is a plain, unsigned, caller-
-// supplied string -- the same trust level sessionId itself already has. Its purpose is solely to
-// give runAuthorizedConversationTurn()'s session-ownership check a real, non-constant signal to
-// compare, so two different callers are no longer indistinguishable (which the previous
-// always-anonymous default made them, defeating the ownership check entirely -- the exact false-
-// sense-of-security failure mode the ADR was written to avoid). Real credential verification
-// (bearer token, session cookie, OIDC) is explicitly out of scope -- a future, separately-
-// authorized milestone (Phase X.16 in the current roadmap).
+// X.16 STEP 2 ADDITION, per X16_PROTOCOL_DECISION.md (Option A -- stdlib-only HMAC bearer
+// token), implemented via Path B of that decision's own fork: this function's exported signature
+// is UNCHANGED (still `(req) => AuthenticationContext`, no new parameter) -- it calls
+// loadAppConfigFromEnv() itself to read CREDENTIAL_SIGNING_SECRET, rather than having the secret
+// threaded through registerConversationRoutes()/httpServer.ts. This was a deliberate trade-off,
+// chosen specifically to avoid (a) a second exact-argument-count break in
+// x12-http-entry-architecture.test.ts's GX-001-fixed call-site literal, which would have required
+// a new GX-005, and (b) modifying src/bootstrap/buildApplication.ts (frozen, X.9.1) to thread the
+// secret through Application the way streamTimeoutMs was. Every existing call site
+// (conversationRoutes.ts's `resolvePrincipalFromRequest(req)`, httpServer.ts's
+// `registerConversationRoutes(server, runtime, sessionIdentityRepository)`) is byte-for-byte
+// unchanged.
 //
-// Absent header -> buildAnonymousContext(), identical to every request's behavior before this
-// milestone. This is a deliberate, verified non-regression: a caller who sends no x-client-id
-// experiences exactly today's behavior.
+// Trust model, by CREDENTIAL_SIGNING_SECRET configuration:
+//   - NOT configured (undefined): credential verification is not enabled. x-client-id is trusted
+//     directly, exactly as at the X.15 freeze -- a deliberate, verified non-regression so every
+//     existing caller/test that does not set this variable keeps its exact pre-X.16 behavior.
+//   - Configured: x-client-id's value must be a token verifyToken() accepts (correctly HMAC-
+//     signed by this same secret, not expired); the verified payload's subject becomes the
+//     principal's id. An absent header, an invalid signature, a tampered payload, or an expired
+//     token all fall back to buildAnonymousContext() -- never a 500, never a silently-escalated
+//     trusted principal (X16_PROTOCOL_DECISION.md's Acceptance Criteria #2/#3).
+//
+// x-client-id is still NOT itself a credential when no secret is configured -- OIDC/session-
+// cookie alternatives remain out of scope, per X16_PROTOCOL_DECISION.md's own Decision.
 
 const CLIENT_ID_HEADER = 'x-client-id'
 
 export function resolvePrincipalFromRequest(req: FastifyRequest): AuthenticationContext {
   const header = req.headers[CLIENT_ID_HEADER]
-  const clientId = Array.isArray(header) ? header[0] : header
-  if (typeof clientId === 'string' && clientId.trim() !== '') {
-    return buildUserContext(clientId.trim())
+  const value = Array.isArray(header) ? header[0] : header
+  if (typeof value !== 'string' || value.trim() === '') {
+    return buildAnonymousContext()
+  }
+  const trimmed = value.trim()
+
+  const config = loadAppConfigFromEnv()
+  const secret = config.ok ? config.value.credentialSigningSecret : undefined
+  if (secret === undefined) {
+    return buildUserContext(trimmed)
+  }
+
+  const result = verifyToken(secret, trimmed)
+  if (result.valid) {
+    return buildUserContext(result.payload.subject)
   }
   return buildAnonymousContext()
 }

@@ -12,9 +12,19 @@
 // raceSignalAndTimeout() bound on each SSE stage. src/config/ is an explicitly allowed
 // directory for both X.9.2 and X.9.3 — these extensions are authorized, not frozen-file
 // violations.
+//
+// X.16 Step 2 addition: credentialSigningSecret, per X16_PROTOCOL_DECISION.md (Option A --
+// stdlib-only HMAC bearer token). Loaded via CREDENTIAL_SIGNING_SECRET, optional (undefined if
+// unset -- matching this project's "never throws" discipline and letting every existing
+// caller/test that builds a server without this variable keep working unchanged). A non-empty
+// value shorter than MIN_SECRET_LENGTH is rejected rather than silently accepted, since this
+// value is the entire security boundary for the credential-token design (see that decision
+// document's Security Considerations).
 
 export type NodeEnv = 'development' | 'production' | 'test'
 export type LogFormat = 'json' | 'pretty'
+
+const MIN_SECRET_LENGTH = 32
 
 export interface AppConfig {
   readonly port: number
@@ -24,11 +34,12 @@ export interface AppConfig {
   readonly logFormat: LogFormat
   readonly shutdownTimeoutMs: number
   readonly streamTimeoutMs: number
+  readonly credentialSigningSecret: string | undefined
 }
 
 export type AppConfigErrorCode =
   | 'INVALID_PORT' | 'INVALID_NODE_ENV' | 'INVALID_LOG_LEVEL' | 'INVALID_LOG_FORMAT'
-  | 'INVALID_SHUTDOWN_TIMEOUT' | 'INVALID_STREAM_TIMEOUT'
+  | 'INVALID_SHUTDOWN_TIMEOUT' | 'INVALID_STREAM_TIMEOUT' | 'INVALID_CREDENTIAL_SIGNING_SECRET'
 
 export interface AppConfigError {
   readonly code: AppConfigErrorCode
@@ -113,5 +124,20 @@ export function loadAppConfigFromEnv(env: Record<string, string | undefined> = p
     streamTimeoutMs = parsed
   }
 
-  return { ok: true, value: { port, host, nodeEnv, logLevel, logFormat, shutdownTimeoutMs, streamTimeoutMs } }
+  const credentialSigningSecretRaw = env['CREDENTIAL_SIGNING_SECRET']?.trim()
+  let credentialSigningSecret: string | undefined
+  if (credentialSigningSecretRaw !== undefined && credentialSigningSecretRaw !== '') {
+    if (credentialSigningSecretRaw.length < MIN_SECRET_LENGTH) {
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_CREDENTIAL_SIGNING_SECRET',
+          message: `CREDENTIAL_SIGNING_SECRET must be at least ${MIN_SECRET_LENGTH} characters; received length ${credentialSigningSecretRaw.length}.`,
+        },
+      }
+    }
+    credentialSigningSecret = credentialSigningSecretRaw
+  }
+
+  return { ok: true, value: { port, host, nodeEnv, logLevel, logFormat, shutdownTimeoutMs, streamTimeoutMs, credentialSigningSecret } }
 }
