@@ -19,131 +19,122 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.16 - Credential Verification - FROZEN"
+current_milestone: "Phase X.17 - Docker/Postgres Live Verification - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-13
 milestone_evidence:
-  scope: "Closes the credential-verification gap X.15 explicitly deferred: replaces
-         httpPrincipalResolver.ts's unverified x-client-id signal with a real,
-         stdlib-only HMAC bearer-token mechanism (Option A of four evaluated in
-         X16_PROTOCOL_DECISION.md against ten dimensions each -- JWT/session-token/OIDC all
-         rejected, full rationale there). Zero new runtime dependency. Five implementation
-         steps: (1) src/api/credentialToken.ts -- signToken()/verifyToken(), node:crypto
-         HMAC-SHA256 only, timingSafeEqual() constant-time comparison, mandatory enforced
-         expiry, malformed/tampered/expired all indistinguishable from absent at the call site
-         (never a thrown error); (2) src/api/httpPrincipalResolver.ts +
-         src/config/appConfig.ts -- resolvePrincipalFromRequest() keeps its EXACT original
-         one-parameter signature (Path B, chosen explicitly over threading the secret through
-         registerConversationRoutes()'s parameters, which would have required a second,
-         foreseeable break in x12-http-entry-architecture.test.ts's GX-001-fixed literal
-         needing a new GX-005, and touching the frozen src/bootstrap/buildApplication.ts) --
-         instead reads CREDENTIAL_SIGNING_SECRET itself via loadAppConfigFromEnv(); no secret
-         configured -> x-client-id trusted directly, identical to the exact X.15 behavior
-         (non-regression, both frozen X.15 test files re-confirmed unmodified and passing);
-         secret configured -> value must be a token verifyToken() accepts, else anonymous
-         fallback; (3) x16-credential-http-integration.test.ts -- real buildHttpServer(), never
-         a throwaway instance, proving valid/expired/tampered/absent-token behavior end to end;
-         (4) scripts/issueCredentialToken.ts -- a thin CLI wrapper (not a new HTTP endpoint,
-         which would need its own access control to avoid becoming a mint-any-identity hole)
-         closing the issuance gap X16_PROTOCOL_DECISION.md itself named as unscoped; (5)
-         x16-credential-verification-architecture.test.ts -- the dedicated X.16 architecture
-         guard, 13 tests, proving every invariant above in code. MID-IMPLEMENTATION GOVERNANCE
-         FINDING: adding credentialToken.ts to src/api/ immediately broke
-         x15-authorization-wiring-architecture.test.ts's own exhaustive src/api/ file-count
-         assertion (a frozen X.15 guard) -- the same class of problem as GX-001/002/003 (an
-         exhaustive-snapshot assertion over something this project's convention treats as
-         additively extensible) but a distinct trigger (X.16, not X.15's own wiring) and a
-         distinct assertion shape (file-count enumeration, not a call-site literal). Resolved
-         as GX-004, formally documented in ADR_X15_ARCHITECTURE_DECISION.md's Governance
-         Exceptions section alongside GX-001/002/003 -- one filename appended, exact
-         array-equality preserved, not loosened to a subset check."
-  scope_exclusion: "Named explicitly, not glossed over: (1) no real server-side revocation --
-                    a signed token is valid until its own expiresAt; no blocklist/invalidation
-                    mechanism exists; accepted trade-off, no evidenced revocation requirement
-                    found anywhere in the repository. (2) single-secret/single-issuer trust
-                    model -- anyone holding CREDENTIAL_SIGNING_SECRET can mint an arbitrary
-                    valid token; secret protection (the existing, unmodified X.9.4 .env/
-                    Docker-Compose mechanism) is the entire security boundary, an explicit,
-                    accepted design choice. (3) routeAuthorization.ts (Fastify-level route
-                    gating, X.14) remains completely unwired -- a distinct capability from the
-                    runtime-level gating this milestone strengthens, never this milestone's
-                    objective. (4) recovery-producer wiring remains unwired, unrelated to and
-                    unaffected by this milestone. (5) the other three HTTP routes
-                    (reasoning/answer, reasoning/batch, reasoning/answer/stream) remain
-                    entirely unauthenticated -- none has session state to protect. (6)
-                    scripts/issueCredentialToken.ts has no access control of its own -- correct
-                    for an operator-run CLI with the real secret already in its environment,
-                    would not be correct if ever exposed as a network-reachable endpoint, which
-                    it deliberately is not."
-  files_added: "3 governance documents (X16_SCOPING_REPORT.md, X16_PROTOCOL_DECISION.md,
-               PHASE_X16_CREDENTIAL_REPORT.md) + 1 revised ADR (ADR_X15_ARCHITECTURE_DECISION.md,
-               GX-004 added) + 3 new implementation files (credentialToken.ts,
-               issueCredentialToken.ts CLI, plus modifications to httpPrincipalResolver.ts and
-               appConfig.ts) + 4 new test files (x16-credential-token.test.ts unit,
-               x16-http-principal-resolver-credential.test.ts unit,
-               x16-credential-http-integration.test.ts real-server integration,
-               x16-credential-verification-architecture.test.ts dedicated architecture guard) +
-               1 governance-exception literal correction to an already-frozen guard file
-               (x15-authorization-wiring-architecture.test.ts, GX-004). Net: +4 test files
-               versus the X.15 freeze baseline (549 -> 553). Zero new package.json dependency."
+  scope: "Verification-only milestone -- runs the already-built persistence layer against a
+         real, live Docker/PostgreSQL stack for the first time in this repository's entire
+         history (8 phases deep, X.9.4 through X.16, all previously blocked on Docker being
+         unavailable in this environment). Zero new business logic, zero application source
+         code modified, zero test file modified. Environment prerequisite satisfied outside
+         this session (Docker Desktop installed and started); one root-cause diagnosis
+         performed before any implementation step: the initial docker compose up failure
+         (PostgreSQL container continuously restarting, POSTGRES_USER/PASSWORD/DB unset) was
+         traced to a missing app/.env file -- only the two template files (.env.example,
+         .env.template) existed; docker-compose.yml's own header comment already documented
+         the required copy step, simply never performed since Docker had never been available
+         before. Copying the template resolved it completely; docker-compose.yml,
+         prisma.config.ts, and prisma/schema.prisma were each read in full and confirmed
+         correct, no repository defect found. Steps executed: (1) stack brought up
+         (PostgreSQL/Redis/MinIO healthy, pgAdmin running); (2) all 4 existing migrations
+         (20260705120000_init_production_schema, 20260710120000_add_conversation_session,
+         20260710150000_add_conversation_recovery_marker,
+         20260710180000_add_session_identity_binding) applied live via prisma migrate deploy
+         -- the first-ever live application of this repository's entire migration history; (3)
+         the 3 previously-skipped TEST_DATABASE_URL-gated tests in
+         x10-prisma-integration.test.ts passed for real against the live container (once
+         DATABASE_URL was also set, since withTransaction() deliberately uses the production
+         Prisma singleton, not the test-scoped client, per testDatabaseBootstrap.ts's own
+         documented design -- not a defect, an artifact of the first live invocation);
+         re-running the full suite with both variables globally exported surfaced 37 failures,
+         all confirmed as by-design 'throws when DATABASE_URL is unset' tests (LRM-13, LRA-13,
+         LRD-12, MF-04 through MF-07, x10-persistence-foundation.test.ts, and the equivalent
+         X.11/X.13/X.14 Prisma-repository suites), not a regression -- re-running in the default
+         (unset) mode reproduced the exact pre-existing baseline; (4) a real server process
+         (tsx src/server/main.ts, not inject(), not a throwaway instance) was smoke-tested via
+         scripts/waitForReady.ts (ready on first attempt) and scripts/smokeTest.ts (6/6 PASS:
+         /live, /ready, /health, reasoning/answer, reasoning/batch, reasoning/answer/stream SSE)
+         against the live, database-backed server, confirmed by both tool output and the
+         server's own structured request log. Zero defects found across the entire milestone --
+         the conditional defect-fix step was not needed."
+  scope_exclusion: "Named explicitly, not glossed over: this milestone verifies Docker/Postgres
+                    live in ONE development environment, once -- it does not establish CI/CD
+                    verification (X.18's own scope) or verification under real production load.
+                    All of X.16's own named gaps (no server-side token revocation, no replay
+                    protection, single-secret/single-issuer trust model,
+                    routeAuthorization.ts/recovery-producer wiring both still unwired) are
+                    entirely unaffected by and unrelated to this milestone -- X.17 touches
+                    src/persistence/ and prisma/ verification only, confirmed by git diff
+                    showing zero change to src/identity/, src/api/, or any other Phase-X module."
+  files_added: "1 new governance document (PHASE_X17_DOCKER_VERIFICATION_REPORT.md). Zero
+               application source files changed. Zero test files changed. Zero new
+               package.json dependency. Zero new Prisma migration (all 4 already existed).
+               The entire milestone's code-level diff is empty -- its evidence is operational
+               (a real, live verification run), not a source change."
   full_suite_result: "553 test files, 14873 tests (14870 passed, 3 skipped -- X.10's
-                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures, clean on the
-                      first run (no flake encountered this freeze); up from 549 files / 14829
-                      passed at the X.15 freeze baseline (+4 files, +41 tests, exactly the sum
-                      of the four new X.16 test files' own test counts: 13+9+6+13=41,
-                      confirmed). tsc --noEmit clean."
-  exit_criteria_met: "Every Acceptance Criterion in both X16_SCOPING_REPORT.md §6 and
-                      X16_PROTOCOL_DECISION.md §6 verified: tsc --noEmit clean; full suite 0
-                      failures; the dedicated X.16 architecture guard (35th guard file, 13
-                      tests) passes, proving credentialToken.ts's import isolation, Path B's
-                      preserved signatures, the never-silently-escalate guarantee, zero new
-                      dependency, and every frozen marker/file-count intact; real-server
-                      integration tests confirm valid/expired/tampered/absent-token behavior
-                      against the actual buildHttpServer(); git diff --stat against the
-                      pre-Step-1 baseline (commit 1044059) shows exactly the 12 files this
-                      milestone's own files_added field names -- no more, no fewer; this
-                      document and PHASE_X16_CREDENTIAL_REPORT.md both state plainly that no
-                      revocation mechanism exists and the trust model is single-secret/
-                      single-issuer, never oversold as more than that."
-  frozen_interfaces_touched: "None, by design (Path B's entire purpose). resolvePrincipalFromRequest()
-                              keeps its exact original one-parameter signature.
-                              registerConversationRoutes()'s call site in httpServer.ts is
-                              byte-for-byte unchanged since X.15 (still the 3-argument form).
-                              src/bootstrap/buildApplication.ts and src/server/main.ts contain
-                              zero reference to credentials, confirmed by direct grep and by
-                              the new architecture guard. Every file the X.15 ADR lists as 'MUST
-                              remain untouched' remains so; GX-004 is the only modification to
-                              any already-frozen test file, and it is a single appended array
-                              element, not a weakening."
+                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures on the 3rd of 3
+                      consecutive confirming runs (1st run: 2 failures -- the identical,
+                      pre-existing execSync('npx prisma validate') timing flake first
+                      diagnosed and accepted at the X.14 freeze; 2nd run: 1 failure, different
+                      file, same flake signature; 3rd run: 0 failures); unchanged from the
+                      X.16 freeze baseline (553 files / 14870 passed) -- X.17 added zero test
+                      files. tsc --noEmit clean."
+  investigation_note: "Re-confirms the identical pre-existing timing flake investigated at the
+                      X.14 freeze and re-encountered at this freeze's own verification: both
+                      x10-prisma-integration.test.ts and x13-prisma-recovery-repository.test.ts
+                      shell out to a real `npx prisma validate` via execSync, tight against
+                      vitest's 5000ms default under 553-file parallel contention. git status
+                      confirmed both files byte-for-byte unmodified throughout this milestone.
+                      Classification: pre-existing, unrelated, load-dependent flake, not caused
+                      by or related to X.17's own live-database work."
+  exit_criteria_met: "Every Acceptance Criterion in X17_IMPLEMENTATION_PLAN.md §10 verified:
+                      Docker confirmed reachable; docker compose --profile app up succeeded
+                      (or the backing-services default, for the postgres/redis/minio stack);
+                      all 4 migrations applied with zero errors; all 3 previously-skipped
+                      tests pass for real; full suite 0 failures beyond the accepted timing-
+                      flake exception; scripts/waitForReady.ts and scripts/smokeTest.ts both
+                      succeeded against the real, live-backed server; tsc --noEmit clean;
+                      architecture guard suite (35 files, unchanged) passes in full; this
+                      document and PHASE_X17_DOCKER_VERIFICATION_REPORT.md both state plainly
+                      that zero defects were found, closing this gap in full rather than
+                      overselling it."
+  frozen_interfaces_touched: "None. Zero application source file changed by this milestone --
+                              confirmed by git diff --stat showing only this document, the
+                              freeze report, and MILESTONE_HISTORY.md's own update. Every file
+                              in src/persistence/, prisma/, src/identity/, src/api/, and every
+                              other Phase-X module is byte-for-byte unchanged from the X.16
+                              freeze."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
-                          # NOTE: still not updated (unchanged from the X.15 freeze's own note) --
+                          # NOTE: still not updated (unchanged since the X.15/X.16 freezes) --
                           # no new tag was cut this milestone either; its test-count fields now
                           # reflect the x14-frozen tag, stale by +7 files/+67 tests relative to
-                          # this freeze's actual numbers above.
+                          # this freeze's actual numbers above (identical to X.16's own gap,
+                          # since X.17 added no new tests of its own).
 
-next_active_milestone: "None currently proposed. Phase X.16 (Credential Verification) is now
-                        COMPLETE -- callers can now be distinguished by a real, tamper-evident,
-                        expiring, HMAC-signed credential instead of an unverified string, with
-                        an issuance path an operator can actually use. Two named, honest gaps
-                        remain open, explicitly not claimed as solved: no server-side
-                        revocation (a signed token is trusted until it expires, no blocklist
-                        exists), and routeAuthorization.ts (Fastify-level route gating) remains
-                        entirely unwired -- a distinct, still-deferred capability. Recovery-
-                        producer wiring also remains open, unrelated to and unaffected by this
-                        milestone. Candidates named in POST_X14_ARCHITECTURE_AUDIT.md's original
-                        roadmap: X.17 (Docker/Postgres Live Verification), X.18 (CI/CD
-                        Pipeline), X.19 (Exactly-Once Recovery + Optimistic Locking), X.20
-                        (Knowledge Platform Persistence Migration, need-driven only)."
+next_active_milestone: "None currently proposed. Phase X.17 (Docker/Postgres Live Verification)
+                        is now COMPLETE -- the single largest, longest-standing 'implemented but
+                        never run for real' gap on the platform (8 phases deep) is closed with
+                        zero defects found. Candidates named in POST_X14_ARCHITECTURE_AUDIT.md's
+                        original roadmap, still open: X.18 (CI/CD Pipeline, no environment
+                        dependency), X.19 (Exactly-Once Recovery + Optimistic Locking, touches
+                        currently-frozen X.11 persist-path code, needs its own explicit scoping),
+                        X.20 (Knowledge Platform Persistence Migration, need-driven only, not
+                        currently justified). None of X.16's own named gaps (token revocation,
+                        replay protection, routeAuthorization.ts/recovery-producer wiring) were
+                        touched by or are affected by this milestone -- all remain open,
+                        unrelated to X.17's verification-only scope."
 next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per explicit
-                         instruction, work stops here; Phase X.17 does not begin automatically."
-next_milestone_blocker: "N/A — no next milestone proposed. Three named gaps carried forward: (1)
-                         no server-side token revocation exists; (2) routeAuthorization.ts
-                         remains unwired; (3) recovery-producer wiring remains deferred. None is
-                         silently claimed as solved. Beginning any new work requires its own
+                         instruction, work stops here; Phase X.18 does not begin automatically."
+next_milestone_blocker: "N/A — no next milestone proposed. All gaps named at the X.16 freeze
+                         remain open and are carried forward unchanged (X.17 did not touch
+                         them): no server-side token revocation, no replay protection,
+                         routeAuthorization.ts unwired, recovery-producer wiring unwired. None
+                         is silently claimed as solved. Beginning any new work requires its own
                          explicit human authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.16."
+                        after Phase X.17."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -285,6 +276,16 @@ do_not:
      remains a distinct, separately-deferred capability. Do not modify the GX-004 literal in
      x15-authorization-wiring-architecture.test.ts (src/api/'s five-file array) outside of a
      newly-approved milestone that adds another authorized src/api/ file."
+  - "UPDATE (X.17): Docker/Postgres has now been verified live in this development environment
+     -- do not claim this means CI/CD verification (X.18) or production-load verification
+     exists; neither does. app/.env now exists locally (git-ignored, correctly never
+     committed) -- do not assume a fresh checkout has it; the copy-from-template step
+     (docker-compose.yml's own documented instruction) is still required on any new checkout or
+     environment. Zero application source or test file was modified by X.17 -- there is
+     nothing new to protect in the do_not sense beyond what X.16's own entry above already
+     covers. Do not claim X.16's named gaps (token revocation, replay protection,
+     routeAuthorization.ts/recovery-producer wiring) are affected by or resolved by X.17 -- none
+     of them are; X.17's scope was persistence-layer live verification only."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -847,8 +848,31 @@ historical_sequence_to_reach_here:
      issuance gap the protocol decision itself named as unscoped. New dedicated X.16
      architecture guard (13 tests) + real-server (not throwaway) integration test suite (6
      tests) proving valid/expired/tampered/absent-token behavior end to end. Full repo suite
-     green (553 files, 14870 tests, 3 skipped, 0 failures, clean on the first run) — FROZEN —
-     you are here"
+     green (553 files, 14870 tests, 3 skipped, 0 failures, clean on the first run) — FROZEN"
+  - "Phase X.17 (Docker/Postgres Live Verification) implemented: verification-only milestone,
+     zero application source or test file modified. Docker Desktop installed/started outside
+     this session; root-cause diagnosis performed before any implementation step -- the initial
+     docker compose up failure (PostgreSQL continuously restarting) traced to a missing
+     app/.env file (only .env.example/.env.template existed), resolved by copying the template
+     per docker-compose.yml's own already-documented instruction; docker-compose.yml,
+     prisma.config.ts, and prisma/schema.prisma all read in full and confirmed correct, no
+     repository defect found. All 4 existing migrations applied live via prisma migrate deploy
+     -- the first-ever live application of this repository's entire migration history. The 3
+     previously-skipped TEST_DATABASE_URL-gated tests in x10-prisma-integration.test.ts passed
+     for real against the live container (DATABASE_URL needed alongside TEST_DATABASE_URL,
+     since withTransaction() deliberately uses the production singleton, not the test client,
+     per testDatabaseBootstrap.ts's own design -- not a defect). Re-running the full suite with
+     both variables globally exported surfaced 37 failures, all confirmed as by-design 'throws
+     when DATABASE_URL is unset' tests, not a regression -- the default (unset) mode reproduced
+     the exact pre-existing baseline. A real server process (not inject(), not a throwaway
+     instance) was smoke-tested via scripts/waitForReady.ts (ready on first attempt) and
+     scripts/smokeTest.ts (6/6 PASS) against the live, database-backed server. Zero defects
+     found -- the conditional defect-fix step was not needed. Closes the single largest,
+     longest-standing 'implemented but never run for real' gap on the platform, 8 phases deep
+     (X.9.4 through X.16). Full repo suite green (553 files, 14870 tests, 3 skipped, 0 failures
+     on the 3rd of 3 consecutive confirming runs -- the identical pre-existing
+     execSync('npx prisma validate') timing flake first diagnosed at the X.14 freeze) — FROZEN
+     — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

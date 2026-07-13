@@ -7,10 +7,37 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.16 — Credential Verification — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.17 — Docker/Postgres Live Verification — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.16 — Credential Verification — declared 2026-07-13 (superseded by X.17)
+
+**Evidence:** 553 test files, 14,873 tests (14,870 passed, 3 skipped — `TEST_DATABASE_URL`-gated,
+unaffected), 0 failures, clean on the first run; architecture guard (35 files, 334 tests)
+confirmed zero frozen-file modification beyond one documented, minimal governance exception
+(GX-004).
+
+**Summary:** Replaced `httpPrincipalResolver.ts`'s unverified `x-client-id` signal (X.15) with a
+real, stdlib-only HMAC bearer-token mechanism — `X16_PROTOCOL_DECISION.md` evaluated bearer-token/
+JWT/session-token/OIDC against ten dimensions each, chose stdlib-only HMAC (zero new runtime
+dependency). Built `src/api/credentialToken.ts` (`signToken()`/`verifyToken()`, `node:crypto`
+HMAC-SHA256, constant-time comparison, mandatory enforced expiry). Adding this file to `src/api/`
+broke `x15-authorization-wiring-architecture.test.ts`'s own exhaustive file-count assertion —
+resolved as GX-004, the same class of problem as GX-001/002/003 but a distinct trigger (X.16, not
+X.15's own wiring). A second design fork (thread the signing secret through
+`registerConversationRoutes()`'s parameters vs. have the resolver read it internally) was resolved
+explicitly before implementation: Path B was chosen — `resolvePrincipalFromRequest()` keeps its
+exact original one-parameter signature, reading `CREDENTIAL_SIGNING_SECRET` itself via
+`loadAppConfigFromEnv()` — specifically to avoid a second, foreseeable break (GX-005) and touching
+the frozen `buildApplication.ts`. Added `scripts/issueCredentialToken.ts` (a thin CLI, not a new
+HTTP endpoint, avoiding a mint-any-identity hole) and a dedicated X.16 architecture guard (13
+tests). Named, not glossed over: no server-side token revocation exists; single-secret/
+single-issuer trust model; `routeAuthorization.ts` and recovery-producer wiring remain unwired,
+unrelated to this milestone — FROZEN.
 
 ---
 
