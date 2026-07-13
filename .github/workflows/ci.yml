@@ -1,0 +1,47 @@
+name: CI
+
+# Phase X.18 Step 1 -- baseline verification gate, per X18_ARCHITECTURE_DECISION.md.
+# Runs the exact three commands used at every milestone freeze this project has ever had
+# (tsc --noEmit, the architecture guard suite, the full test suite) plus an informational-only
+# lint pass. No Postgres service container (X18_ARCHITECTURE_DECISION.md §1: declined this
+# milestone). Lint never blocks (X18_ARCHITECTURE_DECISION.md §2: 477 pre-existing findings,
+# informational only).
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Architecture guard suite
+        run: npx vitest run --pool=forks src/__tests__/*architecture*.test.ts
+
+      - name: Full test suite
+        run: npx vitest run --pool=forks
+
+      - name: Lint (informational only -- does not block; see X18_ARCHITECTURE_DECISION.md §2)
+        continue-on-error: true
+        run: npx eslint .
