@@ -33,10 +33,16 @@ function listTsFiles(dir: string): string[] {
 }
 
 describe('Architecture guard — Phase X.15 file set', () => {
-  it('src/api/ gained exactly one new file (httpPrincipalResolver.ts), no other scope creep', () => {
+  // GOVERNANCE EXCEPTION GX-004 (see ADR_X15_ARCHITECTURE_DECISION.md's Governance Exceptions
+  // section): Phase X.16 Step 1 added src/api/credentialToken.ts (a pure, dependency-free
+  // node:crypto HMAC sign/verify primitive per X16_PROTOCOL_DECISION.md, not yet imported by
+  // anything), which is one more authorized file in src/api/ beyond X.15's own single addition.
+  // The array below is extended by exactly one entry -- this remains an EXACT array-equality
+  // check, not loosened to a subset/contains check, so any other unexpected file still fails it.
+  it('src/api/ gained exactly two new files (httpPrincipalResolver.ts, credentialToken.ts), no other scope creep', () => {
     const apiFiles = listTsFiles('src/api').map(f => f.split(/[\\/]/).pop())
     expect(apiFiles.sort()).toEqual([
-      'conversationRoutes.ts', 'coordinatorRoutes.ts', 'httpPrincipalResolver.ts', 'reasoningRoutes.ts',
+      'conversationRoutes.ts', 'coordinatorRoutes.ts', 'credentialToken.ts', 'httpPrincipalResolver.ts', 'reasoningRoutes.ts',
     ])
   })
 

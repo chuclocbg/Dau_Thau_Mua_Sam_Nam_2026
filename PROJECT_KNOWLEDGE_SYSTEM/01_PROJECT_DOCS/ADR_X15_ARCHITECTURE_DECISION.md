@@ -1,19 +1,28 @@
 # ADR: Phase X.15 Architecture Decision — Authorization Wiring + Recovery Scan Wiring
 
-**Status:** REVISED — Governance Exceptions section (below) formally adopted per
-`X15_GOVERNANCE_IMPACT_ASSESSMENT.md`'s Recommendation B, approved 2026-07-13. Still not yet
-ratified into `.memory/decision-index.md` (ratification is a separate governance action, out of
-scope for this document per its own instructions).
-**Date:** 2026-07-13 (original decision); revised 2026-07-13 (Governance Exceptions added)
+**Status:** REVISED (twice) — Governance Exceptions section (below) formally adopted per
+`X15_GOVERNANCE_IMPACT_ASSESSMENT.md`'s Recommendation B, approved 2026-07-13 (GX-001/002/003).
+**Amended again 2026-07-13** to add GX-004, a governance exception discovered during Phase X.16
+Step 1 implementation (adding `src/api/credentialToken.ts` broke the X.15 architecture guard's own
+`src/api/` file-count assertion) — user-directed, same-day, documented in this same Governance
+Exceptions section for a single canonical ledger of every GX-numbered exception rather than
+fragmenting them across documents. Still not yet ratified into `.memory/decision-index.md`
+(ratification is a separate governance action, out of scope for this document per its own
+instructions).
+**Date:** 2026-07-13 (original decision); revised 2026-07-13 (GX-001/002/003 added); amended
+2026-07-13 (GX-004 added).
 **Inputs re-read in full for this decision:** `POST_X14_ARCHITECTURE_AUDIT.md`,
-`PHASE_X15_IMPLEMENTATION_PLAN.md`. For the revision: `X15_GOVERNANCE_IMPACT_ASSESSMENT.md` in
-full (its own exhaustive, executed — not assumed — enumeration of every frozen test file
-referencing either affected file). No new repository-wide analysis was performed beyond what
-those two documents already establish.
+`PHASE_X15_IMPLEMENTATION_PLAN.md`. For the GX-001/002/003 revision: `X15_GOVERNANCE_IMPACT_ASSESSMENT.md`
+in full. For the GX-004 amendment: `X16_PROTOCOL_DECISION.md`, `X16_SCOPING_REPORT.md`, and the
+actual current content of `src/api/credentialToken.ts` and
+`x15-authorization-wiring-architecture.test.ts`, re-read directly this session. No new
+repository-wide analysis was performed beyond what these documents already establish.
 **Affects:** `src/api/conversationRoutes.ts`, `src/server/httpServer.ts`, `deployment/deploy.sh`,
-plus (per the revision) three literal assertions across two frozen architecture-guard test files:
+plus four literal assertions across three frozen architecture-guard test files:
 `x12-http-entry-architecture.test.ts` (X.12), `x13-recovery-architecture-guard.test.ts` (X.13),
-`x14-identity-architecture-guard.test.ts` (X.14).
+`x14-identity-architecture-guard.test.ts` (X.14), and `x15-authorization-wiring-architecture.test.ts`
+(X.15, GX-004). Additionally, GX-004's own trigger: the new file `src/api/credentialToken.ts`
+(Phase X.16 Step 1).
 **Does not affect:** any file in `src/reasoning/`, `src/mcp/`, `src/multiagent/`,
 `src/runtime/conversationEntryOrchestrator.ts`, `src/runtime/recovery/*.ts`,
 `src/identity/application/*.ts` (all reused, none modified), `src/server/main.ts`,
@@ -203,13 +212,23 @@ the rest of this ADR's Decision, Dependency Graph, and Flows sections are otherw
 
 ## Governance Exceptions
 
-**Added by this revision, per `X15_GOVERNANCE_IMPACT_ASSESSMENT.md`'s Recommendation B.** During
-implementation, extending `conversationRoutes.ts`/`httpServer.ts` as this ADR authorizes broke
-literal content assertions in three already-frozen architecture-guard test files across three
-prior milestones (X.12, X.13, X.14). Each is formally adopted here as a named governance
-exception (GX-NNN) rather than fixed ad hoc, per the impact assessment's own finding that these
-three breaks share one root cause (see "Why These Are Governance Exceptions, Not Implementation
-Bugs" below), not three unrelated coincidences.
+**GX-001/002/003 added by the original revision, per `X15_GOVERNANCE_IMPACT_ASSESSMENT.md`'s
+Recommendation B.** During implementation, extending `conversationRoutes.ts`/`httpServer.ts` as
+this ADR authorizes broke literal content assertions in three already-frozen architecture-guard
+test files across three prior milestones (X.12, X.13, X.14). Each is formally adopted here as a
+named governance exception (GX-NNN) rather than fixed ad hoc, per the impact assessment's own
+finding that these three breaks share one root cause (see "Why These Are Governance Exceptions,
+Not Implementation Bugs" below), not three unrelated coincidences.
+
+**GX-004 added by a later, same-day amendment.** During Phase X.16 Step 1 (building the
+stdlib-only HMAC credential-verification primitive per `X16_PROTOCOL_DECISION.md`), adding the new
+file `src/api/credentialToken.ts` broke a fourth assertion — this time in the **X.15 guard itself**
+(`x15-authorization-wiring-architecture.test.ts`'s own `src/api/` exhaustive file-count check), a
+sibling problem to GX-001/002/003 (an exhaustive-snapshot assertion over something this project's
+own convention treats as additively extensible) but with a distinct trigger (a new milestone,
+X.16, not X.15's own wiring) and a distinct assertion shape (file enumeration, not a call-site
+literal). Documented here rather than in a separate X.16 document specifically so every GX
+exception remains discoverable from one canonical ledger.
 
 ### GX-001 — `x12-http-entry-architecture.test.ts` (X.12)
 
@@ -276,7 +295,115 @@ Bugs" below), not three unrelated coincidences.
   (it already correctly described the narrowed check).
 - **Status:** approved by this revision; applied together with this ADR update.
 
-### Why These Are Governance Exceptions, Not Implementation Bugs
+### GX-004 — `x15-authorization-wiring-architecture.test.ts` (X.15, broken by Phase X.16)
+
+- **Affected assertion:**
+  ```
+  it('src/api/ gained exactly one new file (httpPrincipalResolver.ts), no other scope creep', () => {
+    const apiFiles = listTsFiles('src/api').map(f => f.split(/[\\/]/).pop())
+    expect(apiFiles.sort()).toEqual([
+      'conversationRoutes.ts', 'coordinatorRoutes.ts', 'httpPrincipalResolver.ts', 'reasoningRoutes.ts',
+    ])
+  })
+  ```
+- **Trigger:** Phase X.16 Step 1 (per `X16_PROTOCOL_DECISION.md`, Option A — stdlib-only HMAC
+  bearer token) added `src/api/credentialToken.ts`, a new, standalone, zero-dependency module
+  exporting `signToken()`/`verifyToken()` — pure functions, no imports from `src/identity/`,
+  `src/auth/`, or any other Phase-X module, and (by design, per `X16_SCOPING_REPORT.md` §5 Step 2)
+  **not yet imported by anything** — the primitive is built and unit-tested in isolation before
+  any wiring step. Adding this fifth file to `src/api/` makes the exact 4-file array above fail.
+- **Rationale — why this is a governance exception, distinct in kind from GX-001/002/003 but the
+  same underlying class of problem:** GX-001/002/003 were brittle *call-site/import literal*
+  assertions over two files `httpServer.ts`'s own header comment had already documented as
+  "wired once, extended repeatedly." This is a brittle *exhaustive file-count* assertion over a
+  *directory* — `src/api/` — that this project's own history already shows is not closed either:
+  X.12 added `conversationRoutes.ts` to a directory that previously held only
+  `reasoningRoutes.ts`/`coordinatorRoutes.ts`; X.15 itself added `httpPrincipalResolver.ts`
+  alongside it. The guard's own `it()` title ("gained exactly one new file... no other scope
+  creep") was written to prove *X.15's own* addition was singular and complete — a true,
+  correctly-scoped claim **at X.15's own freeze time**. It was never a claim that `src/api/`
+  would never receive another file from any future milestone; X.16 is simply the first milestone
+  since to add one.
+- **Fix applied:** append `'credentialToken.ts'` to the expected, sorted array — the assertion
+  remains an **exact array-equality check**, not loosened to a "contains" or "at-least" check.
+  Any unexpected sixth file (or any renamed/removed expected file) still fails this test exactly
+  as before. This is the identical minimal-literal-update discipline GX-001/GX-002 already used
+  for their own call-site literals, applied here to a file-count literal instead.
+- **Status:** approved by this decision (user-directed, 2026-07-13); applied together with this
+  ADR update and Phase X.16 Step 1's commit.
+
+#### Why `credentialToken.ts` Is a Legitimate Architectural Addition
+
+- It implements exactly the one capability `X16_PROTOCOL_DECISION.md` §1 decided on (stdlib-only
+  HMAC bearer token verification) and exactly the one new module `X16_PROTOCOL_DECISION.md` §3/§4
+  named as required — this is not scope creep, it is the planned, decided deliverable.
+- It is co-located in `src/api/` (beside `httpPrincipalResolver.ts`) for the same reason
+  `httpPrincipalResolver.ts` itself was relocated out of `src/identity/` at X.15: placing it under
+  `src/identity/` would trip that module's own recursive "exactly 10 files" guard
+  (`x14-identity-architecture-guard.test.ts`), which is frozen and must not be modified for this
+  purpose. `src/api/` is therefore the correct, precedent-following location, not an arbitrary
+  choice.
+- It is a pure, dependency-free module (`node:crypto` only, part of the Node.js standard library,
+  not a new `package.json` dependency) — re-confirmed by this session's own unit test run (13/13
+  passing) and `tsc --noEmit` (clean) before this guard conflict was even discovered.
+
+#### Why the Existing Frozen Guard Is Now Too Restrictive
+
+The guard's exhaustive 4-file array was correct and complete *as a snapshot of X.15's own diff*,
+but an exhaustive enumeration is, by construction, unable to distinguish "an unexpected,
+unauthorized file appeared" from "an authorized future milestone added its own planned file" —
+both look identical to an `toEqual()` array check. The assertion's *title* ("no other scope
+creep") already implies its true scope was point-in-time, not permanent; nothing in
+`ADR_X15_ARCHITECTURE_DECISION.md`'s original text claimed `src/api/`'s file count was frozen for
+all future milestones, only that X.15 itself added exactly one file. GX-004 corrects the literal
+to match a second, subsequently-authorized addition — the same category of correction GX-001/
+GX-002 already made for call-site literals.
+
+#### Why This Is Not a Layering Violation
+
+`credentialToken.ts` imports only `node:crypto` (Node's standard library) — zero imports from
+`src/identity/`, `src/auth/`, `src/runtime/`, `src/reasoning/`, or any other Phase-X module in
+either direction, confirmed by direct read of the file. No dependency-direction assertion in
+`x15-authorization-wiring-architecture.test.ts` (or any other guard) references this file's
+imports, and none needed to change — only the plain file-count enumeration did. The one edge this
+file will eventually participate in (`httpPrincipalResolver.ts` importing `verifyToken()` from it,
+at a later Step 3 wiring step) is a same-directory, same-layer reference, not a new edge between
+layers.
+
+#### Why This Does Not Weaken the Security Model
+
+This exception touches a **test literal**, not any security-relevant code or check.
+`evaluateAuthorization()`, `runAuthorizedConversationTurn()`, and every other X.14 authorization
+primitive are byte-for-byte unmodified (re-confirmed: none of GX-004's diff touches anything
+outside the single test file). `credentialToken.ts` itself is not yet reachable from any HTTP
+path — it has no security surface to weaken *yet*; its security properties (constant-time
+signature comparison, mandatory expiry) are enforced by its own unit tests (§6 of
+`X16_PROTOCOL_DECISION.md`'s Acceptance Criteria) and were verified passing before this guard
+conflict was discovered. Widening a file-count array is definitionally not capable of weakening a
+security *check* — no `expect(...).not.toMatch(...)`-style negative assertion was touched by this
+exception, only a positive enumeration.
+
+#### Rollback Implications, GX-004 specifically
+
+- **Fully independent of GX-001/002/003's own rollback boundary.** GX-004 is layered on top of
+  the already-frozen X.15 milestone (commit `512b761` and everything since), not on top of X.15's
+  own original wiring — reverting GX-004 and `credentialToken.ts` together (a single, self-
+  contained commit per this session's own "keep commits small and self-contained" instruction)
+  cleanly restores the guard to its pre-X.16 exact-4-file assertion, with zero entanglement in
+  X.15's own already-frozen authorization wiring.
+- **No data/schema implication.** `credentialToken.ts` is pure source code; no migration, no
+  config, no environment variable is introduced at this step (the signing secret's config wiring
+  is a later, separate step per `X16_SCOPING_REPORT.md` §5 Step 3).
+- **If Phase X.16 is rolled back entirely** in the future, this guard's array reverts to its
+  pre-GX-004, 4-file form automatically as part of reverting the commit that added both
+  `credentialToken.ts` and this exception together — matching the same "one commit, one clean
+  revert boundary" property GX-001/002/003 already established.
+
+### Why These Are Governance Exceptions, Not Implementation Bugs (GX-001/002/003)
+
+*The equivalent explanation for GX-004 — a distinct assertion shape (file-count enumeration, not
+a call-site literal) with a distinct trigger (Phase X.16, not X.15's own wiring) — is given in
+full under GX-004's own entry above, not repeated here.*
 
 None of the three affected assertions is a *dependency-boundary* or *layering* rule — every guard
 asserting "api must not import identity/reasoning/mcp/multiagent internals directly" in all three
@@ -294,7 +421,7 @@ of guards, not a defect in the code the guards check. A bug would mean the imple
 something the architecture forbids; nothing here does that — every dependency-direction and
 business-logic-isolation assertion in all three guards still holds.
 
-### Why the Underlying Architecture Remains Valid
+### Why the Underlying Architecture Remains Valid (GX-001/002/003)
 
 - **Zero layering violations.** `src/api/` → `src/identity/` is a new edge, but it points
   downward into an already-lower layer, exactly like every prior "wiring" milestone
@@ -310,7 +437,7 @@ business-logic-isolation assertion in all three guards still holds.
   (GX-003). No guard's *forbidden-import* list, *dependency-direction* check, or *file-count*
   check needed any change.
 
-### Rollback Implications
+### Rollback Implications (GX-001/002/003)
 
 - **If X.15 is rolled back entirely** (revert to `x14-frozen` / commit `d1708ff`): all three guard
   files revert to their original, currently-frozen content automatically — no separate rollback
@@ -326,6 +453,9 @@ business-logic-isolation assertion in all three guards still holds.
   necessitated them, never done independently.
 - **No data/schema rollback implication.** None of GX-001/GX-002/GX-003 touches `prisma/schema.prisma`
   or any migration; rollback is pure source-and-test-file reversion.
+- **GX-004's own rollback profile is independent of the three above** (it sits on top of the
+  already-frozen X.15 milestone, not inside it) — see "Rollback Implications, GX-004 specifically"
+  under GX-004's own entry above.
 
 ### Future Guard-Writing Guidance (recommendation, not a mandate)
 
@@ -340,6 +470,20 @@ argument list. This is a recommendation for whoever authors the next such guard 
 already known to touch these files again); it is **not** a retroactive rewrite of X.9.2/X.9.3/
 X.9.4 (already correct, no change needed) and **not** an additional change to X.12/X.13/X.14
 beyond the three literal corrections GX-001/GX-002/GX-003 already make.
+
+**GX-004 is the first realized instance of this predicted X.16 collision** — though against an
+exhaustive file-count enumeration rather than a call-site literal. GX-004 deliberately did **not**
+loosen the assertion's style (it remains an exact, sorted array-equality check, per this
+amendment's own explicit instruction to never weaken or broaden a guard) — it only appended the
+one newly-authorized filename. The observation for future guard authors is narrower: an
+exhaustive file-count assertion over a directory this project's own convention treats as
+additively extensible (`src/api/` has now received a new file at X.12, X.15, and X.16) will need
+this same kind of minimal, literal update at every future milestone that adds a file there, the
+same way GX-001/GX-002's call-site literals will. That recurring maintenance cost is accepted, not
+solved, by keeping the check exact — the alternative (a subset/"at-least-contains" check) would
+stop requiring updates but would also stop catching an unexpected *extra* file, which is exactly
+the detection property this amendment was instructed to preserve. No change to the guard's
+strictness is recommended; only awareness that this particular assertion will recur.
 
 ## Implementation Boundaries
 
@@ -357,6 +501,12 @@ beyond the three literal corrections GX-001/GX-002/GX-003 already make.
   (GX-003) — literal assertion updates only, each scoped exactly as documented above: minimum
   literal changed, architectural intent re-verified and preserved, zero weakening of any
   dependency-boundary or business-logic-isolation check.
+- **Per the GX-004 amendment (Phase X.16, not part of X.15's own original scope):**
+  `x15-authorization-wiring-architecture.test.ts` — one appended filename in its `src/api/`
+  file-count assertion, and the new file `src/api/credentialToken.ts` itself (X.16 Step 1's own
+  deliverable, not an X.15 file). Listed here only so this ADR's boundary list stays complete and
+  current; the file itself belongs to Phase X.16, tracked in full in `X16_SCOPING_REPORT.md`/
+  `X16_PROTOCOL_DECISION.md`.
 
 ### Files that MUST remain untouched
 
@@ -463,9 +613,16 @@ already narrow and explicit, so no ambiguous "wiring only" language is needed.
    non-cryptographic, caller-supplied, unverified signal — explicitly not authentication, exactly
    as this ADR frames it.
 9. **(Added by this revision)** GX-001, GX-002, and GX-003 are the *only* modifications to any
-   already-frozen test file; each is scoped exactly as documented in the Governance Exceptions
-   section above (minimum literal changed, dependency-boundary/business-logic-isolation checks
-   in all three guards fully re-verified as still passing, no check weakened or removed).
+   already-frozen test file for Phase X.15 itself; each is scoped exactly as documented in the
+   Governance Exceptions section above (minimum literal changed, dependency-boundary/business-
+   logic-isolation checks in all three guards fully re-verified as still passing, no check
+   weakened or removed).
+10. **(Added by the GX-004 amendment)** GX-004 is the *only* modification required to any
+    already-frozen guard by Phase X.16 Step 1; the fix is a single appended array element (exact
+    array-equality preserved, not loosened), and every other assertion in
+    `x15-authorization-wiring-architecture.test.ts` (including every dependency-boundary,
+    forbidden-import, and the `src/identity/` 10-file count check) is re-verified as still
+    passing, unchanged, and unweakened.
 
 ---
 
@@ -490,3 +647,12 @@ started.*
 updates to two frozen guard files) to be applied as the next implementation step. No milestone
 document was updated by this revision — that remains a Step 5 (Freeze) action, contingent on all
 Acceptance Criteria passing.*
+
+---
+
+*End of GX-004 amendment. This amendment itself modified no source code (the amendment document
+you are reading). It formally adopts GX-004 (a single appended filename in
+`x15-authorization-wiring-architecture.test.ts`'s `src/api/` file-count assertion), to be applied
+together with Phase X.16 Step 1's own commit (`src/api/credentialToken.ts` plus its unit tests).
+No milestone document was updated by this amendment — `CURRENT_MILESTONE.md` still correctly
+shows Phase X.15 FROZEN; Phase X.16's own freeze remains a future, separate action.*
