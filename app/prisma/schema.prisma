@@ -2090,3 +2090,30 @@ model ConversationRecoveryMarker {
   @@index([sessionId])
   @@map("conversation_recovery_markers")
 }
+
+// ─── Phase X.14 — Authentication, Authorization & Identity Infrastructure ─────
+// Persists src/identity/infrastructure/sessionIdentityRepository.ts's SessionIdentityBinding
+// exactly as designed there. Associates a ConversationSession (X.11, frozen, untouched) with a
+// Principal by sessionId, without modifying ConversationSession's own shape -- the same parallel
+// bookkeeping pattern Phase X.13's ConversationRecoveryMarker already established. No Role/
+// Permission table: this milestone's roles/permissions are deterministic, built-in constants
+// (src/identity/application/permissionResolver.ts), not persisted/admin-editable data.
+
+enum PrincipalKind {
+  ANONYMOUS
+  USER
+  SERVICE
+  SYSTEM
+}
+
+model SessionIdentityBinding {
+  id            String        @id @default(uuid())
+  sessionId     String
+  principalId   String
+  principalKind PrincipalKind
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([sessionId])
+  @@map("session_identity_bindings")
+}
