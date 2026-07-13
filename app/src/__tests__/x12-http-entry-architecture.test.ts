@@ -26,9 +26,19 @@ function readCode(relativePath: string): string {
 }
 
 describe('Architecture guard — conversationRoutes.ts never duplicates orchestration', () => {
-  it('imports runConversationTurn() and RuntimeContext only — never detectIntent/formatConversationResponse/runToolCallingStage/RuntimeSessionBuilder/ConversationSession directly', () => {
+  // GOVERNANCE EXCEPTION GX-001: the two literals immediately below were updated to reflect an
+  // ADR-approved API evolution (ADR_X15_ARCHITECTURE_DECISION.md) -- conversationRoutes.ts now
+  // calls runAuthorizedConversationTurn() (Phase X.14) instead of runConversationTurn() directly,
+  // per that ADR's explicit, approved design. runAuthorizedConversationTurn() itself still calls
+  // runConversationTurn() internally, so the architectural guarantee this test enforces --
+  // conversationRoutes.ts never duplicates orchestration internals, never imports reasoning/
+  // session internals directly -- is unchanged and fully re-verified below. Only the name of the
+  // single permitted orchestration entry point changed; every forbidden-import check, the
+  // "no logic of its own" check, and the "exactly one route" check are all untouched and still
+  // enforced at full strength.
+  it('imports runAuthorizedConversationTurn() and RuntimeContext only — never detectIntent/formatConversationResponse/runToolCallingStage/RuntimeSessionBuilder/ConversationSession directly', () => {
     const content = readCode('src/api/conversationRoutes.ts')
-    expect(content).toMatch(/import \{ runConversationTurn \} from ['"]\.\.\/runtime\/conversationEntryOrchestrator\.ts['"]/)
+    expect(content).toMatch(/import \{ runAuthorizedConversationTurn \} from ['"]\.\.\/identity\/application\/runtimeAuthorization\.ts['"]/)
     expect(content).toMatch(/import type \{ RuntimeContext \} from ['"]\.\.\/runtime\/runtimeContext\.ts['"]/)
     for (const forbidden of [
       "from '../reasoning/application/intentDetector.ts'",
@@ -57,7 +67,12 @@ describe('Architecture guard — conversationRoutes.ts never duplicates orchestr
 })
 
 describe('Architecture guard — httpServer.ts wiring is additive only', () => {
-  it('every prior route registration and marker is still present, plus exactly the new X.12 wiring', () => {
+  // GOVERNANCE EXCEPTION GX-001 (see the matching note above): the registerConversationRoutes
+  // literal below now includes the third argument ADR_X15_ARCHITECTURE_DECISION.md requires
+  // (sessionIdentityRepository). Every pre-existing marker in the list -- every route
+  // registration from X.9.1/X.9.2/X.9.3, both "ADDITION" comment anchors -- is unchanged and
+  // still required present, so this remains a genuine additive-only check, not a weakened one.
+  it('every prior route registration and marker is still present, plus exactly the new X.12/X.15 wiring', () => {
     const content = readRaw('src/server/httpServer.ts')
     for (const marker of [
       'registerReasoningRoutes(server, app)',
@@ -69,7 +84,7 @@ describe('Architecture guard — httpServer.ts wiring is additive only', () => {
     ]) {
       expect(content, `httpServer.ts missing pre-existing marker "${marker}"`).toContain(marker)
     }
-    expect(content).toContain('registerConversationRoutes(server, runtime)')
+    expect(content).toContain('registerConversationRoutes(server, runtime, sessionIdentityRepository)')
     expect(content).toContain("buildRuntimeContext({ application: app })")
   })
 
