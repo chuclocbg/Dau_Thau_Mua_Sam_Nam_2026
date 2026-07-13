@@ -121,9 +121,18 @@ describe('Architecture guard — genuine reuse, no duplication of frozen runtime
     expect(content).not.toMatch(/new PrismaClient\(/)
   })
 
+  // GOVERNANCE EXCEPTION GX-003 (see ADR_X15_ARCHITECTURE_DECISION.md's Governance Exceptions
+  // section): this test's own title always claimed a narrow fact -- routeAuthorization.ts (the
+  // Fastify preHandler-hook builder) is not imported by either file -- but its implementation
+  // asserted a broader, now-obsolete fact ("no reference to src/identity/ at all"), which
+  // ADR_X15_ARCHITECTURE_DECISION.md's whole purpose is to make false (conversationRoutes.ts/
+  // httpServer.ts now wire in runAuthorizedConversationTurn()/sessionIdentityRepository, both
+  // X.14, per that ADR). Narrowed the regex to match what the title always said, not weakened:
+  // this still fails if routeAuthorization.ts (route-level Fastify gating, a distinct, still
+  // separately-deferred capability) is ever imported by either file.
   it('routeAuthorization.ts is never imported by src/server/httpServer.ts or src/api/conversationRoutes.ts -- a complete but NOT-yet-wired capability', () => {
-    expect(readRaw('src/server/httpServer.ts')).not.toMatch(/identity/)
-    expect(readRaw('src/api/conversationRoutes.ts')).not.toMatch(/identity/)
+    expect(readRaw('src/server/httpServer.ts')).not.toMatch(/routeAuthorization/)
+    expect(readRaw('src/api/conversationRoutes.ts')).not.toMatch(/routeAuthorization/)
   })
 })
 

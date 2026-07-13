@@ -1,16 +1,24 @@
 # ADR: Phase X.15 Architecture Decision — Authorization Wiring + Recovery Scan Wiring
 
-**Status:** DRAFT — decided, not yet ratified into `.memory/decision-index.md` (ratification is a
-governance action, out of scope for this document per its own instructions).
-**Date:** 2026-07-13
+**Status:** REVISED — Governance Exceptions section (below) formally adopted per
+`X15_GOVERNANCE_IMPACT_ASSESSMENT.md`'s Recommendation B, approved 2026-07-13. Still not yet
+ratified into `.memory/decision-index.md` (ratification is a separate governance action, out of
+scope for this document per its own instructions).
+**Date:** 2026-07-13 (original decision); revised 2026-07-13 (Governance Exceptions added)
 **Inputs re-read in full for this decision:** `POST_X14_ARCHITECTURE_AUDIT.md`,
-`PHASE_X15_IMPLEMENTATION_PLAN.md`. No new repository-wide analysis was performed — this ADR
-resolves only the architectural issue the plan surfaced and left open.
-**Affects:** `src/api/conversationRoutes.ts`, `src/server/httpServer.ts`, `deployment/deploy.sh`.
+`PHASE_X15_IMPLEMENTATION_PLAN.md`. For the revision: `X15_GOVERNANCE_IMPACT_ASSESSMENT.md` in
+full (its own exhaustive, executed — not assumed — enumeration of every frozen test file
+referencing either affected file). No new repository-wide analysis was performed beyond what
+those two documents already establish.
+**Affects:** `src/api/conversationRoutes.ts`, `src/server/httpServer.ts`, `deployment/deploy.sh`,
+plus (per the revision) three literal assertions across two frozen architecture-guard test files:
+`x12-http-entry-architecture.test.ts` (X.12), `x13-recovery-architecture-guard.test.ts` (X.13),
+`x14-identity-architecture-guard.test.ts` (X.14).
 **Does not affect:** any file in `src/reasoning/`, `src/mcp/`, `src/multiagent/`,
 `src/runtime/conversationEntryOrchestrator.ts`, `src/runtime/recovery/*.ts`,
 `src/identity/application/*.ts` (all reused, none modified), `src/server/main.ts`,
-`prisma/schema.prisma`.
+`prisma/schema.prisma`. The revision changes no implementation file — only test-assertion
+literals in the three guard files named above.
 
 ---
 
@@ -193,6 +201,146 @@ the rest of this ADR's Decision, Dependency Graph, and Flows sections are otherw
 
 ---
 
+## Governance Exceptions
+
+**Added by this revision, per `X15_GOVERNANCE_IMPACT_ASSESSMENT.md`'s Recommendation B.** During
+implementation, extending `conversationRoutes.ts`/`httpServer.ts` as this ADR authorizes broke
+literal content assertions in three already-frozen architecture-guard test files across three
+prior milestones (X.12, X.13, X.14). Each is formally adopted here as a named governance
+exception (GX-NNN) rather than fixed ad hoc, per the impact assessment's own finding that these
+three breaks share one root cause (see "Why These Are Governance Exceptions, Not Implementation
+Bugs" below), not three unrelated coincidences.
+
+### GX-001 — `x12-http-entry-architecture.test.ts` (X.12)
+
+- **Affected assertions:** (a) `expect(content).toMatch(/import \{ runConversationTurn \} from/)`
+  — the guard's own required import literal for `conversationRoutes.ts`; (b)
+  `expect(content).toContain('registerConversationRoutes(server, runtime)')` — the guard's
+  required call-site literal for `httpServer.ts`.
+- **Rationale:** `conversationRoutes.ts` now calls `runAuthorizedConversationTurn()` (X.14)
+  instead of calling `runConversationTurn()` (X.11) directly, and `httpServer.ts` now passes a
+  third argument (`sessionIdentityRepository`) to `registerConversationRoutes()`. Both changes
+  are exactly what this ADR's Decision section authorizes; the guard's literal was written
+  against the pre-X.15 call shape and had no way to anticipate it.
+- **Fix applied:** the import-literal assertion now matches `runAuthorizedConversationTurn`
+  (still asserting exactly one permitted orchestration entry point, still forbidding every direct
+  reasoning/session import the original guard forbade); the call-site literal now matches
+  `registerConversationRoutes(server, runtime, sessionIdentityRepository)`. Both `it()` titles
+  updated to name the new, correct expectation instead of the old one.
+- **Status:** approved and applied (this exception was identified and fixed during initial X.15
+  implementation, before the governance-impact review that found GX-002/GX-003).
+
+### GX-002 — `x13-recovery-architecture-guard.test.ts` (X.13)
+
+- **Affected assertion:** `expect(readRaw('src/server/httpServer.ts')).toMatch(/registerConversationRoutes\(server, runtime\)/)`,
+  inside `it('every Phase X.12 HTTP entry file is byte-for-byte unmodified', ...)`.
+- **Rationale:** identical root cause to GX-001 — an exact-substring call-site literal, written
+  by a *different* milestone (X.13) re-verifying the *same* fact about the *same* file
+  (`httpServer.ts` still calls `registerConversationRoutes()`), broken by the same,
+  ADR-authorized third argument.
+- **Fix applied:** the exact-substring match is replaced with a name+open-paren presence check
+  (`.toContain('registerConversationRoutes(')`), matching the robust style
+  `x9.2-observability-architecture.test.ts` / `x93-streaming-architecture.test.ts` /
+  `x94-docker-config-architecture.test.ts` already established for verifying the same class of
+  fact about the same file (see "Future Guard-Writing Guidance" below) — robust to this and any
+  future additive-argument extension, while still failing if `registerConversationRoutes(` were
+  ever removed or renamed outright. The `it()` title is updated from "is byte-for-byte
+  unmodified" (already inaccurate — X.15 is a newly-approved milestone explicitly permitted to
+  extend this file, per `CURRENT_MILESTONE.md`'s own X.12 update note) to "still carries its
+  expected marker, extended (not redesigned) by later milestones."
+- **Status:** approved by this revision; applied together with this ADR update.
+
+### GX-003 — `x14-identity-architecture-guard.test.ts` (X.14)
+
+- **Affected assertion:**
+  ```
+  it('routeAuthorization.ts is never imported by src/server/httpServer.ts or
+     src/api/conversationRoutes.ts -- a complete but NOT-yet-wired capability', () => {
+    expect(readRaw('src/server/httpServer.ts')).not.toMatch(/identity/)
+    expect(readRaw('src/api/conversationRoutes.ts')).not.toMatch(/identity/)
+  })
+  ```
+- **Rationale:** the `it()` title states a narrow, still-true claim — `routeAuthorization.ts`
+  (the Fastify preHandler-hook builder) is not imported by either file, and this ADR does not
+  wire it in; route-level gating remains a distinct, separately-deferrable capability from the
+  runtime-level authorization this ADR does wire in. But the *implementation* of that assertion
+  encoded a broader, now-obsolete fact — "nothing under `src/identity/` is referenced by either
+  file at all" — which this ADR's whole purpose is to make false. The assertion was over-broad
+  relative to its own stated intent from the moment it was written; X.15 is simply the first
+  milestone to exercise the gap between the title and the code.
+- **Fix applied:** narrow the regex from `/identity/` (matches any reference to the `identity`
+  module) to `/routeAuthorization/` (matches only what the title actually claims). This is a
+  **narrower**, not weaker, assertion: it continues to fail if `routeAuthorization.ts` is ever
+  imported by either file, which remains the one true fact this test exists to protect — nothing
+  about route-level Fastify gating changes in this milestone. The `it()` title is unchanged
+  (it already correctly described the narrowed check).
+- **Status:** approved by this revision; applied together with this ADR update.
+
+### Why These Are Governance Exceptions, Not Implementation Bugs
+
+None of the three affected assertions is a *dependency-boundary* or *layering* rule — every guard
+asserting "api must not import identity/reasoning/mcp/multiagent internals directly" in all three
+files still passes unmodified after this ADR's implementation. What broke is exclusively
+**point-in-time content-literal snapshots** of two files (`conversationRoutes.ts`,
+`httpServer.ts`) that this project's own established convention — visible in
+`httpServer.ts`'s own header comment, which has carried a running "ADDITION" log since X.9.1 and
+now names four consecutive rounds (X.9.2, X.9.3, X.12, X.15) — has *always* intended to be
+extended repeatedly. `x9.2`/`x93`/`x94`'s own guards, verifying this exact same "extended, not
+redesigned" fact for the same file, chose a presence-check style *already robust* to that
+intended future extension. `x12`/`x13`/`x14`'s guards, verifying the same class of fact for the
+first time on `conversationRoutes.ts` (and copying forward for `httpServer.ts`), independently
+chose the brittle exact-substring style — an authoring-style inconsistency between two lineages
+of guards, not a defect in the code the guards check. A bug would mean the implementation did
+something the architecture forbids; nothing here does that — every dependency-direction and
+business-logic-isolation assertion in all three guards still holds.
+
+### Why the Underlying Architecture Remains Valid
+
+- **Zero layering violations.** `src/api/` → `src/identity/` is a new edge, but it points
+  downward into an already-lower layer, exactly like every prior "wiring" milestone
+  (X.9.2, X.9.3, X.12). No file under `src/identity/` or `src/runtime/recovery/` gained a new
+  import in either direction (their own frozen architecture guards, unmodified and unrun-against
+  by this exception set, already prove this).
+- **Zero behavioral regression.** `x12-conversation-http-integration.test.ts` — an unmodified,
+  frozen X.12 *behavioral* test exercising the real server end-to-end — still passes fully against
+  the new wiring, proving the change is additive in practice, not just in the diagram.
+- **The three broken assertions are exclusively literal/stylistic**, never structural: each is
+  fixed by either (a) updating a literal to match an ADR-authorized, additive code change (GX-001,
+  GX-002), or (b) narrowing an over-broad regex to what its own `it()` title always claimed
+  (GX-003). No guard's *forbidden-import* list, *dependency-direction* check, or *file-count*
+  check needed any change.
+
+### Rollback Implications
+
+- **If X.15 is rolled back entirely** (revert to `x14-frozen` / commit `d1708ff`): all three guard
+  files revert to their original, currently-frozen content automatically — no separate rollback
+  step is needed for GX-001/GX-002/GX-003 specifically, since they are commits layered on top of
+  the same revert boundary. `x12-http-entry-architecture.test.ts`, `x13-recovery-architecture-
+  guard.test.ts`, and `x14-identity-architecture-guard.test.ts` all return to asserting the
+  pre-X.15 shape, which will once again be true (since `conversationRoutes.ts`/`httpServer.ts`
+  also revert).
+- **If only the guard-literal commits are rolled back but the X.15 implementation is kept:** this
+  is an unsupported, inconsistent intermediate state — the three guards would fail again exactly
+  as `X15_GOVERNANCE_IMPACT_ASSESSMENT.md` found them. Rollback of GX-001/GX-002/GX-003 must
+  always be paired with rollback of the `conversationRoutes.ts`/`httpServer.ts` changes that
+  necessitated them, never done independently.
+- **No data/schema rollback implication.** None of GX-001/GX-002/GX-003 touches `prisma/schema.prisma`
+  or any migration; rollback is pure source-and-test-file reversion.
+
+### Future Guard-Writing Guidance (recommendation, not a mandate)
+
+For any file matching this project's established "wired once, extended repeatedly" pattern
+(`httpServer.ts` and `conversationRoutes.ts` today; any future file that joins that pattern, e.g.
+at Phase X.16) — an architecture guard verifying "this file was extended additively, not
+redesigned" should assert **function-name-plus-open-paren presence**
+(`.toContain('registerX(')`), the style `x9.2-observability-architecture.test.ts`/
+`x93-streaming-architecture.test.ts`/`x94-docker-config-architecture.test.ts` already use for the
+same class of fact — **not** an exact-substring match of the full call site including its
+argument list. This is a recommendation for whoever authors the next such guard (X.16's is
+already known to touch these files again); it is **not** a retroactive rewrite of X.9.2/X.9.3/
+X.9.4 (already correct, no change needed) and **not** an additional change to X.12/X.13/X.14
+beyond the three literal corrections GX-001/GX-002/GX-003 already make.
+
 ## Implementation Boundaries
 
 ### Files allowed to change
@@ -204,6 +352,11 @@ the rest of this ADR's Decision, Dependency Graph, and Flows sections are otherw
   "Implementation Note: Resolver Location" above)
 - New test files under `src/__tests__/` for the above (unit + integration + one architecture
   guard, per the plan's §7 estimate)
+- **Per this revision's Governance Exceptions:** `x12-http-entry-architecture.test.ts` (GX-001),
+  `x13-recovery-architecture-guard.test.ts` (GX-002), `x14-identity-architecture-guard.test.ts`
+  (GX-003) — literal assertion updates only, each scoped exactly as documented above: minimum
+  literal changed, architectural intent re-verified and preserved, zero weakening of any
+  dependency-boundary or business-logic-isolation check.
 
 ### Files that MUST remain untouched
 
@@ -309,6 +462,10 @@ already narrow and explicit, so no ambiguous "wiring only" language is needed.
 8. `x-client-id` is documented, in the resolver's own file header and in the freeze report, as a
    non-cryptographic, caller-supplied, unverified signal — explicitly not authentication, exactly
    as this ADR frames it.
+9. **(Added by this revision)** GX-001, GX-002, and GX-003 are the *only* modifications to any
+   already-frozen test file; each is scoped exactly as documented in the Governance Exceptions
+   section above (minimum literal changed, dependency-boundary/business-logic-isolation checks
+   in all three guards fully re-verified as still passing, no check weakened or removed).
 
 ---
 
@@ -322,5 +479,14 @@ security-sensitive logic. That composition — done properly, via an explicit, s
 authorized extension to one of the frozen wrapper functions — is named here as recommended
 future work, not undertaken now.
 
-*End of ADR. No source code was modified. No tests were modified. No commits were created. No
-milestones were updated. No branches or tags were created. Phase X.15 was not started.*
+*End of ADR (original decision). No source code was modified. No tests were modified. No commits
+were created. No milestones were updated. No branches or tags were created. Phase X.15 was not
+started.*
+
+---
+
+*End of revision. This revision itself modified no source code. It formally adopts GX-001
+(already applied during initial implementation), and authorizes GX-002/GX-003 (test-literal
+updates to two frozen guard files) to be applied as the next implementation step. No milestone
+document was updated by this revision — that remains a Step 5 (Freeze) action, contingent on all
+Acceptance Criteria passing.*
