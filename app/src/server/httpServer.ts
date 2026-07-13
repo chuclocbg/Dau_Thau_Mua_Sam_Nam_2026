@@ -8,6 +8,7 @@ import { registerRequestLifecycleHooks } from '../middleware/requestLifecycleHoo
 import { registerReasoningStreamRoute } from '../http/reasoningStreamRoute.ts'
 import type { Application } from '../bootstrap/buildApplication.ts'
 import { buildRuntimeContext } from '../runtime/runtimeContext.ts'
+import { buildMemorySessionIdentityRepository } from '../identity/infrastructure/sessionIdentityRepository.ts'
 
 // ── HTTP Server — Phase X.9.1, extended X.9.2 and X.9.3 (DI/wiring only) ──────
 // Mirrors the exact Fastify-factory pattern already established by
@@ -36,6 +37,13 @@ import { buildRuntimeContext } from '../runtime/runtimeContext.ts'
 // buildRuntimeContext({ application: app }) (memory-backed by default, exactly mirroring how
 // buildApplication() itself defaults to memory-backed knowledge repositories) and registers
 // registerConversationRoutes() (src/api/) — one call, no orchestration/session logic added here.
+//
+// X.15 ADDITION, per ADR_X15_ARCHITECTURE_DECISION.md: constructs one
+// ISessionIdentityRepository via buildMemorySessionIdentityRepository() (Phase X.14,
+// memory-backed by default, matching every prior "memory-first, Prisma opt-in" convention) and
+// passes it through to registerConversationRoutes() — one more constructor call, no
+// authorization logic added here. No IRecoveryRepository is constructed: per the ADR's explicit
+// scope, recovery-producer wiring was deferred, so nothing in the HTTP path needs one.
 
 export function buildHttpServer(app: Application): FastifyInstance {
   const server = Fastify({ logger: false })
@@ -63,7 +71,8 @@ export function buildHttpServer(app: Application): FastifyInstance {
   registerReasoningStreamRoute(server, app, { streamTimeoutMs: app.streamTimeoutMs })
 
   const runtime = buildRuntimeContext({ application: app })
-  registerConversationRoutes(server, runtime)
+  const sessionIdentityRepository = buildMemorySessionIdentityRepository()
+  registerConversationRoutes(server, runtime, sessionIdentityRepository)
 
   return server
 }
