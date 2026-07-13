@@ -19,149 +19,131 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.15 - Authorization & Recovery Wiring - FROZEN"
+current_milestone: "Phase X.16 - Credential Verification - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-13
 milestone_evidence:
-  scope: "Recovered from an interrupted prior session via full repository-state reconstruction
-         (HEAD, git status, governance docs re-read in full -- no reliance on conversation
-         memory). PHASE_X15_IMPLEMENTATION_PLAN.md and ADR_X15_ARCHITECTURE_DECISION.md had
-         already been produced and Step 1 (src/api/httpPrincipalResolver.ts) already committed
-         before the interruption; Steps 2-4 existed complete but uncommitted in the working
-         tree. Wires X.14's authorization infrastructure and X.13's recovery scan into the live
-         HTTP/deployment path -- zero new business logic, exclusively wiring plus one small
-         request-to-Principal bridge, per the ADR's own Capability Reuse Audit. Built/wired: (1)
-         src/api/httpPrincipalResolver.ts (Step 1, ADR-relocated out of src/identity/ to avoid
-         breaking X.14's own recursive file-count guard -- resolvePrincipalFromRequest() reads
-         the caller-supplied, explicitly non-cryptographic x-client-id header, reusing
-         buildUserContext()/buildAnonymousContext() verbatim); (2) src/server/httpServer.ts
-         (constructs one ISessionIdentityRepository via buildMemorySessionIdentityRepository(),
-         passes it through -- no IRecoveryRepository constructed, matching the deferred-producer
-         decision); (3) src/api/conversationRoutes.ts (calls runAuthorizedConversationTurn()
-         instead of runConversationTurn() directly; authorized:false maps to HTTP 403); (4)
-         deployment/deploy.sh (runs scripts/recoveryScan.ts, X.13 unmodified, after
-         wait-for-ready -- recovery SCAN only, producer wiring deliberately deferred). MID-
-         IMPLEMENTATION GOVERNANCE FINDING: extending conversationRoutes.ts/httpServer.ts broke
-         literal content assertions in three already-frozen architecture-guard test files across
-         three prior milestones (X.12, X.13, X.14) -- traced to one root cause (an authoring-
-         style inconsistency between two guard lineages, not a code defect; every dependency-
-         boundary/layering assertion in all three guards held throughout). Resolved via a
-         formal, documented Governance Exceptions process: GX-001 (X.12 guard, applied during
-         initial implementation), GX-002 (X.13 guard), GX-003 (X.14 guard) -- each a minimal
-         literal correction or narrowing to the assertion's own already-stated intent, never a
-         weakening, all three formally recorded in ADR_X15_ARCHITECTURE_DECISION.md's revised
-         Governance Exceptions section (rationale, affected guard, why-exception-not-bug, why-
-         architecture-remains-valid, rollback implications, forward guard-writing guidance) per
-         X15_GOVERNANCE_IMPACT_ASSESSMENT.md's Recommendation B, approved before any guard file
-         was touched."
-  scope_exclusion: "Per ADR_X15_ARCHITECTURE_DECISION.md's Decision section, deliberately NOT
-                    done this milestone: (1) runRecoverableConversationTurn() (X.13) is NOT
-                    wired into conversationRoutes.ts -- composing it with authorization around
-                    one turn would require either modifying a frozen X.13/X.14 file or
-                    duplicating security-sensitive ownership-check/marker-bookkeeping logic
-                    outside a clean interface, both explicitly rejected in the ADR's
-                    Alternatives table. Net effect: the recovery scan is genuinely wired and
-                    invokable, but will find an empty queue in practice until a future,
-                    separately-authorized milestone wires the producer -- stated plainly, not
-                    glossed over. (2) No real credential verification -- x-client-id is
-                    documented, in the resolver's own file header and here, as a
-                    non-cryptographic, caller-supplied, unverified signal, explicitly not
-                    authentication; it closes the false-sense-of-security gap (distinguishing
-                    callers so the ownership check can actually fire) without claiming to be a
-                    security boundary against a real adversary. (3) routeAuthorization.ts
-                    (Fastify-level route gating, X.14) remains completely unwired -- a distinct,
-                    still-deferred capability from the runtime-level authorization this
-                    milestone does wire in, verified by GX-003's own narrowed assertion."
-  files_added: "1 new file (src/api/httpPrincipalResolver.ts, Step 1) + 3 modified implementation
-               files (httpServer.ts, conversationRoutes.ts, deployment/deploy.sh) + 2 new test
-               files (x15-authorization-wiring-architecture.test.ts -- dedicated X.15
-               architecture guard; x15-conversation-authorization-integration.test.ts -- real
-               buildHttpServer() integration tests, never a throwaway instance) + 3 governance-
-               exception literal corrections to already-frozen guard files (x12-http-entry-
-               architecture.test.ts GX-001, x13-recovery-architecture-guard.test.ts GX-002,
-               x14-identity-architecture-guard.test.ts GX-003) + 3 governance documents
-               (PHASE_X15_IMPLEMENTATION_PLAN.md, ADR_X15_ARCHITECTURE_DECISION.md,
-               X15_GOVERNANCE_IMPACT_ASSESSMENT.md). Net: +3 test files versus the X.14 freeze
-               baseline (546 -> 549)."
-  full_suite_result: "549 test files, 14832 tests (14829 passed, 3 skipped -- X.10's
-                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures on the confirming
-                      reruns (pool=forks, full repo, no filter -- see investigation_note below);
-                      up from 546 files / 14803 passed at the X.14 freeze baseline (+3 files,
-                      +26 tests, exactly the new X.15 test files: httpPrincipalResolver unit
-                      tests committed with Step 1, plus this milestone's own integration suite
-                      and architecture guard). tsc --noEmit clean."
-  investigation_note: "The first full-suite run after applying GX-002/GX-003 reported 2
-                      failures, investigated rather than assumed benign: both were
-                      x10-prisma-integration.test.ts (X.10, frozen) and
-                      x13-prisma-recovery-repository.test.ts (X.13, frozen) -- the identical
-                      execSync('npx prisma validate') timing flake already diagnosed and
-                      accepted at the X.14 freeze (real ~2.8s CLI spawn tight against vitest's
-                      5000ms default, routinely exceeded under 549-file parallel contention). Two
-                      consecutive full-suite reruns after that showed 0 failures each. git status
-                      confirmed both files byte-for-byte unmodified throughout. Classification:
-                      pre-existing unrelated flake, not a regression, not caused by this
-                      milestone -- no new fix needed since X.14 already extended its own
-                      migration test's timeout; x10/x13's tests are frozen and were not touched."
-  exit_criteria_met: "All 8 Acceptance Criteria in ADR_X15_ARCHITECTURE_DECISION.md verified: (1)
-                      tsc --noEmit clean; (2) full suite 0 failures beyond the accepted
-                      TEST_DATABASE_URL-skip/timing-flake exceptions; (3) the dedicated X.15
-                      architecture guard passes, confirming every 'MUST remain untouched' file
-                      byte-for-byte unchanged, conversationRoutes.ts calls
-                      runAuthorizedConversationTurn (not runConversationTurn) directly,
-                      httpPrincipalResolver.ts imports only the two authorized X.14 factory
-                      functions, and runRecoverableConversationTurn is not imported anywhere
-                      under src/api/ or src/server/; (4) real-server integration tests confirm
-                      header-less-request regression parity, 403 on mismatched x-client-id, 200
-                      on matching/new/anonymous sessions; (5) deployment/deploy.sh's existing
-                      X.9.5 architecture guard still passes unmodified in its own assertions; (6)
-                      git diff --stat matches exactly the ADR's 'Files allowed to change' list
-                      (including the three GX-numbered guard files, added to that list by the
-                      ADR's own revision) -- no more, no fewer; (7) this document and the commit
-                      history state plainly that recovery-producer wiring was deliberately
-                      deferred; (8) x-client-id is documented as non-cryptographic, unverified,
-                      not authentication, in both the resolver's header and here."
-  frozen_interfaces_touched: "None. RuntimeContext's exported shape is unchanged -- identity
-                              composes ISessionIdentityRepository separately, never adding a
-                              field to it. Every file the ADR lists as 'MUST remain untouched'
-                              (src/runtime/conversationEntryOrchestrator.ts, runtimeContext.ts,
-                              all six src/runtime/recovery/*.ts files, every src/identity/*.ts
-                              implementation file, reasoningRoutes.ts, coordinatorRoutes.ts,
-                              main.ts, gracefulShutdown.ts, src/reasoning/, src/mcp/,
-                              src/multiagent/, src/persistence/, prisma/schema.prisma,
-                              src/auth/, scripts/recoveryScan.ts) is byte-for-byte unmodified,
-                              verified by the new X.15 architecture guard. Only
-                              conversationRoutes.ts, httpServer.ts, and deployment/deploy.sh were
-                              modified -- each an ADR-authorized, additive wiring change -- plus
-                              the three GX-numbered literal corrections to frozen test files."
+  scope: "Closes the credential-verification gap X.15 explicitly deferred: replaces
+         httpPrincipalResolver.ts's unverified x-client-id signal with a real,
+         stdlib-only HMAC bearer-token mechanism (Option A of four evaluated in
+         X16_PROTOCOL_DECISION.md against ten dimensions each -- JWT/session-token/OIDC all
+         rejected, full rationale there). Zero new runtime dependency. Five implementation
+         steps: (1) src/api/credentialToken.ts -- signToken()/verifyToken(), node:crypto
+         HMAC-SHA256 only, timingSafeEqual() constant-time comparison, mandatory enforced
+         expiry, malformed/tampered/expired all indistinguishable from absent at the call site
+         (never a thrown error); (2) src/api/httpPrincipalResolver.ts +
+         src/config/appConfig.ts -- resolvePrincipalFromRequest() keeps its EXACT original
+         one-parameter signature (Path B, chosen explicitly over threading the secret through
+         registerConversationRoutes()'s parameters, which would have required a second,
+         foreseeable break in x12-http-entry-architecture.test.ts's GX-001-fixed literal
+         needing a new GX-005, and touching the frozen src/bootstrap/buildApplication.ts) --
+         instead reads CREDENTIAL_SIGNING_SECRET itself via loadAppConfigFromEnv(); no secret
+         configured -> x-client-id trusted directly, identical to the exact X.15 behavior
+         (non-regression, both frozen X.15 test files re-confirmed unmodified and passing);
+         secret configured -> value must be a token verifyToken() accepts, else anonymous
+         fallback; (3) x16-credential-http-integration.test.ts -- real buildHttpServer(), never
+         a throwaway instance, proving valid/expired/tampered/absent-token behavior end to end;
+         (4) scripts/issueCredentialToken.ts -- a thin CLI wrapper (not a new HTTP endpoint,
+         which would need its own access control to avoid becoming a mint-any-identity hole)
+         closing the issuance gap X16_PROTOCOL_DECISION.md itself named as unscoped; (5)
+         x16-credential-verification-architecture.test.ts -- the dedicated X.16 architecture
+         guard, 13 tests, proving every invariant above in code. MID-IMPLEMENTATION GOVERNANCE
+         FINDING: adding credentialToken.ts to src/api/ immediately broke
+         x15-authorization-wiring-architecture.test.ts's own exhaustive src/api/ file-count
+         assertion (a frozen X.15 guard) -- the same class of problem as GX-001/002/003 (an
+         exhaustive-snapshot assertion over something this project's convention treats as
+         additively extensible) but a distinct trigger (X.16, not X.15's own wiring) and a
+         distinct assertion shape (file-count enumeration, not a call-site literal). Resolved
+         as GX-004, formally documented in ADR_X15_ARCHITECTURE_DECISION.md's Governance
+         Exceptions section alongside GX-001/002/003 -- one filename appended, exact
+         array-equality preserved, not loosened to a subset check."
+  scope_exclusion: "Named explicitly, not glossed over: (1) no real server-side revocation --
+                    a signed token is valid until its own expiresAt; no blocklist/invalidation
+                    mechanism exists; accepted trade-off, no evidenced revocation requirement
+                    found anywhere in the repository. (2) single-secret/single-issuer trust
+                    model -- anyone holding CREDENTIAL_SIGNING_SECRET can mint an arbitrary
+                    valid token; secret protection (the existing, unmodified X.9.4 .env/
+                    Docker-Compose mechanism) is the entire security boundary, an explicit,
+                    accepted design choice. (3) routeAuthorization.ts (Fastify-level route
+                    gating, X.14) remains completely unwired -- a distinct capability from the
+                    runtime-level gating this milestone strengthens, never this milestone's
+                    objective. (4) recovery-producer wiring remains unwired, unrelated to and
+                    unaffected by this milestone. (5) the other three HTTP routes
+                    (reasoning/answer, reasoning/batch, reasoning/answer/stream) remain
+                    entirely unauthenticated -- none has session state to protect. (6)
+                    scripts/issueCredentialToken.ts has no access control of its own -- correct
+                    for an operator-run CLI with the real secret already in its environment,
+                    would not be correct if ever exposed as a network-reachable endpoint, which
+                    it deliberately is not."
+  files_added: "3 governance documents (X16_SCOPING_REPORT.md, X16_PROTOCOL_DECISION.md,
+               PHASE_X16_CREDENTIAL_REPORT.md) + 1 revised ADR (ADR_X15_ARCHITECTURE_DECISION.md,
+               GX-004 added) + 3 new implementation files (credentialToken.ts,
+               issueCredentialToken.ts CLI, plus modifications to httpPrincipalResolver.ts and
+               appConfig.ts) + 4 new test files (x16-credential-token.test.ts unit,
+               x16-http-principal-resolver-credential.test.ts unit,
+               x16-credential-http-integration.test.ts real-server integration,
+               x16-credential-verification-architecture.test.ts dedicated architecture guard) +
+               1 governance-exception literal correction to an already-frozen guard file
+               (x15-authorization-wiring-architecture.test.ts, GX-004). Net: +4 test files
+               versus the X.15 freeze baseline (549 -> 553). Zero new package.json dependency."
+  full_suite_result: "553 test files, 14873 tests (14870 passed, 3 skipped -- X.10's
+                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures, clean on the
+                      first run (no flake encountered this freeze); up from 549 files / 14829
+                      passed at the X.15 freeze baseline (+4 files, +41 tests, exactly the sum
+                      of the four new X.16 test files' own test counts: 13+9+6+13=41,
+                      confirmed). tsc --noEmit clean."
+  exit_criteria_met: "Every Acceptance Criterion in both X16_SCOPING_REPORT.md §6 and
+                      X16_PROTOCOL_DECISION.md §6 verified: tsc --noEmit clean; full suite 0
+                      failures; the dedicated X.16 architecture guard (35th guard file, 13
+                      tests) passes, proving credentialToken.ts's import isolation, Path B's
+                      preserved signatures, the never-silently-escalate guarantee, zero new
+                      dependency, and every frozen marker/file-count intact; real-server
+                      integration tests confirm valid/expired/tampered/absent-token behavior
+                      against the actual buildHttpServer(); git diff --stat against the
+                      pre-Step-1 baseline (commit 1044059) shows exactly the 12 files this
+                      milestone's own files_added field names -- no more, no fewer; this
+                      document and PHASE_X16_CREDENTIAL_REPORT.md both state plainly that no
+                      revocation mechanism exists and the trust model is single-secret/
+                      single-issuer, never oversold as more than that."
+  frozen_interfaces_touched: "None, by design (Path B's entire purpose). resolvePrincipalFromRequest()
+                              keeps its exact original one-parameter signature.
+                              registerConversationRoutes()'s call site in httpServer.ts is
+                              byte-for-byte unchanged since X.15 (still the 3-argument form).
+                              src/bootstrap/buildApplication.ts and src/server/main.ts contain
+                              zero reference to credentials, confirmed by direct grep and by
+                              the new architecture guard. Every file the X.15 ADR lists as 'MUST
+                              remain untouched' remains so; GX-004 is the only modification to
+                              any already-frozen test file, and it is a single appended array
+                              element, not a weakening."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
-                          # NOTE: not updated by this freeze (no new tag was cut this milestone;
-                          # updating it is a separate, not-yet-requested release action) -- its
-                          # test-count fields still reflect the x14-frozen tag, now stale by
-                          # +3 files/+26 tests relative to the full_suite_result recorded above.
+                          # NOTE: still not updated (unchanged from the X.15 freeze's own note) --
+                          # no new tag was cut this milestone either; its test-count fields now
+                          # reflect the x14-frozen tag, stale by +7 files/+67 tests relative to
+                          # this freeze's actual numbers above.
 
-next_active_milestone: "None currently proposed. Phase X.15 (Authorization & Recovery Wiring) is
-                        now COMPLETE -- the session-hijack gap named at the X.14/POST_X14 audit is
-                        closed (authorization is wired into the live conversation-turn write path
-                        with a real, if non-cryptographic, caller-distinguishing signal), and the
-                        recovery scan is genuinely invokable as part of a real deployment. Two
-                        named, honest gaps remain open, explicitly not claimed as solved: real
-                        credential verification (Phase X.16 in the existing roadmap), and
-                        recovery-producer wiring (requires either a frozen-file modification or a
-                        clean composition primitive that does not yet exist -- named as
-                        recommended future work in the ADR, not undertaken here)."
+next_active_milestone: "None currently proposed. Phase X.16 (Credential Verification) is now
+                        COMPLETE -- callers can now be distinguished by a real, tamper-evident,
+                        expiring, HMAC-signed credential instead of an unverified string, with
+                        an issuance path an operator can actually use. Two named, honest gaps
+                        remain open, explicitly not claimed as solved: no server-side
+                        revocation (a signed token is trusted until it expires, no blocklist
+                        exists), and routeAuthorization.ts (Fastify-level route gating) remains
+                        entirely unwired -- a distinct, still-deferred capability. Recovery-
+                        producer wiring also remains open, unrelated to and unaffected by this
+                        milestone. Candidates named in POST_X14_ARCHITECTURE_AUDIT.md's original
+                        roadmap: X.17 (Docker/Postgres Live Verification), X.18 (CI/CD
+                        Pipeline), X.19 (Exactly-Once Recovery + Optimistic Locking), X.20
+                        (Knowledge Platform Persistence Migration, need-driven only)."
 next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per explicit
-                         instruction, work stops here; Phase X.16 does not begin automatically."
-next_milestone_blocker: "N/A — no next milestone proposed. Two named gaps carried forward: (1) no
-                         real credential-verification protocol exists (x-client-id is an
-                         unverified, caller-supplied signal, not a credential); (2) recovery-
-                         producer wiring remains deferred, so the now-invokable recovery scan
-                         will find an empty queue until a future milestone wires
-                         runRecoverableConversationTurn() in. Neither is silently claimed as
-                         solved. Beginning any new work requires its own explicit human
-                         authorization and scoping."
+                         instruction, work stops here; Phase X.17 does not begin automatically."
+next_milestone_blocker: "N/A — no next milestone proposed. Three named gaps carried forward: (1)
+                         no server-side token revocation exists; (2) routeAuthorization.ts
+                         remains unwired; (3) recovery-producer wiring remains deferred. None is
+                         silently claimed as solved. Beginning any new work requires its own
+                         explicit human authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.15."
+                        after Phase X.16."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -284,6 +266,25 @@ do_not:
      needs to extend conversationRoutes.ts/httpServer.ts again (X.16 is already known to) should
      follow that section's forward-looking guard-writing guidance (presence-check style, not
      exact-substring) to avoid repeating the same class of break."
+  - "UPDATE (X.16): src/api/httpPrincipalResolver.ts's trust model changed from 'x-client-id
+     always trusted directly' to 'x-client-id trusted directly only when
+     CREDENTIAL_SIGNING_SECRET is unset; otherwise must be a token verifyToken() accepts' --
+     via Path B (resolvePrincipalFromRequest()'s own exported signature is UNCHANGED; it reads
+     the secret itself via loadAppConfigFromEnv() rather than receiving it as a parameter,
+     specifically so registerConversationRoutes()/httpServer.ts's call sites never needed to
+     change again). Do not modify src/api/credentialToken.ts, src/api/httpPrincipalResolver.ts,
+     the credentialSigningSecret field in src/config/appConfig.ts, or
+     scripts/issueCredentialToken.ts outside of a newly-approved milestone. Do not thread the
+     signing secret through registerConversationRoutes()'s parameters or
+     src/bootstrap/buildApplication.ts's Application interface without a newly-approved
+     milestone and an explicit decision to accept the resulting GX-005 (a second
+     exact-argument-count break in x12-http-entry-architecture.test.ts's GX-001-fixed literal)
+     -- Path B was chosen specifically to avoid this. Do not claim server-side token revocation
+     exists -- it does not; a signed token is trusted until its own expiresAt with no blocklist.
+     Do not claim this closes routeAuthorization.ts's (X.14) unwired state -- it does not; that
+     remains a distinct, separately-deferred capability. Do not modify the GX-004 literal in
+     x15-authorization-wiring-architecture.test.ts (src/api/'s five-file array) outside of a
+     newly-approved milestone that adds another authorized src/api/ file."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -817,8 +818,37 @@ historical_sequence_to_reach_here:
      real-server (not throwaway) integration test suite. Full repo suite green (549 files, 14829
      tests, 3 skipped, 0 failures across 2 consecutive confirming reruns after a first run's 2
      failures were investigated and traced to the identical, pre-existing X.10/X.13
-     `execSync('npx prisma validate')` timing flake already accepted at the X.14 freeze) — FROZEN
-     — you are here"
+     `execSync('npx prisma validate')` timing flake already accepted at the X.14 freeze) — FROZEN"
+  - "Phase X.16 (Credential Verification) implemented: replaced httpPrincipalResolver.ts's
+     unverified x-client-id signal with a real, stdlib-only HMAC bearer-token mechanism --
+     X16_PROTOCOL_DECISION.md evaluated bearer-token/JWT/session-token/OIDC against ten
+     dimensions each, chose stdlib-only HMAC (Option A): zero new runtime dependency, matching
+     this project's 15-phase minimal-dependency discipline. Built src/api/credentialToken.ts
+     (signToken()/verifyToken(), node:crypto HMAC-SHA256, timingSafeEqual() constant-time
+     comparison, mandatory enforced expiry). MID-IMPLEMENTATION GOVERNANCE FINDING: adding this
+     one file to src/api/ immediately broke x15-authorization-wiring-architecture.test.ts's own
+     exhaustive src/api/ file-count assertion (a frozen X.15 guard) -- same class of problem as
+     GX-001/002/003 (an exhaustive-snapshot assertion over something this project's convention
+     treats as additively extensible) but a distinct trigger (X.16, not X.15's own wiring) and
+     shape (file-count enumeration, not a call-site literal). Resolved as GX-004, formally
+     documented in ADR_X15_ARCHITECTURE_DECISION.md's Governance Exceptions section -- one
+     filename appended, exact array-equality preserved. A SECOND design fork was surfaced and
+     resolved explicitly before implementation: wiring the signing secret into
+     httpPrincipalResolver.ts could either thread it through registerConversationRoutes()'s
+     parameters (mirroring X.15's own sessionIdentityRepository precedent, but requiring a
+     second, foreseeable break in x12-http-entry-architecture.test.ts's GX-001-fixed literal --
+     a new GX-005 -- and touching the frozen src/bootstrap/buildApplication.ts) or have
+     resolvePrincipalFromRequest() read the secret itself via loadAppConfigFromEnv(), keeping
+     its exact original one-parameter signature and every existing call site unchanged (Path
+     B). Path B was chosen, explicitly to avoid GX-005 and any frozen-file touch -- zero new
+     governance exceptions beyond GX-004 for the entire milestone. Added
+     scripts/issueCredentialToken.ts (a thin CLI wrapper, not a new HTTP endpoint, which would
+     need its own access control to avoid becoming a mint-any-identity hole) closing the
+     issuance gap the protocol decision itself named as unscoped. New dedicated X.16
+     architecture guard (13 tests) + real-server (not throwaway) integration test suite (6
+     tests) proving valid/expired/tampered/absent-token behavior end to end. Full repo suite
+     green (553 files, 14870 tests, 3 skipped, 0 failures, clean on the first run) — FROZEN —
+     you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

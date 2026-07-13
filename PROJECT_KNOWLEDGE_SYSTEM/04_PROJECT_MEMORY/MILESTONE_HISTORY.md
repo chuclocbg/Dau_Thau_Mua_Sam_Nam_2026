@@ -7,10 +7,40 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.15 — Authorization & Recovery Wiring — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.16 — Credential Verification — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.15 — Authorization & Recovery Wiring — declared 2026-07-13 (superseded by X.16)
+
+**Evidence:** 549 test files, 14,832 tests (14,829 passed, 3 skipped — `TEST_DATABASE_URL`-gated,
+unaffected), 0 failures across 2 consecutive confirming reruns after a first run's 2 failures were
+traced to the pre-existing X.10/X.13 `execSync('npx prisma validate')` timing flake already
+accepted at the X.14 freeze; architecture guard (34 files, 321 tests) confirmed zero frozen-file
+modification beyond three documented, minimal governance exceptions.
+
+**Summary:** Recovered from an interrupted prior session via full repository-state reconstruction
+(no reliance on conversation memory) — the implementation plan and ADR already existed, Step 1
+already committed, Steps 2–4 already written but uncommitted. Wired X.14's
+`runAuthorizedConversationTurn()` into `conversationRoutes.ts`'s write path (`authorized: false` →
+HTTP 403) via a new `x-client-id`-reading `httpPrincipalResolver.ts` (explicitly non-cryptographic,
+not authentication); wired an `ISessionIdentityRepository` into `httpServer.ts`; wired X.13's
+recovery **scan** (not producer) into `deployment/deploy.sh`. MID-IMPLEMENTATION GOVERNANCE
+FINDING: the `conversationRoutes.ts`/`httpServer.ts` signature changes broke literal content
+assertions in three already-frozen architecture guards spanning three prior milestones (X.12,
+X.13, X.14) — one root cause (an authoring-style inconsistency between two guard lineages; zero
+layering/dependency-boundary violation in any of them). Resolved via a formal, pre-approved
+Governance Exceptions process: GX-001 (X.12 guard), GX-002 (X.13 guard), GX-003 (X.14 guard), each
+a minimal literal correction or narrowing to the assertion's own already-stated intent, all three
+formally recorded in `ADR_X15_ARCHITECTURE_DECISION.md`'s Governance Exceptions section before any
+guard file was touched. Deliberately NOT done: recovery-producer wiring (composing it with
+authorization would require modifying a frozen file or duplicating security-sensitive logic, both
+rejected) and real credential verification (`x-client-id` documented, explicitly, as unverified
+and not a credential — carried forward as Phase X.16's own objective). New dedicated X.15
+architecture guard + real-server (not throwaway) integration test suite — FROZEN.
 
 ---
 
