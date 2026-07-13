@@ -7,10 +7,32 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.13 — Conversation Persistence Recovery & Crash Resilience — declared 2026-07-10 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.14 — Authentication, Authorization & Identity Infrastructure — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.13 — Conversation Persistence Recovery & Crash Resilience — declared 2026-07-10 (superseded by X.14)
+
+**Evidence:** 537 test files, 14,726 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-gated
+tests, unaffected), 0 failures at freeze time; architecture guard confirmed zero frozen-file
+modification, including main.ts and gracefulShutdown.ts.
+
+**Summary:** No carve-out this milestone (the first since X.9.1 with none). Built conversation
+crash-resilience infrastructure entirely under a new src/runtime/recovery/ subdirectory:
+RecoveryMarker metadata + isUnfinished() detection, memory/Prisma IRecoveryRepository
+(findPending() as the recovery queue itself), runRecoverableConversationTurn() (the producer,
+wrapping runConversationTurn() with PENDING->COMPLETED/FAILED bookkeeping),
+conversationRecoveryCoordinator.ts (recoverMarker() — pending-session restoration is
+runConversationTurn()'s own existing resume-or-create logic invoked again; idempotent via a
+re-check immediately before acting), runtimeRecoveryManager.ts (runStartupRecoveryScan()). One
+new, additive ConversationRecoveryMarker Prisma model. scripts/recoveryScan.ts (CLI entrypoint).
+TWO HONEST LIMITATIONS named explicitly: at-least-once (not exactly-once) replay across a crash
+boundary, and idempotency verified only for the sequential-scan case, not concurrent scans.
+DELIBERATE WIRING GAP: not invoked from main.ts's boot sequence or conversationRoutes.ts's write
+path — left for a future, separately-authorized milestone.
 
 ---
 
