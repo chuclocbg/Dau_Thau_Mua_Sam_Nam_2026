@@ -19,129 +19,149 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.14 - Authentication, Authorization & Identity Infrastructure - FROZEN"
+current_milestone: "Phase X.15 - Authorization & Recovery Wiring - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-13
 milestone_evidence:
-  scope: "No carve-out this milestone (matching X.13's own precedent) -- 'Do NOT modify any
-         frozen milestone (X.3-X.13)' preserved exactly, zero frozen files touched. INSPECTION
-         FINDING (read in full before any code was written): src/auth/ (Phase M1) already
-         implements a comprehensive RBAC/ABAC system, but it is procurement-domain business
-         logic, not generic infrastructure -- STANDARD_RESOURCES includes PACKAGE/CONTRACT/
-         PAYMENT/SUPPLIER, PermissionConditions.maxValue is 'for procurement guards',
-         ApprovalHierarchy ties to procurement approval levels, DelegationGrant requires a
-         LegalBasis citation, and every algorithm in src/auth/domain/ is typed directly against
-         these business-coupled types. This milestone's own 'no procurement concepts, no legal
-         concepts' requirement makes direct reuse impossible -- reused the DESIGN (wildcard
-         matching, scope hierarchy) without importing the business-coupled CODE, verified in the
-         architecture guard that src/identity/ imports nothing from src/auth/. Built
-         src/identity/ (10 files): identityTypes.ts (Principal, Claims, Role, Permission,
-         AuthorizationDecision), permissionResolver.ts (4 deterministic built-in roles --
-         ANONYMOUS/USER/SERVICE/SYSTEM, not a persisted admin-editable RBAC system),
-         authorizationEvaluator.ts (wildcard matching + OWN/ALL scope hierarchy, deliberately
-         reimplemented against business-free types), authenticationContext.ts (the 4 identity
-         factory functions), runtimeAuthorization.ts (wraps runConversationTurn(), X.11 frozen,
-         with authorization + session identity binding -- ownership check requires ALL scope to
-         cross sessions), toolAuthorization.ts (a ToolDecider higher-order wrapper, zero
-         modification to toolCallingStage.ts), mcpAuthorization.ts (a pure pre-check for
-         MCPClient.callTool(), never wraps mcpClient.ts), routeAuthorization.ts (a standalone
-         Fastify preHandler-hook builder, proven via a real Fastify instance, not the frozen
-         server), sessionIdentityRepository.ts + prismaSessionIdentityRepository.ts
-         (SessionIdentityBinding -- a parallel bookkeeping table alongside ConversationSession,
-         X.11, mirroring X.13's ConversationRecoveryMarker pattern exactly). One new, additive
-         SessionIdentityBinding Prisma model (+ PrincipalKind enum) -- no Role/Permission table,
-         since roles/permissions are deterministic constants, not persisted data."
-  scope_exclusion: "Deliberate scope boundaries, stated plainly in PHASE_X14_IDENTITY_REPORT.md:
-                    (1) not wired into production traffic -- runAuthorizedConversationTurn() is
-                    not called by conversationRoutes.ts; buildRouteAuthorizationHook() is not
-                    registered on httpServer.ts; both complete and tested, wiring left for a
-                    future, separately-authorized milestone, matching X.13's own precedent for
-                    its recovery scan. (2) no real credential verification --
-                    buildUserContext(userId) shapes a Principal, never verifies a password/
-                    token; buildRouteAuthorizationHook()'s default resolvePrincipal always
-                    returns anonymous, matching today's actual, unauthenticated behavior. (3)
-                    MCP default permissions are minimal by design -- only SYSTEM's wildcard
-                    permission authorizes any named MCP tool."
-  files_added: "19 new files (10 src/identity/ modules, 1 migration, 9 test files: unit,
-               integration, architecture guard) + 1 modified file (schema.prisma -- 27
-               insertions, 0 deletions, one new model + one new enum appended). 77 new tests:
-               identity factory functions + determinism (9), built-in role registry (8),
-               authorization evaluator including a deterministic replay verification (16),
-               session identity repository CRUD (9), runtime authorization integration against a
-               real Application -- anonymous authorized, no-permission denied before the
-               reasoning pipeline is ever called, session-ownership enforcement, SERVICE
-               cross-session access (7), tool/MCP authorization (8), route authorization via a
-               real Fastify instance (4), Prisma DATABASE_URL-missing convention + real `prisma
-               validate` migration test (4), architecture guard proving zero src/auth/ import
-               and zero business-domain vocabulary (13)."
-  full_suite_result: "546 test files, 14803 tests passed, 3 skipped (X.10's TEST_DATABASE_URL-
-                      gated tests, unaffected), 0 failures (pool=forks, full repo, no filter,
-                      clean on the 3rd of 3 consecutive full-suite runs -- see
-                      investigation_note below); up from 537 files / 14726 tests at the X.13
-                      freeze baseline (+9 files, +77 tests, exactly the new X.14 test files). tsc
-                      --noEmit clean."
-  investigation_note: "The full-suite run that produced this milestone's implementation reported
-                      3 failures, investigated per the required workflow rather than assumed
-                      benign. Root cause: x10-prisma-integration.test.ts (X.10, frozen),
-                      x13-prisma-recovery-repository.test.ts (X.13, frozen), and
-                      x14-identity-prisma-repository.test.ts (this milestone) all shell out to a
-                      real `npx prisma validate` via execSync -- measured at ~2.8s on an
-                      otherwise-idle system, tight against vitest's 5000ms default, and routinely
-                      exceeded under 546-file parallel contention. Three consecutive full-suite
-                      reruns showed 3 failures -> 2 (X.10/X.13 only, after fixing X.14's own
-                      timeout to 15000ms) -> 0, the failing file varying non-deterministically
-                      each time -- the defining signature of a load-timing flake, not a
-                      persistent regression, matching the identical characteristic and
-                      resolution already accepted at the Phase X.9.5 freeze. Classification:
-                      pre-existing unrelated issue, not an implementation bug, not an incorrect
-                      test expectation, not an architecture guard failure. Fix: X.14's own
-                      migration test's timeout only (pure test-configuration, zero new
-                      functionality) -- x10/x13's identical tests are frozen and were NOT
-                      modified, confirmed by git status showing no diff on either file. Full
-                      evidence trail in PHASE_X14_IDENTITY_REPORT.md's Investigation section."
-  exit_criteria_met: "The dependency graph documented in PHASE_X14_IDENTITY_REPORT.md is
-                      verified: runAuthorizedConversationTurn -> evaluateAuthorization ->
-                      ISessionIdentityRepository ownership check -> runConversationTurn (X.11,
-                      frozen, unmodified) -> ISessionIdentityRepository.create() to bind a new
-                      session. withToolAuthorization() composes as the `decider` option to
-                      runToolCallingStage() (X.6, frozen) with zero modification.
-                      buildRouteAuthorizationHook() proven via a real, throwaway Fastify
-                      instance (never the frozen server). tsc --noEmit and the full repository
-                      test suite both verified with zero regressions attributable to this
-                      milestone. git status confirms only schema.prisma was modified among all
-                      pre-existing files (27 insertions, 0 deletions, purely additive) -- x10/x13
-                      test files confirmed untouched."
+  scope: "Recovered from an interrupted prior session via full repository-state reconstruction
+         (HEAD, git status, governance docs re-read in full -- no reliance on conversation
+         memory). PHASE_X15_IMPLEMENTATION_PLAN.md and ADR_X15_ARCHITECTURE_DECISION.md had
+         already been produced and Step 1 (src/api/httpPrincipalResolver.ts) already committed
+         before the interruption; Steps 2-4 existed complete but uncommitted in the working
+         tree. Wires X.14's authorization infrastructure and X.13's recovery scan into the live
+         HTTP/deployment path -- zero new business logic, exclusively wiring plus one small
+         request-to-Principal bridge, per the ADR's own Capability Reuse Audit. Built/wired: (1)
+         src/api/httpPrincipalResolver.ts (Step 1, ADR-relocated out of src/identity/ to avoid
+         breaking X.14's own recursive file-count guard -- resolvePrincipalFromRequest() reads
+         the caller-supplied, explicitly non-cryptographic x-client-id header, reusing
+         buildUserContext()/buildAnonymousContext() verbatim); (2) src/server/httpServer.ts
+         (constructs one ISessionIdentityRepository via buildMemorySessionIdentityRepository(),
+         passes it through -- no IRecoveryRepository constructed, matching the deferred-producer
+         decision); (3) src/api/conversationRoutes.ts (calls runAuthorizedConversationTurn()
+         instead of runConversationTurn() directly; authorized:false maps to HTTP 403); (4)
+         deployment/deploy.sh (runs scripts/recoveryScan.ts, X.13 unmodified, after
+         wait-for-ready -- recovery SCAN only, producer wiring deliberately deferred). MID-
+         IMPLEMENTATION GOVERNANCE FINDING: extending conversationRoutes.ts/httpServer.ts broke
+         literal content assertions in three already-frozen architecture-guard test files across
+         three prior milestones (X.12, X.13, X.14) -- traced to one root cause (an authoring-
+         style inconsistency between two guard lineages, not a code defect; every dependency-
+         boundary/layering assertion in all three guards held throughout). Resolved via a
+         formal, documented Governance Exceptions process: GX-001 (X.12 guard, applied during
+         initial implementation), GX-002 (X.13 guard), GX-003 (X.14 guard) -- each a minimal
+         literal correction or narrowing to the assertion's own already-stated intent, never a
+         weakening, all three formally recorded in ADR_X15_ARCHITECTURE_DECISION.md's revised
+         Governance Exceptions section (rationale, affected guard, why-exception-not-bug, why-
+         architecture-remains-valid, rollback implications, forward guard-writing guidance) per
+         X15_GOVERNANCE_IMPACT_ASSESSMENT.md's Recommendation B, approved before any guard file
+         was touched."
+  scope_exclusion: "Per ADR_X15_ARCHITECTURE_DECISION.md's Decision section, deliberately NOT
+                    done this milestone: (1) runRecoverableConversationTurn() (X.13) is NOT
+                    wired into conversationRoutes.ts -- composing it with authorization around
+                    one turn would require either modifying a frozen X.13/X.14 file or
+                    duplicating security-sensitive ownership-check/marker-bookkeeping logic
+                    outside a clean interface, both explicitly rejected in the ADR's
+                    Alternatives table. Net effect: the recovery scan is genuinely wired and
+                    invokable, but will find an empty queue in practice until a future,
+                    separately-authorized milestone wires the producer -- stated plainly, not
+                    glossed over. (2) No real credential verification -- x-client-id is
+                    documented, in the resolver's own file header and here, as a
+                    non-cryptographic, caller-supplied, unverified signal, explicitly not
+                    authentication; it closes the false-sense-of-security gap (distinguishing
+                    callers so the ownership check can actually fire) without claiming to be a
+                    security boundary against a real adversary. (3) routeAuthorization.ts
+                    (Fastify-level route gating, X.14) remains completely unwired -- a distinct,
+                    still-deferred capability from the runtime-level authorization this
+                    milestone does wire in, verified by GX-003's own narrowed assertion."
+  files_added: "1 new file (src/api/httpPrincipalResolver.ts, Step 1) + 3 modified implementation
+               files (httpServer.ts, conversationRoutes.ts, deployment/deploy.sh) + 2 new test
+               files (x15-authorization-wiring-architecture.test.ts -- dedicated X.15
+               architecture guard; x15-conversation-authorization-integration.test.ts -- real
+               buildHttpServer() integration tests, never a throwaway instance) + 3 governance-
+               exception literal corrections to already-frozen guard files (x12-http-entry-
+               architecture.test.ts GX-001, x13-recovery-architecture-guard.test.ts GX-002,
+               x14-identity-architecture-guard.test.ts GX-003) + 3 governance documents
+               (PHASE_X15_IMPLEMENTATION_PLAN.md, ADR_X15_ARCHITECTURE_DECISION.md,
+               X15_GOVERNANCE_IMPACT_ASSESSMENT.md). Net: +3 test files versus the X.14 freeze
+               baseline (546 -> 549)."
+  full_suite_result: "549 test files, 14832 tests (14829 passed, 3 skipped -- X.10's
+                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures on the confirming
+                      reruns (pool=forks, full repo, no filter -- see investigation_note below);
+                      up from 546 files / 14803 passed at the X.14 freeze baseline (+3 files,
+                      +26 tests, exactly the new X.15 test files: httpPrincipalResolver unit
+                      tests committed with Step 1, plus this milestone's own integration suite
+                      and architecture guard). tsc --noEmit clean."
+  investigation_note: "The first full-suite run after applying GX-002/GX-003 reported 2
+                      failures, investigated rather than assumed benign: both were
+                      x10-prisma-integration.test.ts (X.10, frozen) and
+                      x13-prisma-recovery-repository.test.ts (X.13, frozen) -- the identical
+                      execSync('npx prisma validate') timing flake already diagnosed and
+                      accepted at the X.14 freeze (real ~2.8s CLI spawn tight against vitest's
+                      5000ms default, routinely exceeded under 549-file parallel contention). Two
+                      consecutive full-suite reruns after that showed 0 failures each. git status
+                      confirmed both files byte-for-byte unmodified throughout. Classification:
+                      pre-existing unrelated flake, not a regression, not caused by this
+                      milestone -- no new fix needed since X.14 already extended its own
+                      migration test's timeout; x10/x13's tests are frozen and were not touched."
+  exit_criteria_met: "All 8 Acceptance Criteria in ADR_X15_ARCHITECTURE_DECISION.md verified: (1)
+                      tsc --noEmit clean; (2) full suite 0 failures beyond the accepted
+                      TEST_DATABASE_URL-skip/timing-flake exceptions; (3) the dedicated X.15
+                      architecture guard passes, confirming every 'MUST remain untouched' file
+                      byte-for-byte unchanged, conversationRoutes.ts calls
+                      runAuthorizedConversationTurn (not runConversationTurn) directly,
+                      httpPrincipalResolver.ts imports only the two authorized X.14 factory
+                      functions, and runRecoverableConversationTurn is not imported anywhere
+                      under src/api/ or src/server/; (4) real-server integration tests confirm
+                      header-less-request regression parity, 403 on mismatched x-client-id, 200
+                      on matching/new/anonymous sessions; (5) deployment/deploy.sh's existing
+                      X.9.5 architecture guard still passes unmodified in its own assertions; (6)
+                      git diff --stat matches exactly the ADR's 'Files allowed to change' list
+                      (including the three GX-numbered guard files, added to that list by the
+                      ADR's own revision) -- no more, no fewer; (7) this document and the commit
+                      history state plainly that recovery-producer wiring was deliberately
+                      deferred; (8) x-client-id is documented as non-cryptographic, unverified,
+                      not authentication, in both the resolver's header and here."
   frozen_interfaces_touched: "None. RuntimeContext's exported shape is unchanged -- identity
-                              composes ISessionIdentityRepository separately at each call site,
-                              never adding a field to it. Every X.3-X.13 frozen-file marker
-                              (including main.ts, gracefulShutdown.ts, conversationRoutes.ts,
-                              httpServer.ts -- none reference identity/principal/authorization)
-                              is byte-for-byte unmodified, verified by architecture guard."
+                              composes ISessionIdentityRepository separately, never adding a
+                              field to it. Every file the ADR lists as 'MUST remain untouched'
+                              (src/runtime/conversationEntryOrchestrator.ts, runtimeContext.ts,
+                              all six src/runtime/recovery/*.ts files, every src/identity/*.ts
+                              implementation file, reasoningRoutes.ts, coordinatorRoutes.ts,
+                              main.ts, gracefulShutdown.ts, src/reasoning/, src/mcp/,
+                              src/multiagent/, src/persistence/, prisma/schema.prisma,
+                              src/auth/, scripts/recoveryScan.ts) is byte-for-byte unmodified,
+                              verified by the new X.15 architecture guard. Only
+                              conversationRoutes.ts, httpServer.ts, and deployment/deploy.sh were
+                              modified -- each an ADR-authorized, additive wiring change -- plus
+                              the three GX-numbered literal corrections to frozen test files."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
+                          # NOTE: not updated by this freeze (no new tag was cut this milestone;
+                          # updating it is a separate, not-yet-requested release action) -- its
+                          # test-count fields still reflect the x14-frozen tag, now stale by
+                          # +3 files/+26 tests relative to the full_suite_result recorded above.
 
-next_active_milestone: "None currently proposed. Phase X.14 (Authentication, Authorization &
-                        Identity Infrastructure) is now COMPLETE -- identity/authorization
-                        infrastructure exists and is proven, but not yet wired into production
-                        traffic (no route requires authorization, runAuthorizedConversationTurn
-                        is not called by conversationRoutes.ts, no real credential verification
-                        exists). Any future work -- wiring authorization into the live HTTP/
-                        Runtime path, building real credential verification, integrating
-                        identity with X.13's recovery scan (SYSTEM principal), or any
-                        business-domain milestone such as X.15 -- is a new, separately-scoped
-                        and separately-authorized phase, not automatic."
-next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per this
-                         milestone's explicit closing instruction, work stops here and no
-                         business-domain milestone begins automatically."
-next_milestone_blocker: "N/A — no next milestone proposed. Three named, honest gaps carried
-                         forward: (1) authorization is not wired into any live route or the
-                         Runtime write path; (2) no real credential-verification protocol exists
-                         (buildUserContext() shapes a Principal, never authenticates one); (3)
-                         MCP default permissions are minimal (only SYSTEM). None is silently
-                         claimed as solved. Beginning any new work requires its own explicit
-                         human authorization and scoping."
+next_active_milestone: "None currently proposed. Phase X.15 (Authorization & Recovery Wiring) is
+                        now COMPLETE -- the session-hijack gap named at the X.14/POST_X14 audit is
+                        closed (authorization is wired into the live conversation-turn write path
+                        with a real, if non-cryptographic, caller-distinguishing signal), and the
+                        recovery scan is genuinely invokable as part of a real deployment. Two
+                        named, honest gaps remain open, explicitly not claimed as solved: real
+                        credential verification (Phase X.16 in the existing roadmap), and
+                        recovery-producer wiring (requires either a frozen-file modification or a
+                        clean composition primitive that does not yet exist -- named as
+                        recommended future work in the ADR, not undertaken here)."
+next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per explicit
+                         instruction, work stops here; Phase X.16 does not begin automatically."
+next_milestone_blocker: "N/A — no next milestone proposed. Two named gaps carried forward: (1) no
+                         real credential-verification protocol exists (x-client-id is an
+                         unverified, caller-supplied signal, not a credential); (2) recovery-
+                         producer wiring remains deferred, so the now-invokable recovery scan
+                         will find an empty queue until a future milestone wires
+                         runRecoverableConversationTurn() in. Neither is silently claimed as
+                         solved. Beginning any new work requires its own explicit human
+                         authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.14."
+                        after Phase X.15."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -242,6 +262,28 @@ do_not:
      protected by authorization today — none is; this milestone built the infrastructure, not
      the wiring. Do not claim real credential verification exists — buildUserContext() shapes a
      Principal from a caller-supplied id, it never authenticates a password/token/session."
+  - "UPDATE (X.15): the two entries directly above are superseded in part. runAuthorizedConversationTurn()
+     IS now wired into src/api/conversationRoutes.ts's write path (calling it instead of
+     runConversationTurn() directly, authorized:false -> HTTP 403), and src/server/httpServer.ts
+     now constructs an ISessionIdentityRepository and passes it through — both via
+     src/api/httpPrincipalResolver.ts (new file, X.15), which reads an unverified x-client-id
+     header and is NOT real credential verification (that gap remains fully open, named
+     explicitly, carried to a future X.16). Do not modify
+     src/api/httpPrincipalResolver.ts, or the conversationRoutes.ts/httpServer.ts wiring
+     established by X.15, outside of a newly-approved milestone. Do not wire
+     runRecoverableConversationTurn() (X.13) into conversationRoutes.ts, or
+     buildRouteAuthorizationHook()/routeAuthorization.ts (X.14) into httpServer.ts, without a
+     newly-approved milestone — X.15 deliberately deferred both (see
+     ADR_X15_ARCHITECTURE_DECISION.md's Decision and Rejected Alternatives). Do not modify
+     deployment/deploy.sh's X.15 recovery-scan step (the `npx tsx scripts/recoveryScan.ts` line)
+     outside of a newly-approved milestone. Do not modify the three governance-exception literal
+     corrections in x12-http-entry-architecture.test.ts (GX-001),
+     x13-recovery-architecture-guard.test.ts (GX-002), or x14-identity-architecture-guard.test.ts
+     (GX-003) outside of a newly-approved milestone — each is formally documented in
+     ADR_X15_ARCHITECTURE_DECISION.md's Governance Exceptions section; any future milestone that
+     needs to extend conversationRoutes.ts/httpServer.ts again (X.16 is already known to) should
+     follow that section's forward-looking guard-writing guidance (presence-check style, not
+     exact-substring) to avoid repeating the same class of break."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -749,8 +791,34 @@ historical_sequence_to_reach_here:
      load-timing flake, not a regression, matching the identical X.9.5-freeze precedent;
      classified pre-existing unrelated issue; fixed by extending ONLY X.14's own migration test's
      timeout to 15000ms (X.10/X.13's identical, frozen tests were not touched). Full repo suite
-     green (546 files, 14803 tests, 3 skipped, 0 failures on the confirming rerun) — FROZEN — you
-     are here"
+     green (546 files, 14803 tests, 3 skipped, 0 failures on the confirming rerun) — FROZEN"
+  - "Phase X.15 (Authorization & Recovery Wiring) implemented: recovered from an interrupted
+     prior session via full repository-state reconstruction (no reliance on conversation
+     memory) -- PHASE_X15_IMPLEMENTATION_PLAN.md and ADR_X15_ARCHITECTURE_DECISION.md already
+     existed, Step 1 (src/api/httpPrincipalResolver.ts) already committed, Steps 2-4 already
+     written but uncommitted. Wired X.14's runAuthorizedConversationTurn() into
+     conversationRoutes.ts's write path (authorized:false -> HTTP 403), wired an
+     ISessionIdentityRepository into httpServer.ts, wired X.13's recovery SCAN (not producer)
+     into deployment/deploy.sh -- zero new business logic beyond one small,
+     explicitly-non-cryptographic request-to-Principal bridge (x-client-id header). MID-
+     IMPLEMENTATION GOVERNANCE FINDING: the conversationRoutes.ts/httpServer.ts signature changes
+     broke literal content assertions in three already-frozen architecture guards spanning three
+     prior milestones (X.12, X.13, X.14) -- one root cause (an authoring-style inconsistency
+     between two guard lineages; zero layering/dependency-boundary violation in any of them).
+     Resolved via a formal, pre-approved Governance Exceptions process
+     (X15_GOVERNANCE_IMPACT_ASSESSMENT.md's Recommendation B): GX-001 (X.12 guard), GX-002 (X.13
+     guard), GX-003 (X.14 guard), each a minimal literal correction or narrowing to the
+     assertion's own already-stated intent, all three formally recorded in
+     ADR_X15_ARCHITECTURE_DECISION.md's revised Governance Exceptions section before any guard
+     file was touched. Deliberately NOT done: recovery-producer wiring (composing it with
+     authorization would require modifying a frozen file or duplicating security-sensitive
+     logic, both rejected) and real credential verification (x-client-id is documented,
+     explicitly, as unverified and not a credential). New dedicated X.15 architecture guard +
+     real-server (not throwaway) integration test suite. Full repo suite green (549 files, 14829
+     tests, 3 skipped, 0 failures across 2 consecutive confirming reruns after a first run's 2
+     failures were investigated and traced to the identical, pre-existing X.10/X.13
+     `execSync('npx prisma validate')` timing flake already accepted at the X.14 freeze) — FROZEN
+     — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:

@@ -7,10 +7,42 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.14 — Authentication, Authorization & Identity Infrastructure — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.15 — Authorization & Recovery Wiring — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.14 — Authentication, Authorization & Identity Infrastructure — declared 2026-07-13 (superseded by X.15)
+
+**Evidence:** 546 test files, 14,806 tests (14,803 passed, 3 skipped — X.10's
+`TEST_DATABASE_URL`-gated tests, unaffected), 0 failures on the confirming rerun; architecture
+guard confirmed zero `src/auth/` import and zero business-domain vocabulary in `src/identity/`.
+
+**Summary:** Inspected `src/auth/` (Phase M1) in full before any code was written and found it to
+be procurement business logic (`STANDARD_RESOURCES` includes PACKAGE/CONTRACT/PAYMENT/SUPPLIER,
+`PermissionConditions.maxValue` is "for procurement guards", `ApprovalHierarchy`/`DelegationGrant`
+tie to procurement approval and legal-basis requirements) rather than generic infrastructure --
+reused the DESIGN (wildcard resource/action matching, OWN/ALL-equivalent scope hierarchy) without
+importing the business-coupled CODE. Built `src/identity/` (10 files): `identityTypes.ts`
+(Principal, Claims, Role, Permission, AuthorizationDecision), `permissionResolver.ts` (4
+deterministic built-in roles -- ANONYMOUS/USER/SERVICE/SYSTEM, not a persisted admin-editable
+system), `authorizationEvaluator.ts`, `authenticationContext.ts` (the 4 identity factory
+functions), `runtimeAuthorization.ts` (wraps `runConversationTurn()`, X.11 frozen, with
+authorization + session identity binding), `toolAuthorization.ts` (a `ToolDecider` higher-order
+wrapper), `mcpAuthorization.ts` (a pure pre-check for `MCPClient.callTool()`), `routeAuthorization.ts`
+(a standalone Fastify preHandler-hook builder, proven via a real Fastify instance, not the frozen
+server), `sessionIdentityRepository.ts` + `prismaSessionIdentityRepository.ts` (`SessionIdentityBinding`
+-- a parallel bookkeeping table alongside `ConversationSession`). One new, additive
+`SessionIdentityBinding` Prisma model -- no Role/Permission table, since roles/permissions are
+deterministic constants. DELIBERATE SCOPE BOUNDARIES named explicitly: not wired into production
+traffic, no real credential verification, minimal default MCP permissions (SYSTEM only).
+INVESTIGATION: 3 originally-reported failures (all `execSync('npx prisma validate')` migration
+tests timing out under vitest's 5000ms default against real ~2.8s CLI spawns under 546-file
+parallel contention) confirmed a load-timing flake via 3 consecutive reruns, matching the
+identical X.9.5-freeze precedent -- fixed by extending only X.14's own migration test's timeout
+to 15000ms.
 
 ---
 
