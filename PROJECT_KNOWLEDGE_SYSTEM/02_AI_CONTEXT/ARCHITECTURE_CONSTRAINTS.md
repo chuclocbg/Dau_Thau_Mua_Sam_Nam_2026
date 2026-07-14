@@ -9,7 +9,7 @@ in this project's own architecture review/design cycle, not aspirational goals.
 ## Machine Context
 
 ```yaml
-as_of: 2026-07-05
+as_of: 2026-07-14
 status: CURRENT
 related: [DEPENDENCY_RULES.md, DDD_RULES.md, FREEZE_STATUS.md, ../01_PROJECT_DOCS/AI_ADVISORY_ARCHITECTURE.md]
 
@@ -53,4 +53,33 @@ constraints:
     rule: "Every LLM output passes OutputValidator before reaching a user — citation, numeric,
            contradiction, language, completeness, forbidden-pattern checks, zero exceptions"
     scope: future src/ai/
+
+# Engineering Platform, Phase A1 (Repository Foundation / Governance Engine, Layer 1) --
+# written down here because this file is the natural owning location for binding rulings, and
+# these two rules have governed every Phase X.16-X.20 milestone in practice without ever being
+# recorded anywhere durable until now.
+governance_policy:
+  adr_trigger_checklist:
+    introduced: "Phase X.19"
+    questions:
+      - "Does this change the persistence model (schema, migration, storage engine)?"
+      - "Does this change a public API (external HTTP contract)?"
+      - "Does this change system architecture (module boundaries, layering)?"
+      - "Does this change Docker/deployment topology?"
+      - "Does this change the authentication/authorization model?"
+      - "Does this change messaging/event architecture?"
+      - "Does this change the database engine?"
+    rule: "If ALL seven are false, no ADR. If ANY is true, exactly one ADR before implementation
+           proceeds. A document must answer something git history, CI logs, or source code
+           cannot already answer -- otherwise it should not exist (Lean Governance v2, X.19)."
+  decision_budget:
+    introduced: "Phase X.19, widened same phase"
+    autonomous_when_all_true:
+      - "<=8 files modified in one commit"
+      - "no public API changes"
+      - "no architecture changes"
+      - "no database migration"
+      - "no dependency changes"
+      - "no security changes"
+    else: "explicit human approval required before implementation, per batch"
 ```
