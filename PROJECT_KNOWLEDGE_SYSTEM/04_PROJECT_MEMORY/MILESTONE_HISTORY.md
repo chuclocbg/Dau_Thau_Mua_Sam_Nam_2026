@@ -7,10 +7,31 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.17 — Docker/Postgres Live Verification — declared 2026-07-13 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.18 — CI/CD Pipeline — declared 2026-07-14 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.17 — Docker/Postgres Live Verification — declared 2026-07-13 (superseded by X.18)
+
+**Evidence:** 553 test files, 14,873 tests (14,870 passed, 3 skipped — `TEST_DATABASE_URL`-gated,
+unaffected), 0 failures on the 3rd of 3 consecutive confirming runs (the identical pre-existing
+`execSync('npx prisma validate')` timing flake first diagnosed at the X.14 freeze); architecture
+guard suite unchanged (35 files, 334 tests) — X.17 added no new code for any guard to protect.
+
+**Summary:** Verification-only milestone, zero application source or test file modified. Docker
+Desktop installed/started outside the session; root-cause diagnosis performed before any
+implementation step -- the initial `docker compose up` failure (PostgreSQL continuously
+restarting) traced to a missing `app/.env` file, resolved by copying the already-documented
+template; `docker-compose.yml`/`prisma.config.ts`/`prisma/schema.prisma` all confirmed correct, no
+repository defect found. All 4 existing migrations applied live via `prisma migrate deploy` -- the
+first-ever live application of this repository's entire migration history. The 3 previously-
+skipped `TEST_DATABASE_URL`-gated tests passed for real against the live container. A real server
+process was smoke-tested (6/6 PASS) against the live, database-backed server. Zero defects found.
+Closed the single largest, longest-standing "implemented but never run for real" gap on the
+platform, 8 phases deep (X.9.4 through X.16) — FROZEN.
 
 ---
 

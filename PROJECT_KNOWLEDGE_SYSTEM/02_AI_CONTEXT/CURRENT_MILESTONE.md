@@ -19,122 +19,125 @@ status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.17 - Docker/Postgres Live Verification - FROZEN"
+current_milestone: "Phase X.18 - CI/CD Pipeline - FROZEN"
 documentation_track_status: "CLOSED"
-milestone_declared: 2026-07-13
+milestone_declared: 2026-07-14
 milestone_evidence:
-  scope: "Verification-only milestone -- runs the already-built persistence layer against a
-         real, live Docker/PostgreSQL stack for the first time in this repository's entire
-         history (8 phases deep, X.9.4 through X.16, all previously blocked on Docker being
-         unavailable in this environment). Zero new business logic, zero application source
-         code modified, zero test file modified. Environment prerequisite satisfied outside
-         this session (Docker Desktop installed and started); one root-cause diagnosis
-         performed before any implementation step: the initial docker compose up failure
-         (PostgreSQL container continuously restarting, POSTGRES_USER/PASSWORD/DB unset) was
-         traced to a missing app/.env file -- only the two template files (.env.example,
-         .env.template) existed; docker-compose.yml's own header comment already documented
-         the required copy step, simply never performed since Docker had never been available
-         before. Copying the template resolved it completely; docker-compose.yml,
-         prisma.config.ts, and prisma/schema.prisma were each read in full and confirmed
-         correct, no repository defect found. Steps executed: (1) stack brought up
-         (PostgreSQL/Redis/MinIO healthy, pgAdmin running); (2) all 4 existing migrations
-         (20260705120000_init_production_schema, 20260710120000_add_conversation_session,
-         20260710150000_add_conversation_recovery_marker,
-         20260710180000_add_session_identity_binding) applied live via prisma migrate deploy
-         -- the first-ever live application of this repository's entire migration history; (3)
-         the 3 previously-skipped TEST_DATABASE_URL-gated tests in
-         x10-prisma-integration.test.ts passed for real against the live container (once
-         DATABASE_URL was also set, since withTransaction() deliberately uses the production
-         Prisma singleton, not the test-scoped client, per testDatabaseBootstrap.ts's own
-         documented design -- not a defect, an artifact of the first live invocation);
-         re-running the full suite with both variables globally exported surfaced 37 failures,
-         all confirmed as by-design 'throws when DATABASE_URL is unset' tests (LRM-13, LRA-13,
-         LRD-12, MF-04 through MF-07, x10-persistence-foundation.test.ts, and the equivalent
-         X.11/X.13/X.14 Prisma-repository suites), not a regression -- re-running in the default
-         (unset) mode reproduced the exact pre-existing baseline; (4) a real server process
-         (tsx src/server/main.ts, not inject(), not a throwaway instance) was smoke-tested via
-         scripts/waitForReady.ts (ready on first attempt) and scripts/smokeTest.ts (6/6 PASS:
-         /live, /ready, /health, reasoning/answer, reasoning/batch, reasoning/answer/stream SSE)
-         against the live, database-backed server, confirmed by both tool output and the
-         server's own structured request log. Zero defects found across the entire milestone --
-         the conditional defect-fix step was not needed."
-  scope_exclusion: "Named explicitly, not glossed over: this milestone verifies Docker/Postgres
-                    live in ONE development environment, once -- it does not establish CI/CD
-                    verification (X.18's own scope) or verification under real production load.
-                    All of X.16's own named gaps (no server-side token revocation, no replay
-                    protection, single-secret/single-issuer trust model,
-                    routeAuthorization.ts/recovery-producer wiring both still unwired) are
-                    entirely unaffected by and unrelated to this milestone -- X.17 touches
-                    src/persistence/ and prisma/ verification only, confirmed by git diff
-                    showing zero change to src/identity/, src/api/, or any other Phase-X module."
-  files_added: "1 new governance document (PHASE_X17_DOCKER_VERIFICATION_REPORT.md). Zero
-               application source files changed. Zero test files changed. Zero new
-               package.json dependency. Zero new Prisma migration (all 4 already existed).
-               The entire milestone's code-level diff is empty -- its evidence is operational
-               (a real, live verification run), not a source change."
+  scope: "Tooling-only milestone -- stands up a GitHub Actions CI pipeline enforcing the exact
+         verification commands used at every prior milestone freeze (tsc --noEmit, the
+         architecture guard suite, the full test suite), converting manual discipline into a
+         tooling-enforced gate. Zero application capability added, zero runtime behavior
+         changed. Two forks resolved up front in X18_ARCHITECTURE_DECISION.md, against direct
+         repository evidence: (1) no PostgreSQL service container in CI -- the 3
+         TEST_DATABASE_URL-gated tests remain optional/skipped in CI exactly as locally, since
+         the marginal per-PR value of 3 already-live-verified (X.17) tests did not justify a
+         new infrastructure-flakiness vector on every PR; (2) ESLint is informational only,
+         never blocking -- 477 pre-existing errors across 178 files (re-counted fresh at
+         decision time) made full blocking infeasible without an out-of-scope cleanup, and
+         partial/diff-scoped gating was rejected (file-level diffing would unfairly block
+         unrelated one-line changes to already-flagged files). Implementation steps: (1)
+         .github/workflows/ci.yml (commit e0003d1) -- checkout, Node 24, npm ci, tsc, the
+         architecture guard suite, the full test suite (--pool=forks), an informational lint
+         step; triggers on PRs into develop/main and pushes to develop. LIVE VERIFICATION
+         SURFACED A REAL DEFECT in this very file on its first run: 30 test files failed to
+         resolve '../../generated/prisma/client.ts' -- app/generated/ is Prisma's codegen
+         output, correctly untracked, and a fresh GitHub Actions checkout has none of it; the
+         workflow never ran `prisma generate`. Not an implementation bug, not a Linux/Windows
+         difference, not a flake -- fixed with one new step, `npx prisma generate` (commit
+         289c3a5, needs no DATABASE_URL, does not reopen the no-Postgres-in-CI decision);
+         re-run passed in full. (2) package.json's 'test' script changed from 'vitest run' to
+         'vitest run --pool=forks' (commit f90d30d), protecting any local `npm test` from the
+         jsdom-parallelism crash CURRENT_RELEASE.md already documents, verified locally across
+         5 consecutive runs and live in CI. (3) Proof the gate blocks -- no artificial break was
+         introduced; the real history above (e0003d1 failure -> 289c3a5 fix, passing ->
+         f90d30d, passing) is itself stronger evidence than a manufactured one, since it is
+         this project's own actual first CI-caught defect, demonstrating the gate blocks a
+         real failure and passes real fixes, in both directions."
+  scope_exclusion: "Named explicitly, not glossed over: (1) no PostgreSQL in CI -- addable
+                    later as its own small, separately-scoped extension, not foreclosed. (2)
+                    no blocking lint gate -- 477 pre-existing findings remain unaddressed and
+                    non-blocking by design, merely visible in CI for the first time. (3) no
+                    deployment automation -- this milestone verifies on PR/push only. (4) no
+                    branch-protection configuration -- enforcing that this gate actually blocks
+                    a merge (not just reports failure) is a GitHub repository *setting*, not a
+                    file in this repository, and was not configured. None of X.16/X.17's own
+                    named gaps (token revocation, replay protection,
+                    routeAuthorization.ts/recovery-producer wiring, live-Postgres-in-CI) were
+                    touched by or are affected by this milestone."
+  files_added: "1 new workflow file (.github/workflows/ci.yml, extended once with the Prisma-
+               generate fix) + 1 changed line (package.json's test script) + 1 new governance
+               document (PHASE_X18_CICD_REPORT.md). Zero application source file changed. Zero
+               test file changed. Zero new package.json dependency. Zero Prisma
+               schema/migration change."
   full_suite_result: "553 test files, 14873 tests (14870 passed, 3 skipped -- X.10's
-                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures on the 3rd of 3
-                      consecutive confirming runs (1st run: 2 failures -- the identical,
-                      pre-existing execSync('npx prisma validate') timing flake first
-                      diagnosed and accepted at the X.14 freeze; 2nd run: 1 failure, different
-                      file, same flake signature; 3rd run: 0 failures); unchanged from the
-                      X.16 freeze baseline (553 files / 14870 passed) -- X.17 added zero test
-                      files. tsc --noEmit clean."
-  investigation_note: "Re-confirms the identical pre-existing timing flake investigated at the
-                      X.14 freeze and re-encountered at this freeze's own verification: both
-                      x10-prisma-integration.test.ts and x13-prisma-recovery-repository.test.ts
-                      shell out to a real `npx prisma validate` via execSync, tight against
-                      vitest's 5000ms default under 553-file parallel contention. git status
-                      confirmed both files byte-for-byte unmodified throughout this milestone.
-                      Classification: pre-existing, unrelated, load-dependent flake, not caused
-                      by or related to X.17's own live-database work."
-  exit_criteria_met: "Every Acceptance Criterion in X17_IMPLEMENTATION_PLAN.md §10 verified:
-                      Docker confirmed reachable; docker compose --profile app up succeeded
-                      (or the backing-services default, for the postgres/redis/minio stack);
-                      all 4 migrations applied with zero errors; all 3 previously-skipped
-                      tests pass for real; full suite 0 failures beyond the accepted timing-
-                      flake exception; scripts/waitForReady.ts and scripts/smokeTest.ts both
-                      succeeded against the real, live-backed server; tsc --noEmit clean;
-                      architecture guard suite (35 files, unchanged) passes in full; this
-                      document and PHASE_X17_DOCKER_VERIFICATION_REPORT.md both state plainly
-                      that zero defects were found, closing this gap in full rather than
-                      overselling it."
-  frozen_interfaces_touched: "None. Zero application source file changed by this milestone --
-                              confirmed by git diff --stat showing only this document, the
-                              freeze report, and MILESTONE_HISTORY.md's own update. Every file
-                              in src/persistence/, prisma/, src/identity/, src/api/, and every
-                              other Phase-X module is byte-for-byte unchanged from the X.16
-                              freeze."
+                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures, confirmed live on
+                      GitHub Actions at commit f90d30d (the final passing run) -- unchanged
+                      from the X.17 freeze baseline; X.18 added zero test files. Locally,
+                      npm test was run 5 consecutive times to verify the --pool=forks script
+                      change is behavior-neutral: the same 2 already-documented, load-dependent
+                      execSync('npx prisma validate') timing tests intermittently flaked under
+                      this session's own repeated back-to-back full-suite load (unrelated to
+                      this change, and not seen at all on the live, unloaded GitHub Actions
+                      runner). tsc --noEmit clean, both locally and live in CI."
+  ci_verification: "Live GitHub Actions history, re-queried directly via the public Actions API
+                   at freeze time: run 29263895937 (commit e0003d1) -- FAILURE (the real
+                   Prisma-generate defect); run 29265807366 (commit 289c3a5) -- SUCCESS; run
+                   29294256329 (commit f90d30d) -- SUCCESS, confirmed as the latest run on
+                   develop at freeze time. All three steps (tsc, architecture guards, full
+                   suite) plus the informational lint step passed in full on both successful
+                   runs."
+  exit_criteria_met: "Every Acceptance Criterion in X18_SCOPING_REPORT.md §12 and
+                      X18_ARCHITECTURE_DECISION.md §7 verified: .github/workflows/ci.yml exists
+                      and triggers on PRs into develop/main and pushes to develop; tsc,
+                      architecture guards, and the full test suite each run as distinct,
+                      individually-reportable steps; Node 24 is pinned explicitly; the full
+                      suite step uses --pool=forks; the workflow contains no Postgres service
+                      container and no DATABASE_URL/TEST_DATABASE_URL step, and the 3 gated
+                      tests report as skipped, not failed; the ESLint step is present,
+                      continue-on-error, and does not block a clean-of-new-violations PR
+                      despite 477 pre-existing findings; the gate's blocking behavior was
+                      proven using real history rather than an artificial break;
+                      PHASE_X18_CICD_REPORT.md states plainly which of the two named scope
+                      decisions was chosen and why."
+  frozen_interfaces_touched: "None. Zero application source file changed by this milestone.
+                              src/identity/, src/api/, src/runtime/, src/persistence/,
+                              prisma/schema.prisma, and every other Phase-X module are
+                              byte-for-byte unchanged from the X.17 freeze -- confirmed by
+                              git diff --stat across the entire milestone showing only
+                              .github/workflows/ci.yml, package.json (1 line), and the
+                              governance documents this milestone itself added."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
-                          # NOTE: still not updated (unchanged since the X.15/X.16 freezes) --
-                          # no new tag was cut this milestone either; its test-count fields now
-                          # reflect the x14-frozen tag, stale by +7 files/+67 tests relative to
-                          # this freeze's actual numbers above (identical to X.16's own gap,
-                          # since X.17 added no new tests of its own).
+                          # NOTE: still not updated (unchanged since the X.15/X.16/X.17
+                          # freezes) -- no new tag was cut this milestone either; its
+                          # test-count fields now reflect the x14-frozen tag, stale by
+                          # +7 files/+67 tests relative to this freeze's actual numbers above
+                          # (identical gap carried since X.16, since neither X.17 nor X.18
+                          # added new tests of their own).
 
-next_active_milestone: "None currently proposed. Phase X.17 (Docker/Postgres Live Verification)
-                        is now COMPLETE -- the single largest, longest-standing 'implemented but
-                        never run for real' gap on the platform (8 phases deep) is closed with
-                        zero defects found. Candidates named in POST_X14_ARCHITECTURE_AUDIT.md's
-                        original roadmap, still open: X.18 (CI/CD Pipeline, no environment
-                        dependency), X.19 (Exactly-Once Recovery + Optimistic Locking, touches
-                        currently-frozen X.11 persist-path code, needs its own explicit scoping),
-                        X.20 (Knowledge Platform Persistence Migration, need-driven only, not
-                        currently justified). None of X.16's own named gaps (token revocation,
-                        replay protection, routeAuthorization.ts/recovery-producer wiring) were
-                        touched by or are affected by this milestone -- all remain open,
-                        unrelated to X.17's verification-only scope."
+next_active_milestone: "None currently proposed. Phase X.18 (CI/CD Pipeline) is now COMPLETE --
+                        every pull request into develop/main and every push to develop is now
+                        automatically verified (tsc, architecture guards, full suite), with
+                        lint visible but non-blocking. Candidates named in
+                        POST_X14_ARCHITECTURE_AUDIT.md's original roadmap, still open: X.19
+                        (Exactly-Once Recovery + Optimistic Locking, touches currently-frozen
+                        X.11 persist-path code, needs its own explicit scoping), X.20
+                        (Knowledge Platform Persistence Migration, need-driven only, not
+                        currently justified). None of X.16/X.17's own named gaps (token
+                        revocation, replay protection,
+                        routeAuthorization.ts/recovery-producer wiring, live-Postgres-in-CI)
+                        were touched by or are affected by this milestone -- all remain open."
 next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per explicit
-                         instruction, work stops here; Phase X.18 does not begin automatically."
-next_milestone_blocker: "N/A — no next milestone proposed. All gaps named at the X.16 freeze
-                         remain open and are carried forward unchanged (X.17 did not touch
-                         them): no server-side token revocation, no replay protection,
-                         routeAuthorization.ts unwired, recovery-producer wiring unwired. None
-                         is silently claimed as solved. Beginning any new work requires its own
-                         explicit human authorization and scoping."
+                         instruction, work stops here; Phase X.19 does not begin automatically."
+next_milestone_blocker: "N/A — no next milestone proposed. All gaps named at the X.16/X.17
+                         freezes remain open and are carried forward unchanged (X.18 did not
+                         touch them): no server-side token revocation, no replay protection,
+                         routeAuthorization.ts unwired, recovery-producer wiring unwired, no
+                         PostgreSQL in CI, no blocking lint gate, no branch-protection
+                         configuration. None is silently claimed as solved. Beginning any new
+                         work requires its own explicit human authorization and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.17."
+                        after Phase X.18."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -286,6 +289,19 @@ do_not:
      covers. Do not claim X.16's named gaps (token revocation, replay protection,
      routeAuthorization.ts/recovery-producer wiring) are affected by or resolved by X.17 -- none
      of them are; X.17's scope was persistence-layer live verification only."
+  - "UPDATE (X.18): every PR into develop/main and every push to develop is now automatically
+     verified by .github/workflows/ci.yml (tsc, architecture guards, full suite, informational
+     lint). Do not modify .github/workflows/ci.yml or package.json's 'test' script outside of a
+     newly-approved milestone. Do not add a PostgreSQL service container to the CI workflow, or
+     make the ESLint step blocking, without a newly-approved milestone and an explicit decision
+     -- both were deliberately declined in X18_ARCHITECTURE_DECISION.md; the 477 pre-existing
+     ESLint findings remain unaddressed. Do not claim this gate is enforced by GitHub branch
+     protection -- that is a repository *setting*, not configured by this milestone; the gate
+     reports failure but nothing yet prevents a failing PR from being merged by an operator who
+     chooses to. Do not claim the 3 TEST_DATABASE_URL-gated tests run in CI -- they remain
+     skipped there by design. Do not claim any of X.16/X.17's own named gaps (token revocation,
+     replay protection, routeAuthorization.ts/recovery-producer wiring) are affected by or
+     resolved by X.18 -- none of them are; X.18's scope was CI/CD tooling only."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -871,8 +887,26 @@ historical_sequence_to_reach_here:
      longest-standing 'implemented but never run for real' gap on the platform, 8 phases deep
      (X.9.4 through X.16). Full repo suite green (553 files, 14870 tests, 3 skipped, 0 failures
      on the 3rd of 3 consecutive confirming runs -- the identical pre-existing
-     execSync('npx prisma validate') timing flake first diagnosed at the X.14 freeze) — FROZEN
-     — you are here"
+     execSync('npx prisma validate') timing flake first diagnosed at the X.14 freeze) — FROZEN"
+  - "Phase X.18 (CI/CD Pipeline) implemented: tooling-only milestone, zero application source or
+     test file modified. Added .github/workflows/ci.yml (checkout, Node 24, npm ci, tsc, the
+     architecture guard suite, the full test suite via --pool=forks, an informational lint
+     step), per two forks resolved up front in X18_ARCHITECTURE_DECISION.md against direct
+     repository evidence: no PostgreSQL service container in CI (the 3 gated tests remain
+     optional there, matching local default behavior), and ESLint informational-only, never
+     blocking (477 pre-existing errors across 178 files ruled out full blocking; partial
+     diff-scoped gating rejected as unfairly punishing unrelated one-line changes to
+     already-flagged files). LIVE VERIFICATION CAUGHT A REAL DEFECT in the workflow's own first
+     run: 30 test files failed to resolve the Prisma-generated client, since app/generated/ is
+     correctly untracked and a fresh GitHub Actions checkout has none of it -- fixed with one
+     new step, `npx prisma generate` (needs no DATABASE_URL, does not reopen the
+     no-Postgres-in-CI decision). Also changed package.json's 'test' script to default to
+     --pool=forks, protecting any local `npm test` from the jsdom-parallelism crash
+     CURRENT_RELEASE.md already documents. Proved the gate blocks using real history rather than
+     an artificial break -- the workflow's own first real failure, followed by its own real fix
+     passing, followed by a second independent change also passing, is stronger evidence than a
+     manufactured one would have been. Full repo suite green live in CI (553 files, 14870 tests,
+     3 skipped, 0 failures) at the final passing commit — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
