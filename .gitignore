@@ -32,8 +32,11 @@ app/coverage/
 # Build output (root-level pre-built app)
 dist/
 
-# Claude Code local configuration and memory (machine-specific)
-.claude/
+# Claude Code local configuration and memory (machine-specific) -- .claude/commands/ (and any
+# future .claude/agents/, .claude/hooks/) are deliberately NOT ignored: those are shared
+# repository tooling (Engineering Platform Command Platform), not machine-specific state.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # Logs
 *.log
