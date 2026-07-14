@@ -2,10 +2,19 @@ name: CI
 
 # Phase X.18 Step 1 -- baseline verification gate, per X18_ARCHITECTURE_DECISION.md.
 # Runs the exact three commands used at every milestone freeze this project has ever had
-# (tsc --noEmit, the architecture guard suite, the full test suite) plus an informational-only
-# lint pass. No Postgres service container (X18_ARCHITECTURE_DECISION.md §1: declined this
-# milestone). Lint never blocks (X18_ARCHITECTURE_DECISION.md §2: 477 pre-existing findings,
-# informational only).
+# (tsc -b, the architecture guard suite, the full test suite) plus two informational-only
+# passes (type-check, lint). No Postgres service container (X18_ARCHITECTURE_DECISION.md §1:
+# declined this milestone). Lint never blocks (X18_ARCHITECTURE_DECISION.md §2: 477 pre-existing
+# findings, informational only).
+#
+# Phase X.19 CI investigation fix: Type-check previously ran `tsc --noEmit`, which against this
+# repo's solution-style root tsconfig.json ("files": [], only "references") compiles zero files
+# -- only `tsc -b`/--build actually walks the referenced projects (tsconfig.app.json,
+# tsconfig.node.json) where the real source lives. Switched to `tsc -b`, which surfaces ~1271
+# pre-existing errors across 182 application source files (dominated by erasableSyntaxOnly vs.
+# constructor-parameter-property syntax, unused locals, and a JSX Attributes typing mismatch in
+# tests) -- unrelated to any single phase and out of scope here. Kept informational-only, same
+# treatment as lint, until a dedicated remediation milestone addresses the backlog.
 
 on:
   pull_request:
@@ -36,8 +45,9 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Type-check
-        run: npx tsc --noEmit
+      - name: Type-check (informational only -- does not block; surfaces pre-existing errors, see workflow header)
+        continue-on-error: true
+        run: npx tsc -b
 
       - name: Architecture guard suite
         run: npx vitest run --pool=forks src/__tests__/*architecture*.test.ts
