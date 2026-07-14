@@ -8,7 +8,7 @@ import { buildMemoryRecoveryRepository } from '../runtime/recovery/memoryRecover
 import { isUnfinished } from '../runtime/recovery/recoveryTypes.ts'
 import type { IRecoveryRepository, RecoveryMarker } from '../runtime/recovery/recoveryTypes.ts'
 
-function markerInput(question: string, startedAt: string): Omit<RecoveryMarker, 'id' | 'createdAt' | 'updatedAt'> {
+function markerInput(question: string, startedAt: string): Omit<RecoveryMarker, 'id' | 'createdAt' | 'updatedAt' | 'version'> {
   return { question, status: 'PENDING', startedAt }
 }
 

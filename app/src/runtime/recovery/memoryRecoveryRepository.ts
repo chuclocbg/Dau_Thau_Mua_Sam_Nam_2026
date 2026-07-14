@@ -10,17 +10,23 @@ import { isUnfinished } from './recoveryTypes.ts'
 export class MemoryRecoveryRepository implements IRecoveryRepository {
   private readonly store = new Map<string, RecoveryMarker>()
 
-  async create(entity: Omit<RecoveryMarker, 'id' | 'createdAt' | 'updatedAt'>): Promise<RecoveryMarker> {
+  async create(entity: Omit<RecoveryMarker, 'id' | 'createdAt' | 'updatedAt' | 'version'>): Promise<RecoveryMarker> {
     const now = new Date().toISOString()
-    const marker: RecoveryMarker = { ...entity, id: crypto.randomUUID(), createdAt: now, updatedAt: now }
+    const marker: RecoveryMarker = { ...entity, id: crypto.randomUUID(), createdAt: now, updatedAt: now, version: 0 }
     this.store.set(marker.id, marker)
     return marker
   }
 
-  async update(id: string, updates: Partial<Omit<RecoveryMarker, 'id' | 'createdAt'>>): Promise<RecoveryMarker> {
+  async update(id: string, updates: Partial<Omit<RecoveryMarker, 'id' | 'createdAt' | 'version'>>): Promise<RecoveryMarker> {
     const existing = this.store.get(id)
     if (!existing) throw new Error(`Recovery marker not found: ${id}`)
-    const updated: RecoveryMarker = { ...existing, ...updates, id, updatedAt: new Date().toISOString() }
+    const updated: RecoveryMarker = {
+      ...existing,
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString(),
+      version: existing.version + 1,
+    }
     this.store.set(id, updated)
     return updated
   }
@@ -49,6 +55,26 @@ export class MemoryRecoveryRepository implements IRecoveryRepository {
 
   async findBySessionId(sessionId: string): Promise<readonly RecoveryMarker[]> {
     return Array.from(this.store.values()).filter(m => m.sessionId === sessionId)
+  }
+
+  async resolveIfPending(
+    id: string,
+    expectedVersion: number,
+    updates: Partial<Omit<RecoveryMarker, 'id' | 'createdAt' | 'updatedAt' | 'version'>>,
+  ): Promise<RecoveryMarker | null> {
+    const existing = this.store.get(id)
+    if (!existing || existing.status !== 'PENDING' || existing.version !== expectedVersion) {
+      return null
+    }
+    const updated: RecoveryMarker = {
+      ...existing,
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString(),
+      version: existing.version + 1,
+    }
+    this.store.set(id, updated)
+    return updated
   }
 }
 

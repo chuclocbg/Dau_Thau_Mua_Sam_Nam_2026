@@ -2067,6 +2067,12 @@ model ConversationSession {
 // left PENDING after a process restart is the crash-recovery signal (see recoveryTypes.ts's own
 // header comment for the full rationale). Independent of ConversationSession's own status field
 // by design: turn-in-flight bookkeeping and session lifecycle are different concerns.
+//
+// X.19 ADDITION, per X19_ARCHITECTURE_DECISION.md: `version` is the optimistic-locking token for
+// resolveIfPending()'s compare-and-swap -- a monotonically-incrementing integer, not a timestamp.
+// An `updatedAt`-based CAS was tried first and rejected: two near-simultaneous writes can land in
+// the same millisecond, making a DateTime-based compare-and-swap silently fail to detect a real
+// concurrent claim (proven by this milestone's own concurrency test before this column existed).
 
 enum RecoveryMarkerStatus {
   PENDING
@@ -2083,6 +2089,7 @@ model ConversationRecoveryMarker {
   startedAt   DateTime
   completedAt DateTime?
   error       String?
+  version     Int                  @default(0)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
