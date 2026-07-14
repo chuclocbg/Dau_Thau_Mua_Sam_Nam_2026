@@ -7,10 +7,43 @@ is overwritten for the next one. See that file's archival rule.
 
 ## Milestone Log (most recent first)
 
-### Phase X.18 — CI/CD Pipeline — declared 2026-07-14 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
+### Phase X.19 — Concurrent-Scan-Safe Recovery (Optimistic Locking) — declared 2026-07-14 (CURRENT — see `../02_AI_CONTEXT/CURRENT_MILESTONE.md`)
 
 Not yet archived — this is the live milestone. When superseded, its full summary moves here,
 above this note, before `CURRENT_MILESTONE.md` is overwritten.
+
+---
+
+### Phase X.18 — CI/CD Pipeline — declared 2026-07-14 (superseded by X.19)
+
+**Evidence:** 553 test files, 14,873 tests (14,870 passed, 3 skipped — X.10's
+`TEST_DATABASE_URL`-gated tests, unaffected), 0 failures, confirmed live on GitHub Actions at
+commit `f90d30d` (the final passing run); architecture guard suite unchanged (35 files, 334
+tests) — X.18 added zero test files of its own.
+
+**Summary:** Tooling-only milestone, zero application source or test file modified. Stood up
+`.github/workflows/ci.yml` — checkout, Node 24, `npm ci`, `tsc --noEmit`, the architecture guard
+suite, the full test suite (`--pool=forks`), an informational-only lint step — converting this
+project's own manual per-freeze discipline into a tooling-enforced gate on every PR into
+develop/main and every push to develop. Two forks resolved up front in
+`X18_ARCHITECTURE_DECISION.md` against direct repository evidence: no PostgreSQL service
+container in CI (the 3 `TEST_DATABASE_URL`-gated tests remain optional/skipped exactly as
+locally, since 3 already-live-verified [X.17] tests didn't justify a new infrastructure-
+flakiness vector on every PR), and ESLint informational-only, never blocking (477 pre-existing
+errors across 178 files made full blocking infeasible; diff-scoped gating was rejected as
+unfairly punishing unrelated one-line changes to already-flagged files). LIVE VERIFICATION
+SURFACED A REAL DEFECT on the workflow's own first run: 30 test files failed to resolve the
+Prisma-generated client, since `app/generated/` is correctly untracked and a fresh GitHub
+Actions checkout has none of it — fixed with one new step, `npx prisma generate`. Also changed
+`package.json`'s `test` script to default to `--pool=forks`, protecting local `npm test` from
+the jsdom-parallelism crash `CURRENT_RELEASE.md` documents. Proved the gate blocks using real
+history rather than an artificial break — the workflow's own first real failure (`e0003d1`),
+followed by its own real fix passing (`289c3a5`), followed by a second independent change also
+passing (`f90d30d`), is itself stronger evidence than a manufactured break would have been.
+NOTE (superseded by X.19): the Type-check step (`npx tsc --noEmit`) was later discovered to have
+been compiling zero files this entire milestone — see the X.19 entry above for the root cause
+and fix; not a defect introduced by X.18, but a pre-existing condition of this repo's
+solution-style `tsconfig.json` that X.18 inherited rather than caused.
 
 ---
 

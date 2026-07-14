@@ -14,130 +14,176 @@ before trusting anything else in this session.*
 ## Machine Context
 
 ```yaml
-as_of: 2026-07-13
+as_of: 2026-07-14
 status: CURRENT
 owner_file: null   # owns: current_milestone_name, next_milestone_name, milestone_blockers
 related: [../04_PROJECT_MEMORY/MILESTONE_HISTORY.md, CURRENT_RELEASE.md, NEXT_APPROVED_PHASE.md, SCHEMA.md]
 
-current_milestone: "Phase X.18 - CI/CD Pipeline - FROZEN"
+current_milestone: "Phase X.19 - Concurrent-Scan-Safe Recovery (Optimistic Locking) - FROZEN"
 documentation_track_status: "CLOSED"
 milestone_declared: 2026-07-14
 milestone_evidence:
-  scope: "Tooling-only milestone -- stands up a GitHub Actions CI pipeline enforcing the exact
-         verification commands used at every prior milestone freeze (tsc --noEmit, the
-         architecture guard suite, the full test suite), converting manual discipline into a
-         tooling-enforced gate. Zero application capability added, zero runtime behavior
-         changed. Two forks resolved up front in X18_ARCHITECTURE_DECISION.md, against direct
-         repository evidence: (1) no PostgreSQL service container in CI -- the 3
-         TEST_DATABASE_URL-gated tests remain optional/skipped in CI exactly as locally, since
-         the marginal per-PR value of 3 already-live-verified (X.17) tests did not justify a
-         new infrastructure-flakiness vector on every PR; (2) ESLint is informational only,
-         never blocking -- 477 pre-existing errors across 178 files (re-counted fresh at
-         decision time) made full blocking infeasible without an out-of-scope cleanup, and
-         partial/diff-scoped gating was rejected (file-level diffing would unfairly block
-         unrelated one-line changes to already-flagged files). Implementation steps: (1)
-         .github/workflows/ci.yml (commit e0003d1) -- checkout, Node 24, npm ci, tsc, the
-         architecture guard suite, the full test suite (--pool=forks), an informational lint
-         step; triggers on PRs into develop/main and pushes to develop. LIVE VERIFICATION
-         SURFACED A REAL DEFECT in this very file on its first run: 30 test files failed to
-         resolve '../../generated/prisma/client.ts' -- app/generated/ is Prisma's codegen
-         output, correctly untracked, and a fresh GitHub Actions checkout has none of it; the
-         workflow never ran `prisma generate`. Not an implementation bug, not a Linux/Windows
-         difference, not a flake -- fixed with one new step, `npx prisma generate` (commit
-         289c3a5, needs no DATABASE_URL, does not reopen the no-Postgres-in-CI decision);
-         re-run passed in full. (2) package.json's 'test' script changed from 'vitest run' to
-         'vitest run --pool=forks' (commit f90d30d), protecting any local `npm test` from the
-         jsdom-parallelism crash CURRENT_RELEASE.md already documents, verified locally across
-         5 consecutive runs and live in CI. (3) Proof the gate blocks -- no artificial break was
-         introduced; the real history above (e0003d1 failure -> 289c3a5 fix, passing ->
-         f90d30d, passing) is itself stronger evidence than a manufactured one, since it is
-         this project's own actual first CI-caught defect, demonstrating the gate blocks a
-         real failure and passes real fixes, in both directions."
-  scope_exclusion: "Named explicitly, not glossed over: (1) no PostgreSQL in CI -- addable
-                    later as its own small, separately-scoped extension, not foreclosed. (2)
-                    no blocking lint gate -- 477 pre-existing findings remain unaddressed and
-                    non-blocking by design, merely visible in CI for the first time. (3) no
-                    deployment automation -- this milestone verifies on PR/push only. (4) no
-                    branch-protection configuration -- enforcing that this gate actually blocks
-                    a merge (not just reports failure) is a GitHub repository *setting*, not a
-                    file in this repository, and was not configured. None of X.16/X.17's own
-                    named gaps (token revocation, replay protection,
-                    routeAuthorization.ts/recovery-producer wiring, live-Postgres-in-CI) were
-                    touched by or are affected by this milestone."
-  files_added: "1 new workflow file (.github/workflows/ci.yml, extended once with the Prisma-
-               generate fix) + 1 changed line (package.json's test script) + 1 new governance
-               document (PHASE_X18_CICD_REPORT.md). Zero application source file changed. Zero
-               test file changed. Zero new package.json dependency. Zero Prisma
-               schema/migration change."
-  full_suite_result: "553 test files, 14873 tests (14870 passed, 3 skipped -- X.10's
-                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures, confirmed live on
-                      GitHub Actions at commit f90d30d (the final passing run) -- unchanged
-                      from the X.17 freeze baseline; X.18 added zero test files. Locally,
-                      npm test was run 5 consecutive times to verify the --pool=forks script
-                      change is behavior-neutral: the same 2 already-documented, load-dependent
-                      execSync('npx prisma validate') timing tests intermittently flaked under
-                      this session's own repeated back-to-back full-suite load (unrelated to
-                      this change, and not seen at all on the live, unloaded GitHub Actions
-                      runner). tsc --noEmit clean, both locally and live in CI."
-  ci_verification: "Live GitHub Actions history, re-queried directly via the public Actions API
-                   at freeze time: run 29263895937 (commit e0003d1) -- FAILURE (the real
-                   Prisma-generate defect); run 29265807366 (commit 289c3a5) -- SUCCESS; run
-                   29294256329 (commit f90d30d) -- SUCCESS, confirmed as the latest run on
-                   develop at freeze time. All three steps (tsc, architecture guards, full
-                   suite) plus the informational lint step passed in full on both successful
-                   runs."
-  exit_criteria_met: "Every Acceptance Criterion in X18_SCOPING_REPORT.md §12 and
-                      X18_ARCHITECTURE_DECISION.md §7 verified: .github/workflows/ci.yml exists
-                      and triggers on PRs into develop/main and pushes to develop; tsc,
-                      architecture guards, and the full test suite each run as distinct,
-                      individually-reportable steps; Node 24 is pinned explicitly; the full
-                      suite step uses --pool=forks; the workflow contains no Postgres service
-                      container and no DATABASE_URL/TEST_DATABASE_URL step, and the 3 gated
-                      tests report as skipped, not failed; the ESLint step is present,
-                      continue-on-error, and does not block a clean-of-new-violations PR
-                      despite 477 pre-existing findings; the gate's blocking behavior was
-                      proven using real history rather than an artificial break;
-                      PHASE_X18_CICD_REPORT.md states plainly which of the two named scope
-                      decisions was chosen and why."
-  frozen_interfaces_touched: "None. Zero application source file changed by this milestone.
-                              src/identity/, src/api/, src/runtime/, src/persistence/,
-                              prisma/schema.prisma, and every other Phase-X module are
-                              byte-for-byte unchanged from the X.17 freeze -- confirmed by
-                              git diff --stat across the entire milestone showing only
-                              .github/workflows/ci.yml, package.json (1 line), and the
-                              governance documents this milestone itself added."
+  scope: "Closes X.13's own named gap ('idempotency verified only for the sequential-scan case,
+         not concurrent scans -- no optimistic-locking primitive exists on IBaseRepository').
+         Adds `version Int @default(0)` to ConversationRecoveryMarker and switches
+         resolveIfPending()'s compare-and-swap token from a plan to reuse `updatedAt` (proposed
+         in X19_IMPLEMENTATION_PLAN.md, specifically to stay migration-free) to `version`
+         (X19_ARCHITECTURE_DECISION.md). MID-IMPLEMENTATION DESIGN FLAW CAUGHT BY OWN TESTING:
+         a concurrency test (Promise.all of two simultaneous recoverMarker() calls against the
+         same marker) showed BOTH succeeding when exactly one should have -- root cause,
+         updatedAt is a millisecond-resolution DateTime and two near-simultaneous claims can
+         land in the same millisecond, so the stale-read check (`existing.updatedAt !==
+         expectedUpdatedAt`) sees no difference and lets both through. Presented as a 3-option
+         stop-and-explain (per this project's Decision Budget: no database migration = one of
+         the autonomous-implementation conditions), user approved Option 1 (add the version
+         column) -- this migration retroactively made 'Persistence model changed?' true under
+         the project's own ADR checklist, so X19_ARCHITECTURE_DECISION.md was written before
+         continuing implementation, documenting why updatedAt-based CAS was rejected and why
+         three other migration-free alternatives (random token in the `error` field, a new
+         RecoveryMarkerStatus enum value, an in-process-only counter) were also rejected -- none
+         actually closes the named cross-process threat model. `version` is incremented on
+         every write (not just resolveIfPending()'s CAS path), so conversationRecoveryCoordinator.ts's
+         claim call could be simplified to an empty updates payload (`resolveIfPending(marker.id,
+         marker.version, {})`), removing the 'touch startedAt to force a bump' workaround the
+         rejected updatedAt design had needed. One forced, mechanical, non-weakening fix to the
+         frozen x13-recovery-repository.test.ts: markerInput()'s return-type annotation now also
+         excludes 'version' (system-managed like id/createdAt/updatedAt) -- zero assertions
+         changed, documented plainly in the implementation commit rather than paused on, since
+         it was not a judgment call. SEPARATE, USER-DIRECTED SUB-INVESTIGATION (still within
+         this milestone, freeze deliberately withheld until it closed): `npx tsc --noEmit`, run
+         identically by this project at every milestone freeze and by .github/workflows/ci.yml's
+         Type-check step, was proven to compile ZERO files -- app's root tsconfig.json is a
+         solution-style config (`\"files\": []`, only `\"references\"`), and a plain (non
+         `-b`/`--build`) invocation takes that literally. Confirmed via `--listFilesOnly` (0
+         files) and a from-scratch `tsc -b` run (no incremental cache) surfacing real errors
+         with exit 1. Root cause classified as (A) a CI configuration defect -- specifically the
+         workflow's own invocation, not tsconfig/references/package.json scripts/working-
+         directory/Vite config, all individually confirmed correct. Fix: the Type-check step now
+         runs `tsc -b` (matching package.json's own `build` script), kept `continue-on-error:
+         true` -- the same non-blocking treatment already established for the Lint step
+         (X18_ARCHITECTURE_DECISION.md §2) -- since enforcing it as blocking would immediately
+         redden CI across (B) ~1271 pre-existing error lines spanning 182 application source
+         files, unrelated to any single phase (dominated by three systemic patterns:
+         erasableSyntaxOnly vs. constructor-parameter-property syntax [242], noUnusedLocals/
+         noUnusedParameters [269], a JSX Attributes typing mismatch in tests [169] -- not ~1271
+         independent bugs). No ADR required for the CI fix (a pipeline correction, not a
+         persistence/API/architecture/deployment-strategy change, same precedent as the ESLint
+         decision)."
+  scope_exclusion: "Named explicitly, not glossed over: (1) true exactly-once replay semantics
+                    across a crash boundary -- would require runConversationTurn()'s session
+                    persist and the marker's completion write to share one transaction, not
+                    achievable without modifying the frozen X.11 persist path; still at-least-
+                    once, unchanged from X.13. (2) repo-wide IBaseRepository optimistic locking
+                    -- X.19 extends only IRecoveryRepository (a single-module, additive override
+                    of create()/update(), matching X.13's own precedent for extending this
+                    interface); no evidenced need to touch the shared IBaseRepository.ts itself
+                    for any of the other 24+ consuming modules. (3) the ~1271-error-line, 182-
+                    file pre-existing TypeScript debt the CI investigation surfaced -- fixing it
+                    (or even triaging it) was explicitly out of scope per the investigation's own
+                    instructions; the Type-check step now reports real numbers but remains
+                    non-blocking until a dedicated remediation milestone. (4) ESLint's 477
+                    pre-existing findings (X.18's own named gap) -- untouched, unrelated to this
+                    milestone."
+  files_added: "Governance: X19_IMPLEMENTATION_PLAN.md, X19_ARCHITECTURE_DECISION.md (1 commit,
+               70ebaa3). Implementation (1 commit, eb9109d, 8 files): prisma/schema.prisma
+               (+version Int @default(0) on ConversationRecoveryMarker), one new migration
+               (prisma/migrations/20260714004215_add_recovery_marker_version/migration.sql --
+               `ALTER TABLE conversation_recovery_markers ADD COLUMN version INTEGER NOT NULL
+               DEFAULT 0`, additive only), recoveryTypes.ts, memoryRecoveryRepository.ts,
+               prismaRecoveryRepository.ts, conversationRecoveryCoordinator.ts (all X.13,
+               modified under this milestone's own explicit new-milestone authorization for that
+               directory), x19-recovery-optimistic-locking.test.ts (new), and the one forced
+               line in x13-recovery-repository.test.ts described above. CI fix (1 commit,
+               ce796c1, 1 file): .github/workflows/ci.yml only. Zero new package.json
+               dependency. No other frozen module touched."
+  full_suite_result: "554 test files, 14879 tests (14876 passed, 3 skipped -- X.10's
+                      TEST_DATABASE_URL-gated tests, unaffected), 0 failures on a clean local
+                      run (+1 file / +6 tests over the X.18 baseline of 553/14870, exactly the
+                      6 tests x19-recovery-optimistic-locking.test.ts added). Two full-suite runs
+                      immediately prior each hit exactly one failure -- a different file each
+                      time (x13-prisma-recovery-repository.test.ts, then also
+                      x10-prisma-integration.test.ts) -- both the identical, already-documented
+                      execSync('npx prisma validate') timing flake first diagnosed at the X.14
+                      freeze, not a regression; cleared on the 3rd run. Live on GitHub Actions at
+                      commit ce796c1 (run 29304573420): SUCCESS -- Architecture guard suite and
+                      Full test suite steps both genuinely passed; the Type-check step's
+                      `continue-on-error: true` reports 'success' even though the underlying
+                      `tsc -b` genuinely exits 1 with real, pre-existing errors (confirmed by
+                      running the identical command locally against the identical committed
+                      tree; raw CI log text was not retrievable via the public API, which needs
+                      repository-admin token scope this session does not have)."
+  ci_verification: "Live GitHub Actions history, queried directly via the public Actions API:
+                   run 29304573420 (commit ce796c1, the final commit of this milestone) --
+                   SUCCESS. All 9 steps (checkout, Node setup, install, prisma generate,
+                   type-check, architecture guard suite, full test suite, lint, post-job
+                   cleanup) completed successfully; type-check and lint both report success via
+                   continue-on-error while genuinely surfacing their respective pre-existing
+                   debt, exactly as designed."
+  exit_criteria_met: "CAS token is a monotonic integer, immune to millisecond collision by
+                      construction (not just by the concurrency test's specific timing --
+                      proven by the failing-then-passing test itself). Two simultaneous
+                      recoverMarker() calls against the same marker now yield exactly one
+                      recovered:true and one ALREADY_RESOLVED, verified directly (the prior,
+                      rejected updatedAt design produced two recovered:true on the same test).
+                      Migration applied live against the real Postgres instance X.17 verified
+                      (`npx prisma migrate dev`, confirmed via `npx prisma migrate status` --
+                      'Database schema is up to date!'). Architecture guard suite unchanged at
+                      35 files / 334 tests -- X.19 added no new frozen-file assertions to
+                      protect beyond the one forced x13 fix, itself verified non-weakening.
+                      CI's Type-check step now genuinely executes tsc -b instead of silently
+                      compiling zero files, confirmed both by local reproduction and by the live
+                      GitHub Actions run."
+  frozen_interfaces_touched: "src/runtime/recovery/ (X.13) -- modified under this milestone's
+                              own explicit authorization, its stated purpose. .github/workflows/
+                              ci.yml (X.18) -- modified under this milestone's own explicit,
+                              user-directed sub-investigation. One forced line in the frozen
+                              x13-recovery-repository.test.ts (X.13), documented above. No other
+                              frozen module touched: src/identity/, src/api/, src/persistence/,
+                              src/conversation/, src/runtime/ (outside recovery/),
+                              src/bootstrap/buildApplication.ts, and every other Phase-X module
+                              are byte-for-byte unchanged from the X.18 freeze."
   owner_file_for_numbers: CURRENT_RELEASE.md   # release tag, test counts — see there, not here
-                          # NOTE: still not updated (unchanged since the X.15/X.16/X.17
+                          # NOTE: still not updated (unchanged since the X.15/X.16/X.17/X.18
                           # freezes) -- no new tag was cut this milestone either; its
-                          # test-count fields now reflect the x14-frozen tag, stale by
-                          # +7 files/+67 tests relative to this freeze's actual numbers above
-                          # (identical gap carried since X.16, since neither X.17 nor X.18
-                          # added new tests of their own).
+                          # test-count fields now reflect the x14-frozen tag, stale relative to
+                          # this freeze's actual numbers above (identical gap carried since
+                          # X.16).
 
-next_active_milestone: "None currently proposed. Phase X.18 (CI/CD Pipeline) is now COMPLETE --
-                        every pull request into develop/main and every push to develop is now
-                        automatically verified (tsc, architecture guards, full suite), with
-                        lint visible but non-blocking. Candidates named in
-                        POST_X14_ARCHITECTURE_AUDIT.md's original roadmap, still open: X.19
-                        (Exactly-Once Recovery + Optimistic Locking, touches currently-frozen
-                        X.11 persist-path code, needs its own explicit scoping), X.20
-                        (Knowledge Platform Persistence Migration, need-driven only, not
-                        currently justified). None of X.16/X.17's own named gaps (token
+next_active_milestone: "None currently authorized. Phase X.19 (Concurrent-Scan-Safe Recovery)
+                        is now COMPLETE -- recoverMarker() is safe under concurrent scans, and
+                        CI's Type-check step genuinely executes instead of silently checking
+                        zero files. RECOMMENDED (not authorized) candidates, per this
+                        milestone's own two open technical-debt findings: X.20 -- TypeScript
+                        Remediation (the ~1271 pre-existing error lines / 182 application source
+                        files the CI investigation surfaced -- dominated by 3 systemic patterns,
+                        likely more tractable than the raw count suggests, but still needs its
+                        own scoping before any file is touched). X.21 -- ESLint Remediation (the
+                        477 pre-existing findings named at the X.18 freeze, still fully
+                        unaddressed). X.22 -- CI Hardening (branch-protection configuration to
+                        make the gate actually block a merge -- a GitHub repository *setting*,
+                        never configured by any milestone to date -- plus revisiting whether
+                        Type-check/Lint should become blocking once X.20/X.21 clear their
+                        respective backlogs). None of X.16/X.17's own named gaps (token
                         revocation, replay protection,
                         routeAuthorization.ts/recovery-producer wiring, live-Postgres-in-CI)
                         were touched by or are affected by this milestone -- all remain open."
-next_milestone_status: "NOT AUTHORIZED — no specific next milestone is proposed. Per explicit
-                         instruction, work stops here; Phase X.19 does not begin automatically."
+next_milestone_status: "NOT AUTHORIZED — X.20/X.21/X.22 above are recommendations, not
+                         approvals. Per explicit instruction, work stops here; no next
+                         milestone's planning document or implementation begins automatically."
 next_milestone_blocker: "N/A — no next milestone proposed. All gaps named at the X.16/X.17
-                         freezes remain open and are carried forward unchanged (X.18 did not
-                         touch them): no server-side token revocation, no replay protection,
-                         routeAuthorization.ts unwired, recovery-producer wiring unwired, no
-                         PostgreSQL in CI, no blocking lint gate, no branch-protection
-                         configuration. None is silently claimed as solved. Beginning any new
-                         work requires its own explicit human authorization and scoping."
+                         freezes remain open and are carried forward unchanged (neither X.18 nor
+                         X.19 touched them): no server-side token revocation, no replay
+                         protection, routeAuthorization.ts unwired, recovery-producer wiring
+                         unwired, no PostgreSQL in CI, no blocking lint gate, no blocking
+                         type-check gate, no branch-protection configuration. X.19 additionally
+                         leaves open: true exactly-once recovery replay, repo-wide
+                         IBaseRepository optimistic locking, the ~1271-error-line TypeScript
+                         debt, the 477-finding ESLint debt. None is silently claimed as solved.
+                         Beginning any new work requires its own explicit human authorization
+                         and scoping."
 
 immediate_next_action: "None. Waiting for explicit human direction on what (if anything) comes
-                        after Phase X.18."
+                        after Phase X.19."
 
 do_not:
   - "Do not begin any new phase or milestone without explicit approval and explicit scoping —
@@ -302,6 +348,22 @@ do_not:
      skipped there by design. Do not claim any of X.16/X.17's own named gaps (token revocation,
      replay protection, routeAuthorization.ts/recovery-producer wiring) are affected by or
      resolved by X.18 -- none of them are; X.18's scope was CI/CD tooling only."
+  - "UPDATE (X.19): resolveIfPending()'s compare-and-swap token is `version` (a monotonic Int on
+     ConversationRecoveryMarker), not `updatedAt` -- do not revert to an updatedAt-based CAS or
+     reintroduce an updatedAt parameter on resolveIfPending(); it was implemented, tested, and
+     proven to allow two concurrent claims to both succeed (see X19_ARCHITECTURE_DECISION.md).
+     Do not modify src/runtime/recovery/ again, or the version column/migration, outside of a
+     newly-approved milestone. Do not modify the one forced type-annotation fix in
+     x13-recovery-repository.test.ts (markerInput()'s return type excluding 'version') outside
+     of a newly-approved milestone. Do not modify .github/workflows/ci.yml's Type-check step
+     (now `tsc -b`, continue-on-error: true) outside of a newly-approved milestone -- do not
+     make it blocking without first addressing (or explicitly accepting) the ~1271 pre-existing
+     error lines across 182 application source files it surfaces; do not claim those errors are
+     fixed -- none are, X.19's CI sub-investigation only made them visible. Do not claim X.19
+     provides exactly-once recovery replay or repo-wide optimistic locking -- neither is true;
+     both are named, open gaps, not solved by this milestone. Do not claim the ESLint 477-finding
+     debt (X.18) or the new TypeScript ~1271-error-line debt are addressed by any work to date --
+     both remain fully open, non-blocking by design, pending X.20/X.21 authorization."
 
 historical_sequence_to_reach_here:
   - "Phase A-M1: business modules + infrastructure, built and frozen incrementally"
@@ -906,7 +968,46 @@ historical_sequence_to_reach_here:
      an artificial break -- the workflow's own first real failure, followed by its own real fix
      passing, followed by a second independent change also passing, is stronger evidence than a
      manufactured one would have been. Full repo suite green live in CI (553 files, 14870 tests,
-     3 skipped, 0 failures) at the final passing commit — FROZEN — you are here"
+     3 skipped, 0 failures) at the final passing commit — FROZEN"
+  - "Phase X.19 (Concurrent-Scan-Safe Recovery / Optimistic Locking) implemented: closed X.13's
+     own named gap (idempotency proven only for sequential, not concurrent, scans). Added
+     `version Int @default(0)` to ConversationRecoveryMarker; resolveIfPending()'s CAS token
+     switched from a planned updatedAt reuse to version. MID-IMPLEMENTATION DESIGN FLAW CAUGHT
+     BY OWN TESTING: a concurrency test (two simultaneous recoverMarker() calls against the same
+     marker) showed both succeeding -- updatedAt is millisecond-resolution and two near-
+     simultaneous claims can collide, so the stale-read check saw no difference. Presented as a
+     3-option stop-and-explain per the project's Decision Budget (no-database-migration being
+     one autonomous-implementation condition); user approved adding the version column, which
+     retroactively required exactly one ADR under the project's own checklist
+     (X19_ARCHITECTURE_DECISION.md, written before continuing implementation) -- documents why
+     updatedAt-based CAS was rejected and why three migration-free alternatives (random token in
+     `error`, a new status enum value, an in-process counter) were also rejected. One forced,
+     mechanical, non-weakening fix to the frozen x13-recovery-repository.test.ts (a return-type
+     annotation excluding the new field, zero assertions changed). Verified: the concurrency test
+     now yields exactly one recovered:true, not two; migration applied live (`prisma migrate
+     status` confirms up to date); architecture guard unchanged (35 files, 334 tests); full suite
+     green on a clean run (554 files, 14879 tests, 3 skipped, 0 failures) after two runs each hit
+     the already-documented execSync('npx prisma validate') timing flake (different file each
+     time, not a regression). SEPARATE, USER-DIRECTED SUB-INVESTIGATION, folded into this
+     milestone rather than deferred: `npx tsc --noEmit` -- run identically at every prior
+     milestone freeze and by CI's own Type-check step -- proven to compile ZERO files, since
+     app's root tsconfig.json is a solution-style config (`files: []`, only `references`) and a
+     plain, non-`-b` invocation takes that literally (confirmed via `--listFilesOnly` and a
+     from-scratch `tsc -b` run surfacing real errors). Classified as a CI configuration defect
+     (the workflow's own invocation, not tsconfig/references/scripts/working-directory/Vite
+     config, each individually ruled out with evidence). Fixed by switching the step to `tsc -b`
+     (matching package.json's own build script), kept informational (continue-on-error: true,
+     the same treatment already established for Lint) since enforcing it as blocking would
+     immediately redden CI across ~1271 pre-existing error lines spanning 182 application source
+     files -- pre-existing debt, not a regression, dominated by three systemic patterns
+     (erasableSyntaxOnly vs. constructor-parameter-property syntax, unused locals, a JSX
+     Attributes typing mismatch in tests) rather than ~1271 independent bugs. No ADR required
+     (pipeline correction, not a persistence/API/architecture/deployment-strategy change).
+     Verified live: GitHub Actions run 29304573420 at the final commit -- SUCCESS, all 9 steps
+     completed, Type-check and Lint both genuinely surface their respective debt while remaining
+     non-blocking by design. Recommended, not authorized, follow-ups: X.20 (TypeScript
+     Remediation), X.21 (ESLint Remediation), X.22 (CI Hardening / branch-protection
+     configuration) — FROZEN — you are here"
 ```
 
 Full narrative version of this sequence, with the reasoning behind each step:
