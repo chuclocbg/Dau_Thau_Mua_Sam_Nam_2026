@@ -19,37 +19,24 @@
  * Zero new dependencies: git via child_process, GitHub API via Node's built-in fetch (Node 18+).
  * Owner/repo/branch are derived from the actual repository, not hardcoded, so this script is a
  * reusable artifact, not a Dau_Thau_Mua_Sam_Nam_2026-specific one.
+ *
+ * Phase 1 (GOVERNANCE_RUNTIME_IMPLEMENTATION_CONTRACT.md): the environment-detection helpers,
+ * the CheckResult shape, the print format, the masked-step lookup, and the generic poll loop
+ * shape now live in ./lib/governanceRuntime.ts, shared infrastructure extracted from this exact
+ * file. checkHeadMatchesOrigin, checkWorkingTreeClean, and pollWorkflowRun's own GitHub-Actions
+ * interpretation stay here -- they are this rule's own logic, not generic infrastructure.
  */
 
-import { execSync } from 'node:child_process'
-import { readFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
-
-function sh(cmd: string): string {
-  return execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
-}
-
-function repoRoot(): string {
-  return sh('git rev-parse --show-toplevel')
-}
-
-function currentBranch(): string {
-  return sh('git rev-parse --abbrev-ref HEAD')
-}
-
-function ownerRepoFromRemote(): { owner: string; repo: string } {
-  const url = sh('git remote get-url origin')
-  const match = url.match(/github\.com[/:]([^/]+)\/([^/.]+?)(?:\.git)?$/)
-  if (!match) throw new Error(`Could not parse owner/repo from origin remote: ${url}`)
-  const [, owner, repo] = match
-  return { owner, repo }
-}
-
-interface CheckResult {
-  readonly name: string
-  readonly ok: boolean
-  readonly detail: string
-}
+import {
+  sh,
+  repoRoot,
+  currentBranch,
+  ownerRepoFromRemote,
+  findMaskedStepNames,
+  pollUntil,
+  printCheckResult,
+  type CheckResult,
+} from './lib/governanceRuntime.ts'
 
 function checkHeadMatchesOrigin(branch: string): CheckResult {
   const head = sh('git rev-parse HEAD')
@@ -82,27 +69,6 @@ function checkWorkingTreeClean(): CheckResult {
   }
 }
 
-/** Cross-references the workflow file for step names carrying `continue-on-error: true`, so a
- *  reported API "success" can be flagged as masked rather than taken at face value. */
-function findMaskedStepNames(root: string): Set<string> {
-  const workflowPath = join(root, '.github', 'workflows', 'ci.yml')
-  if (!existsSync(workflowPath)) return new Set()
-  const lines = readFileSync(workflowPath, 'utf8').split('\n')
-  const masked = new Set<string>()
-  let currentStepName: string | null = null
-  for (const line of lines) {
-    const nameMatch = line.match(/^\s*-\s*name:\s*(.+)$/)
-    if (nameMatch) {
-      currentStepName = nameMatch[1].trim()
-      continue
-    }
-    if (currentStepName && /continue-on-error:\s*true/.test(line)) {
-      masked.add(currentStepName)
-    }
-  }
-  return masked
-}
-
 async function pollWorkflowRun(
   owner: string,
   repo: string,
@@ -110,41 +76,45 @@ async function pollWorkflowRun(
   sha: string,
   { intervalMs = 15000, maxAttempts = 40 }: { intervalMs?: number; maxAttempts?: number } = {},
 ): Promise<CheckResult> {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const runsRes = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/actions/runs?branch=${branch}&per_page=5`,
-    )
-    if (!runsRes.ok) {
-      return { name: 'CI result', ok: false, detail: `GitHub API error: ${runsRes.status} ${runsRes.statusText}` }
-    }
-    const runsBody = (await runsRes.json()) as { workflow_runs: Array<{ id: number; head_sha: string; status: string; conclusion: string | null; html_url: string }> }
-    const run = runsBody.workflow_runs.find(r => r.head_sha === sha)
-    if (!run) {
-      console.log(`[verifyPushState] no run found yet for ${sha}, waiting... (attempt ${attempt}/${maxAttempts})`)
-    } else if (run.status !== 'completed') {
-      console.log(`[verifyPushState] run ${run.id} status=${run.status}, waiting... (attempt ${attempt}/${maxAttempts})`)
-    } else {
-      const jobsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${run.id}/jobs`)
-      const jobsBody = (await jobsRes.json()) as { jobs: Array<{ steps: Array<{ name: string; conclusion: string | null }> }> }
-      const masked = findMaskedStepNames(repoRoot())
-      const steps = jobsBody.jobs.flatMap(j => j.steps)
-      const maskedSuccesses = steps.filter(s => s.conclusion === 'success' && masked.has(s.name))
-      const genuineFailures = steps.filter(s => s.conclusion === 'failure' && !masked.has(s.name))
-      const detailLines = [
-        `run ${run.id} (${run.html_url}): conclusion=${run.conclusion}`,
-        ...steps.map(s => `  - ${s.name}: ${s.conclusion}${masked.has(s.name) ? '  [continue-on-error: "success" here is NOT a guarantee the underlying command passed]' : ''}`),
-      ]
-      if (genuineFailures.length > 0) {
-        return { name: 'CI result', ok: false, detail: detailLines.join('\n') }
+  const result = await pollUntil<CheckResult>(
+    async (attempt, attemptsTotal) => {
+      const runsRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/actions/runs?branch=${branch}&per_page=5`,
+      )
+      if (!runsRes.ok) {
+        return { done: true, value: { name: 'CI result', ok: false, detail: `GitHub API error: ${runsRes.status} ${runsRes.statusText}` } }
       }
-      if (maskedSuccesses.length > 0) {
-        detailLines.push(`\nNote: ${maskedSuccesses.length} step(s) report success only via continue-on-error masking (${maskedSuccesses.map(s => s.name).join(', ')}). Verify locally if certainty matters.`)
+      const runsBody = (await runsRes.json()) as { workflow_runs: Array<{ id: number; head_sha: string; status: string; conclusion: string | null; html_url: string }> }
+      const run = runsBody.workflow_runs.find(r => r.head_sha === sha)
+      if (!run) {
+        console.log(`[verifyPushState] no run found yet for ${sha}, waiting... (attempt ${attempt}/${attemptsTotal})`)
+        return { done: false }
+      } else if (run.status !== 'completed') {
+        console.log(`[verifyPushState] run ${run.id} status=${run.status}, waiting... (attempt ${attempt}/${attemptsTotal})`)
+        return { done: false }
+      } else {
+        const jobsRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${run.id}/jobs`)
+        const jobsBody = (await jobsRes.json()) as { jobs: Array<{ steps: Array<{ name: string; conclusion: string | null }> }> }
+        const masked = findMaskedStepNames(repoRoot())
+        const steps = jobsBody.jobs.flatMap(j => j.steps)
+        const maskedSuccesses = steps.filter(s => s.conclusion === 'success' && masked.has(s.name))
+        const genuineFailures = steps.filter(s => s.conclusion === 'failure' && !masked.has(s.name))
+        const detailLines = [
+          `run ${run.id} (${run.html_url}): conclusion=${run.conclusion}`,
+          ...steps.map(s => `  - ${s.name}: ${s.conclusion}${masked.has(s.name) ? '  [continue-on-error: "success" here is NOT a guarantee the underlying command passed]' : ''}`),
+        ]
+        if (genuineFailures.length > 0) {
+          return { done: true, value: { name: 'CI result', ok: false, detail: detailLines.join('\n') } }
+        }
+        if (maskedSuccesses.length > 0) {
+          detailLines.push(`\nNote: ${maskedSuccesses.length} step(s) report success only via continue-on-error masking (${maskedSuccesses.map(s => s.name).join(', ')}). Verify locally if certainty matters.`)
+        }
+        return { done: true, value: { name: 'CI result', ok: run.conclusion === 'success', detail: detailLines.join('\n') } }
       }
-      return { name: 'CI result', ok: run.conclusion === 'success', detail: detailLines.join('\n') }
-    }
-    if (attempt < maxAttempts) await new Promise(resolve => setTimeout(resolve, intervalMs))
-  }
-  return { name: 'CI result', ok: false, detail: `Timed out after ${maxAttempts} polling attempts` }
+    },
+    { intervalMs, maxAttempts },
+  )
+  return result ?? { name: 'CI result', ok: false, detail: `Timed out after ${maxAttempts} polling attempts` }
 }
 
 async function main() {
@@ -159,12 +129,12 @@ async function main() {
 
   console.log(`\n=== verifyPushState: ${owner}/${repo}@${branch} (${head}) ===\n`)
   for (const r of results) {
-    console.log(`${r.ok ? 'PASS' : 'FAIL'} -- ${r.name}\n  ${r.detail.replace(/\n/g, '\n  ')}\n`)
+    printCheckResult(r)
   }
 
   console.log('Polling GitHub Actions for the current commit...')
   const ciResult = await pollWorkflowRun(owner, repo, branch, head)
-  console.log(`${ciResult.ok ? 'PASS' : 'FAIL'} -- ${ciResult.name}\n  ${ciResult.detail.replace(/\n/g, '\n  ')}\n`)
+  printCheckResult(ciResult)
   results.push(ciResult)
 
   const allOk = results.every(r => r.ok)
