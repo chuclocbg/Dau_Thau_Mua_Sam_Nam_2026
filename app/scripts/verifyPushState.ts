@@ -36,6 +36,8 @@ import {
   pollUntil,
   printCheckResult,
   type CheckResult,
+  type ExecutionContext,
+  type RuleExecution,
 } from './lib/governanceRuntime.ts'
 
 function checkHeadMatchesOrigin(branch: string): CheckResult {
@@ -121,6 +123,22 @@ async function main() {
   const branch = currentBranch()
   const { owner, repo } = ownerRepoFromRemote()
   const head = sh('git rev-parse HEAD')
+
+  // Phase 2 (GOVERNANCE_RUNTIME_IMPLEMENTATION_CONTRACT.md): construct an explicit RuleExecution
+  // record instead of treating "the script ran" as an implicit, untracked event. Purely additive
+  // -- does not replace or feed into any of the three checks below, whose own logic is unchanged.
+  const executionContext: ExecutionContext = { repoRoot: repoRoot(), branch, owner, repo, headSha: head }
+  const ruleExecution: RuleExecution = {
+    ruleId: 'REVIEW-3',
+    version: 1,
+    // No signal exists today to distinguish which of REVIEW-3's declared execution_points
+    // (command | dogfood) triggered this specific run -- both invoke the identical command
+    // line. Disclosed limitation, not resolved here; out of Phase 2's stated scope.
+    triggeredBy: 'command',
+    timestamp: new Date().toISOString(),
+    executionContext,
+  }
+  console.log(`[verifyPushState] RuleExecution constructed: ${ruleExecution.ruleId}@v${ruleExecution.version} triggeredBy=${ruleExecution.triggeredBy} at ${ruleExecution.timestamp}`)
 
   const results: CheckResult[] = [
     checkHeadMatchesOrigin(branch),

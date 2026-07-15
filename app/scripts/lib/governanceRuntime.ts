@@ -38,6 +38,32 @@ export function ownerRepoFromRemote(): { owner: string; repo: string } {
   return { owner, repo }
 }
 
+/** The environment a RuleExecution runs within (GOVERNANCE_OBJECT_MODEL.md's ExecutionContext
+ *  entry) -- maps directly onto what this module's own repoRoot()/currentBranch()/
+ *  ownerRepoFromRemote() already gather at the start of every run. Constructed fresh per
+ *  execution; not independently persisted (that entry's own Serialization note: "ephemeral"). */
+export interface ExecutionContext {
+  readonly repoRoot: string
+  readonly branch: string
+  readonly owner: string
+  readonly repo: string
+  readonly headSha: string
+}
+
+/** One specific, timestamped run of a rule's script (GOVERNANCE_OBJECT_MODEL.md's RuleExecution
+ *  entry). Phase 2 (GOVERNANCE_RUNTIME_IMPLEMENTATION_CONTRACT.md): constructed explicitly and
+ *  in-memory so "the script ran" is a real, typed fact instead of an implicit, untracked event.
+ *  Not yet persisted -- that is Phase 3's Report, out of this phase's scope. `triggeredBy` is
+ *  REVIEW-3's own execution_points value set (RULE_DEFINITION_FORMAT.md), already excluding
+ *  "scheduled" per the Reduction Plan's trim -- no new enum value introduced here. */
+export interface RuleExecution {
+  readonly ruleId: string
+  readonly version: number
+  readonly triggeredBy: 'command' | 'dogfood' | 'ci' | 'pre-commit' | 'ai-review'
+  readonly timestamp: string
+  readonly executionContext: ExecutionContext
+}
+
 /** The Rule Execution API's standard per-check result shape (GOVERNANCE_ENGINE_RUNTIME.md §19,
  *  §4's Rule Execution Pipeline). Every future rule's script returns arrays of this. */
 export interface CheckResult {
