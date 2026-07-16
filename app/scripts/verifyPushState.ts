@@ -35,9 +35,11 @@ import {
   findMaskedStepNames,
   pollUntil,
   printCheckResult,
+  writeReport,
   type CheckResult,
   type ExecutionContext,
   type RuleExecution,
+  type Report,
 } from './lib/governanceRuntime.ts'
 
 function checkHeadMatchesOrigin(branch: string): CheckResult {
@@ -157,6 +159,22 @@ async function main() {
 
   const allOk = results.every(r => r.ok)
   console.log(`=== VERDICT: ${allOk ? 'ALL CHECKS PASSED' : 'FAILED -- see above'} ===\n`)
+
+  // Phase 3 (GOVERNANCE_RUNTIME_IMPLEMENTATION_CONTRACT.md): append this RuleExecution's result
+  // to a durable, queryable log -- not only printed to console. Purely additive; does not affect
+  // any check's own verdict or the exit code below.
+  const report: Report = {
+    sourceId: `${ruleExecution.ruleId}@${ruleExecution.timestamp}`,
+    content: [
+      `**Verdict:** ${allOk ? 'ALL CHECKS PASSED' : 'FAILED'}`,
+      '',
+      ...results.map(r => `- ${r.ok ? 'PASS' : 'FAIL'} -- ${r.name}: ${r.detail.replace(/\n/g, ' ')}`),
+    ].join('\n'),
+    createdAt: ruleExecution.timestamp,
+  }
+  writeReport(executionContext.repoRoot, report)
+  console.log(`[verifyPushState] Report appended to PROJECT_KNOWLEDGE_SYSTEM/04_PROJECT_MEMORY/REVIEW_LOG.md`)
+
   process.exit(allOk ? 0 : 1)
 }
 

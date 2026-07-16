@@ -15,7 +15,7 @@
  */
 
 import { execSync } from 'node:child_process'
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 export function sh(cmd: string): string {
@@ -100,6 +100,35 @@ export function findMaskedStepNames(root: string, workflowRelativePath = '.githu
     }
   }
   return masked
+}
+
+/** The durable, human-readable record produced after a RuleExecution (GOVERNANCE_OBJECT_MODEL.md's
+ *  Report entry) -- today, console output only; this is that entry's designed extension into a
+ *  durable, queryable log (GOVERNANCE_ENGINE_RUNTIME.md §6). Append-only once written, mirroring
+ *  MILESTONE_HISTORY.md's own "archive, never overwrite" discipline -- reused here, not reinvented. */
+export interface Report {
+  readonly sourceId: string
+  readonly content: string
+  readonly createdAt: string
+}
+
+/** Appends one Report entry to a durable Markdown log, creating it (with a one-time header) on
+ *  first use. Never overwrites an existing entry -- always appends, matching Report's own
+ *  immutability rule (Object Model: "a Report entry, once written, is never edited"). The log
+ *  starts empty and grows only from real executions -- no historical data is ever backfilled
+ *  (Phase 3's own explicit scope boundary, GOVERNANCE_RUNTIME_IMPLEMENTATION_CONTRACT.md). */
+export function writeReport(
+  root: string,
+  report: Report,
+  logRelativePath = 'PROJECT_KNOWLEDGE_SYSTEM/04_PROJECT_MEMORY/REVIEW_LOG.md',
+): void {
+  const logPath = join(root, ...logRelativePath.split('/'))
+  const header = existsSync(logPath)
+    ? ''
+    : '# Review Log\n\nAppend-only. One entry per RuleExecution -- never edited after being ' +
+      'written, only superseded by a later entry (GOVERNANCE_OBJECT_MODEL.md\'s Report entry).\n\n'
+  const entry = `## ${report.sourceId}\n\n_${report.createdAt}_\n\n${report.content}\n\n---\n\n`
+  writeFileSync(logPath, header + entry, { flag: 'a' })
 }
 
 /** Generic bounded-poll primitive: calls fn() repeatedly, waiting intervalMs between attempts,
