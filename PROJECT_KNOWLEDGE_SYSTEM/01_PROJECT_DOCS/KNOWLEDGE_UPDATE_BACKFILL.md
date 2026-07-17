@@ -368,5 +368,79 @@ consumer depends on it.
 
 ---
 
+## Runtime Iteration 2 Slice 5 — Review log structural validator
+
+**Authoritative source:** commit `d7cbcfa` (`Runtime Iteration 2 Slice 5: add review log
+structural validator`), pushed to `develop`, GitHub Actions run `29589084013`
+(conclusion=success).
+
+### What was implemented
+
+One new, fully self-contained, read-only script, `app/scripts/validateReviewLog.ts`, per
+`IMPLEMENTATION_SLICE_05_SELECTION.md`'s Candidate U and `SLICE5_PRE_IMPLEMENTATION_
+DISCLOSURE.md`. It checks, for every `REVIEW_LOG.md` entry: required parts (`sourceId`,
+timestamp, `content`) are present, with `content` non-empty rather than silently absent; entries
+are chronologically non-decreasing; no `sourceId` is duplicated — directly mirroring `IMPLEMENTATION_
+SLICE_03_SELECTION.md`'s Candidate G, applied to the sibling log. `REVIEW_LOG.md` has no
+`triggeredBy`/`contentDifferedFromPrevious`/`explicitIntentFlagPresent` fields at all, so this
+capability cannot touch reportable-execution semantics even in principle. The script imports
+nothing from any of the five prior Governance Runtime scripts and contains no write API of any
+kind.
+
+### What independent review found
+
+Two independent reviews were performed — one against the pre-implementation disclosure, one
+against the committed code — both concluding no correction was required. The disclosure review
+additionally cross-checked `GOVERNANCE_VERTICAL_SLICE_TEMPLATE.md`'s "script + command adapter"
+requirement and judged it inapplicable to this observability-tooling category, consistent with
+the same unchallenged pattern already established across all four prior slices. The
+post-implementation review examined one design nuance — a severely malformed entry header causes
+all three required-parts checks to fire together rather than pinpointing the single broken part —
+and judged it an acceptable trade-off within the disclosed scope, not a violation.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Architecture guard suite: 35 files / 334
+tests passing. Full test suite (local run): 552 files passed / 2 failed — both the known,
+pre-existing `prisma validate` timeout flake, unrelated to this slice. Non-vacuous check: run
+against the 23 real accumulated entries in `REVIEW_LOG.md`, it found **one genuine, real anomaly**
+— a timestamp out of order by 122ms, almost certainly from two concurrent processes racing to
+append near-simultaneously — organic evidence the check works, confirmed by direct inspection of
+the raw file, not a script defect. Separately run, via an isolated scratch git repository (never
+touching the real file), against synthetic data covering all three anomaly types individually —
+missing/empty content, an out-of-order timestamp, and a duplicated `sourceId` — all three were
+correctly and precisely flagged. Zero-write guarantee: `sha1sum` of the real `REVIEW_LOG.md` taken
+before and after running the script — identical. `git status`: confirmed exactly one file in the
+diff at every checkpoint. Final commit `d7cbcfa`: exactly one file changed, 131 insertions, 0
+deletions.
+
+### What GitHub Actions confirmed
+
+Run `29589084013`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Full test suite reported
+success cleanly in CI — the Prisma flake did not trigger this particular run.
+
+### Rollback strategy
+
+`git revert d7cbcfa` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it.
+
+### Open items intentionally deferred to later slices
+
+- The one genuine out-of-order-timestamp anomaly this slice found in real `REVIEW_LOG.md` data
+  remains unrepaired — this slice, like every other in this iteration, is detection-only by
+  explicit design; no fix, deletion, or modification of any anomaly is in scope for this track.
+- `IMPLEMENTATION_SLICE_05_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains a documented, real, not-yet-reviewed
+  design question — not addressed here.
+- The same four Decision Matrix gaps identified after Slice 2 (Backward compatibility for existing
+  callers, Implementation complexity, Verification cost, Future extensibility) remain unresolved.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation, and
+  correlation data now available from Slices 1–5 together — that remains a separate,
+  human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
