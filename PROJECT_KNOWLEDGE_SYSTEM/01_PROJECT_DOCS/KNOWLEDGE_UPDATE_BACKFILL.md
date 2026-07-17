@@ -305,5 +305,68 @@ consumer depends on it.
 
 ---
 
+## Runtime Iteration 2 Slice 4 — Reportable-execution signal-to-report correlation check
+
+**Authoritative source:** commit `4fc30da` (`Runtime Iteration 2 Slice 4: add reportable-execution
+signal-to-report correlation check`), pushed to `develop`, GitHub Actions run `29585142368`
+(conclusion=success).
+
+### What was implemented
+
+One new, fully self-contained, read-only script, `app/scripts/correlateReportableExecutionSignals.ts`,
+per `IMPLEMENTATION_SLICE_04_SELECTION.md`'s Candidate N and `SLICE4_PRE_IMPLEMENTATION_
+DISCLOSURE.md`. It reads the `sourceId` of every entry in `REPORTABLE_EXECUTION_SIGNALS.md`
+(Slice 1's own artifact) and the `sourceId` of every entry in `REVIEW_LOG.md` (Contract Phase 3's
+own artifact), and reports any signals-side `sourceId` with no `REVIEW_LOG.md` counterpart. The
+check is one-directional only — no cutoff or timestamp reasoning is used, since `REPORTABLE_
+EXECUTION_SIGNALS.md` has no entries predating Slice 1. The script imports nothing from
+`governanceRuntime.ts`, `verifyPushState.ts`, `summarizeReportableExecutionSignals.ts`, or
+`validateReportableExecutionSignals.ts`, and contains no write API of any kind.
+
+### What independent review found
+
+Two independent reviews were performed — one against the pre-implementation disclosure, one
+against the committed code — both concluding no correction was required.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Architecture guard suite: 35 files / 334
+tests passing. Full test suite (local run): 552 files passed / 2 failed — both the known,
+pre-existing `prisma validate` timeout flake (`x10-prisma-integration.test.ts` and
+`x13-prisma-recovery-repository.test.ts`), unrelated to this slice. Non-vacuous check: run against
+the 12 real accumulated entries in `REPORTABLE_EXECUTION_SIGNALS.md`, reported zero orphaned
+entries; separately run, via an isolated scratch git repository containing synthetic copies of
+both logs (never touching either real file), against one deliberately-orphaned signals-side
+`sourceId` — it was correctly and precisely flagged, with the matched entry correctly excluded.
+Zero-write guarantee: `sha1sum` of both real logs taken before and after running the script —
+identical for both. `git status`: confirmed exactly one file in the diff at every checkpoint.
+Final commit `4fc30da`: exactly one file changed, 92 insertions, 0 deletions.
+
+### What GitHub Actions confirmed
+
+Run `29585142368`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Full test suite reported
+success cleanly in CI — the Prisma flake did not trigger this particular run.
+
+### Rollback strategy
+
+`git revert 4fc30da` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_03_SELECTION.md`'s own Candidate H (a *bidirectional* correlation check)
+  remains unaddressed — its cutoff-determination question is still an undisclosed design
+  decision, not resolved by Slice 4's one-directional check.
+- The same four Decision Matrix gaps identified after Slice 2 (Backward compatibility for existing
+  callers, Implementation complexity, Verification cost, Future extensibility) remain unresolved;
+  nothing in Slice 4 addresses any of them.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation, and
+  correlation data now available from Slices 1–4 together — that remains a separate,
+  human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
