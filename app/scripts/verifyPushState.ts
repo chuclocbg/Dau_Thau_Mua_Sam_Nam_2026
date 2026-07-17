@@ -36,11 +36,15 @@ import {
   pollUntil,
   printCheckResult,
   writeReport,
+  writeSignalRecord,
   type CheckResult,
   type ExecutionContext,
   type RuleExecution,
   type Report,
+  type SignalRecord,
 } from './lib/governanceRuntime.ts'
+import { readFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 function checkHeadMatchesOrigin(branch: string): CheckResult {
   const head = sh('git rev-parse HEAD')
@@ -121,6 +125,21 @@ async function pollWorkflowRun(
   return result ?? { name: 'CI result', ok: false, detail: `Timed out after ${maxAttempts} polling attempts` }
 }
 
+/** Runtime Contract Iteration 2 Slice 1 (SLICE1_PRE_IMPLEMENTATION_DISCLOSURE.md): reads the
+ *  immediately preceding REVIEW_LOG.md entry's content for the given rule, if any, to compute
+ *  the content-differed signal. Read-only -- REVIEW_LOG.md's own append-only writer (writeReport)
+ *  is untouched by this function. Returns null if no prior entry exists yet. */
+function readPreviousReviewLogEntryContent(root: string, ruleId: string): string | null {
+  const logPath = join(root, 'PROJECT_KNOWLEDGE_SYSTEM', '04_PROJECT_MEMORY', 'REVIEW_LOG.md')
+  if (!existsSync(logPath)) return null
+  const text = readFileSync(logPath, 'utf8')
+  const entries = text.split('\n---\n\n').filter(block => block.includes(`## ${ruleId}@`))
+  if (entries.length === 0) return null
+  const last = entries[entries.length - 1]
+  const match = last.match(/\n\n_[^\n]*_\n\n([\s\S]*)$/)
+  return match ? match[1] : null
+}
+
 async function main() {
   const branch = currentBranch()
   const { owner, repo } = ownerRepoFromRemote()
@@ -172,8 +191,28 @@ async function main() {
     ].join('\n'),
     createdAt: ruleExecution.timestamp,
   }
+  // Runtime Contract Iteration 2 Slice 1: capture the previous REVIEW_LOG.md entry's content
+  // before this run's own writeReport() call appends a new one, so the comparison reflects prior
+  // state, not this run's own entry.
+  const previousReviewLogContent = readPreviousReviewLogEntryContent(executionContext.repoRoot, ruleExecution.ruleId)
+
   writeReport(executionContext.repoRoot, report)
   console.log(`[verifyPushState] Report appended to PROJECT_KNOWLEDGE_SYSTEM/04_PROJECT_MEMORY/REVIEW_LOG.md`)
+
+  // Runtime Contract Iteration 2 Slice 1 (SLICE1_PRE_IMPLEMENTATION_DISCLOSURE.md): compute and
+  // record the three raw signals a future reportable-execution semantic decision could be
+  // evaluated against (RUNTIME_CAPABILITY_BOOTSTRAP_PLAN.md). Purely additive -- never gates
+  // writeReport() or any Check above, and chooses no semantic; see SLICE1_PRE_IMPLEMENTATION_
+  // DISCLOSURE.md's Explicit non-goals.
+  const signalRecord: SignalRecord = {
+    sourceId: report.sourceId,
+    triggeredBy: ruleExecution.triggeredBy,
+    contentDifferedFromPrevious: previousReviewLogContent === null ? null : previousReviewLogContent !== report.content,
+    explicitIntentFlagPresent: process.argv.includes('--explicit-intent'),
+    createdAt: ruleExecution.timestamp,
+  }
+  writeSignalRecord(executionContext.repoRoot, signalRecord)
+  console.log(`[verifyPushState] Signal record appended to PROJECT_KNOWLEDGE_SYSTEM/04_PROJECT_MEMORY/REPORTABLE_EXECUTION_SIGNALS.md`)
 
   process.exit(allOk ? 0 : 1)
 }

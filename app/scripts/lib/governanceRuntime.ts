@@ -131,6 +131,43 @@ export function writeReport(
   writeFileSync(logPath, header + entry, { flag: 'a' })
 }
 
+/** One diagnostic recording of the three raw signals a future reportable-execution semantic
+ *  decision (REPORTABLE_EXECUTION_DECISION_SPEC.md) could be evaluated against. Computed and
+ *  exposed only -- never gates writeReport() or any Check, and chooses no semantic itself
+ *  (RUNTIME_CAPABILITY_BOOTSTRAP_PLAN.md, RUNTIME_CAPABILITY_SURFACE_SELECTION.md Surface C). */
+export interface SignalRecord {
+  readonly sourceId: string
+  readonly triggeredBy: string
+  readonly contentDifferedFromPrevious: boolean | null
+  readonly explicitIntentFlagPresent: boolean
+  readonly createdAt: string
+}
+
+/** Appends one SignalRecord to a durable, decoupled diagnostic log -- distinct from REVIEW_LOG.md,
+ *  never read by anything that reads it (nothing currently does). Purely additive, append-only,
+ *  mirroring writeReport()'s own never-overwrite discipline. Runtime Contract Iteration 2 Slice 1
+ *  (SLICE1_PRE_IMPLEMENTATION_DISCLOSURE.md) -- outside the Runtime Contract's five-phase
+ *  Implementation Order table; this file's use here is a placement choice, not an exercise of
+ *  Contract authority. */
+export function writeSignalRecord(
+  root: string,
+  record: SignalRecord,
+  logRelativePath = 'PROJECT_KNOWLEDGE_SYSTEM/04_PROJECT_MEMORY/REPORTABLE_EXECUTION_SIGNALS.md',
+): void {
+  const logPath = join(root, ...logRelativePath.split('/'))
+  const header = existsSync(logPath)
+    ? ''
+    : '# Reportable Execution Signals\n\nAppend-only diagnostic log. Records raw signals a future ' +
+      'reportable-execution semantic decision could be evaluated against -- never gates or alters ' +
+      'any existing Report, Check, or exit-code behavior. No semantic is chosen or implied by any ' +
+      'entry here (RUNTIME_CAPABILITY_BOOTSTRAP_PLAN.md).\n\n'
+  const entry = `## ${record.sourceId}\n\n_${record.createdAt}_\n\n` +
+    `- triggeredBy: ${record.triggeredBy}\n` +
+    `- contentDifferedFromPrevious: ${record.contentDifferedFromPrevious === null ? 'n/a (no prior entry)' : record.contentDifferedFromPrevious}\n` +
+    `- explicitIntentFlagPresent: ${record.explicitIntentFlagPresent}\n\n---\n\n`
+  writeFileSync(logPath, header + entry, { flag: 'a' })
+}
+
 /** Generic bounded-poll primitive: calls fn() repeatedly, waiting intervalMs between attempts,
  *  until it reports done or maxAttempts is exhausted (returning null in that case). Extracted
  *  from pollWorkflowRun's own retry-loop shape -- named in GOVERNANCE_ENGINE_RUNTIME.md's
