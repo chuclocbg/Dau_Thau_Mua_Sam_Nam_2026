@@ -230,5 +230,80 @@ suite reported success cleanly in CI as well — the Prisma flake did not trigge
 
 ---
 
-*This document is append-only. Do not edit either entry above in any future update — add a new
+## Runtime Iteration 2 Slice 3 — Reportable-execution signals structural validator
+
+**Authoritative source:** commit `2c3e2af` (`Runtime Iteration 2 Slice 3: add reportable-execution
+signals structural validator`), pushed to `develop`, GitHub Actions run `29583173031`
+(conclusion=success).
+
+### What was implemented
+
+One new, fully self-contained, read-only script, `app/scripts/validateReportableExecutionSignals.ts`,
+per `IMPLEMENTATION_SLICE_03_SELECTION.md`'s Candidate G and `SLICE3_PRE_IMPLEMENTATION_
+DISCLOSURE.md`. It reads `REPORTABLE_EXECUTION_SIGNALS.md` and checks, per entry: all three
+required fields (`triggeredBy`, `contentDifferedFromPrevious`, `explicitIntentFlagPresent`) are
+present in recognized form rather than silently defaulted; entries are chronologically
+non-decreasing; no `sourceId` is duplicated. `triggeredBy` is checked for presence only (its value
+set is Contract-adjacent and may be extended by a future, properly-authorized phase);
+`contentDifferedFromPrevious`/`explicitIntentFlagPresent` are checked against their own closed,
+already-fully-known value sets, since both are owned entirely by this document chain. The script
+imports nothing from `governanceRuntime.ts`, `verifyPushState.ts`, or `summarizeReportableExecutionSignals.ts`,
+and contains no write API of any kind.
+
+### What independent review found
+
+Two independent reviews were performed — one against the pre-implementation disclosure, one
+against the committed code — both concluding no correction was required. Two points were examined
+closely and judged compliant rather than flagged: (1) the disclosure's verification plan specified
+constructing "one" deliberately-malformed test case, while the actual verification constructed
+four, covering all three named anomaly types individually — judged a non-vacuous-verification
+necessity implied by the already-approved three-part capability definition, not a scope expansion;
+(2) the asymmetric presence-only vs. closed-set-value checking across the three fields was judged
+consistent with the disclosure's own stated risk mitigation ("does the field exist and take a
+recognized value"), not a deviation from it.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Architecture guard suite: 35 files / 334
+tests passing. Full test suite (local run): 553 files passed / 1 failed — the known, pre-existing
+`prisma validate` timeout flake (`x10-prisma-integration.test.ts`), unrelated to this slice.
+Non-vacuous check: run against the 10 real accumulated entries in `REPORTABLE_EXECUTION_
+SIGNALS.md`, reported zero anomalies; separately run, via an isolated scratch git repository
+containing synthetic data (never touching the real file), against four deliberately-malformed
+entries — a missing `triggeredBy` field, an unrecognized `contentDifferedFromPrevious` value, an
+out-of-order timestamp, and a duplicate `sourceId` — all four were individually and correctly
+flagged. Zero-write guarantee: `sha1sum` of the real `REPORTABLE_EXECUTION_SIGNALS.md` taken
+before and after running the script against it — identical. `git status`: confirmed exactly one
+file in the diff at every checkpoint.
+
+### What GitHub Actions confirmed
+
+Run `29583173031`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Full test suite reported
+success cleanly in CI — the Prisma flake did not trigger this particular run.
+
+### Rollback strategy
+
+`git revert 2c3e2af` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_03_SELECTION.md`'s own Candidate H (a cross-log correlation checker
+  between `REVIEW_LOG.md` and `REPORTABLE_EXECUTION_SIGNALS.md`) remains a documented, real
+  finding — the two logs currently differ in entry count for a benign, already-explained reason
+  (different start times), and a naive correlation check could produce false "drift" alarms — but
+  was not selected for Slice 3 because its cutoff-determination question is an undisclosed design
+  decision, not yet brought forward for its own review cycle.
+- The same four Decision Matrix gaps identified after Slice 2 (Backward compatibility for existing
+  callers, Implementation complexity, Verification cost, Future extensibility) remain unresolved;
+  nothing in Slice 3 addresses any of them.
+- No Decision Matrix re-scoring has been performed using the signal, summary, and validation data
+  now available from Slices 1–3 together — that remains a separate, human-judgment-gated activity,
+  not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
+*This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
