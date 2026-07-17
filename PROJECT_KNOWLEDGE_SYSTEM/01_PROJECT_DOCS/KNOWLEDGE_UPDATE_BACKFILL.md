@@ -116,5 +116,119 @@ or explicit-intent-based) was chosen, favored, or implemented.
 
 ---
 
-*This document is append-only. Do not edit the entry above in any future update — add a new
-`## Runtime Iteration N Slice M` section below it instead.*
+## Runtime Iteration 2 Slice 2 — Reportable-execution signal summary reporter
+
+**Authoritative source:** commit `17c8dac` (`Runtime Iteration 2 Slice 2: add reportable-execution
+signal summary reporter`), pushed to `develop`, GitHub Actions run `29580854929`
+(conclusion=success).
+
+### Slice objective
+
+Per `IMPLEMENTATION_SLICE_02_SELECTION.md` and `SLICE2_PRE_IMPLEMENTATION_DISCLOSURE.md`: make the
+raw signal data already accumulating in `REPORTABLE_EXECUTION_SIGNALS.md` (Slice 1's own artifact)
+observable at a glance for the first time, without deciding, scoring, ranking, or interpreting
+what that data means for any candidate reportable-execution semantic.
+
+### Final implementation summary
+
+One new, fully self-contained, read-only script, `app/scripts/summarizeReportableExecutionSignals.ts`,
+matching the disclosure's scope exactly: it locates the repository root via a direct `git
+rev-parse --show-toplevel` call (duplicated rather than imported, to keep this slice independent
+of `governanceRuntime.ts`), reads `REPORTABLE_EXECUTION_SIGNALS.md`, parses each entry with a
+formatting-tolerant regex, and prints three symmetric aggregate counts — `triggeredBy`
+distribution, `contentDifferedFromPrevious` (true/false/n-a), and `explicitIntentFlagPresent`
+(true/false) — with an explicit on-screen disclaimer that no semantic is chosen or implied. The
+script contains no write API of any kind and imports nothing from any other script in this
+repository.
+
+### Files changed
+
+- `app/scripts/summarizeReportableExecutionSignals.ts` (new file only). No other file was touched
+  — `governanceRuntime.ts` and `verifyPushState.ts` do not appear in the commit at all.
+
+### Verification results
+
+- `npx tsc -b`: zero errors attributable to the new file.
+- Architecture guard suite: 35 files / 334 tests passing, both locally and in CI.
+- Full test suite: locally, 554 files / 14,876 passed / 3 skipped / 0 failed — the known Prisma
+  flake did not trigger during this slice's own verification runs.
+- Non-vacuous check: the script was run twice against the 7 real entries accumulated in
+  `REPORTABLE_EXECUTION_SIGNALS.md`; its printed counts matched an independent, `grep`-based
+  manual count exactly (7 total; `triggeredBy: command` ×7; `contentDifferedFromPrevious: true`
+  ×7, `false` ×0, `n/a` ×0; `explicitIntentFlagPresent: false` ×7, `true` ×0).
+- No-writes guarantee: confirmed via `sha1sum` of `REPORTABLE_EXECUTION_SIGNALS.md` taken before
+  and after two runs — identical both times.
+- Parity check: re-ran `verifyPushState.ts` directly; exit code and PASS/FAIL pattern were
+  identical to every prior run this session.
+- `git status`: confirmed exactly one file in the diff at every checkpoint.
+- Final commit `17c8dac`: exactly one file changed, 91 insertions, 0 deletions.
+
+### CI result
+
+GitHub Actions run `29580854929`: conclusion=success, all steps passed (Type-check and Lint report
+success only via continue-on-error masking, as previously established/non-blocking). Full test
+suite reported success cleanly in CI as well — the Prisma flake did not trigger this run.
+
+### Rollback command
+
+`git revert 17c8dac`.
+
+### Lessons learned
+
+- **A hash comparison is only meaningful if both sides use the same algorithm.** An early no-writes
+  check appeared to show a mismatch because the "before" measurement used `md5sum` and the "after"
+  measurement used `sha1sum` — a testing-process error, not a script defect. Re-run with a
+  consistent algorithm on both sides, the hash was identical. Worth recording plainly: any future
+  before/after file-integrity check must pin one algorithm for both measurements.
+- **A read-only tool whose only input file is itself under a no-modify constraint cannot fully
+  live-test its own "file does not exist" branch without violating that constraint.** The
+  zero-entries edge case was verified by source inspection of the `!existsSync` early-return path
+  instead of a live run, since deliberately removing the real, already-populated
+  `REPORTABLE_EXECUTION_SIGNALS.md` to test it would itself have broken this slice's own forbidden-
+  files boundary. This was disclosed explicitly rather than silently assumed proven.
+- **A filename-alias discrepancy surfaced again during the independent post-implementation
+  review** (`IMPLEMENTATION_PLAYBOOK.md` referenced but not present; the real file is
+  `ENGINEERING_PLATFORM_IMPLEMENTATION_PLAYBOOK.md`) — caught and confirmed via the same
+  stop-and-report discipline established earlier in this iteration, before the review proceeded.
+
+### Reusable engineering patterns
+
+- **Fully self-contained observability tooling.** A script that inspects another mechanism's
+  output can be kept completely independent of that mechanism's own source files — importing only
+  Node built-ins, never an in-repo module — which maximizes this kind of tool's own rollback
+  independence. Demonstrated as a real, working pattern here, not merely a theoretical option.
+- **Formatting-tolerant regex parsing of an append-only markdown log**, without a shared schema or
+  parser module, is sufficient for a read-only summary tool and is reusable for any future
+  observability script reading another append-only log in this repository (e.g. `REVIEW_LOG.md`
+  itself), provided it stays strictly read-only.
+- **Verifying a no-writes guarantee via a before/after file-hash comparison** (same algorithm both
+  times) is a reusable, low-cost verification technique for any future read-only script.
+
+### Constraints confirmed
+
+- Contract §3's global forbidden-file list remains fully binding for Runtime Iteration 2 work,
+  confirmed a second time.
+- `ENGINEERING_PLATFORM_IMPLEMENTATION_PLAYBOOK.md` Part 4's requirement that a pre-implementation
+  disclosure (not an earlier selection document) commit to exact filenames was followed
+  consistently again.
+- The "no candidate ranking" requirement was satisfied by inheriting `RUNTIME_CAPABILITY_
+  BOOTSTRAP_PLAN.md`'s own canonical signal-numbering order for presentation, rather than inventing
+  a new evaluative order — checked specifically and confirmed, via independent review, not to
+  constitute ranking.
+
+### Open items intentionally left for later slices
+
+- Per `IMPLEMENTATION_SLICE_02_SELECTION.md`'s own finding: Backward compatibility (for existing
+  callers), Implementation complexity, Verification cost, and Future extensibility remain
+  unresolved Decision Matrix gaps that no Slice-2-shaped candidate could close under the governing
+  constraints — this remains true after Slice 2's completion.
+- No Decision Matrix re-scoring has been performed using the signal and summary data now available
+  from Slices 1 and 2 together — that remains a separate, human-judgment-gated activity, not begun
+  here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1 — `.claude/
+  commands/ci-review.md` has not been updated to pass it.
+
+---
+
+*This document is append-only. Do not edit either entry above in any future update — add a new
+`## Runtime Iteration N Slice M` section below the last one instead.*
