@@ -620,5 +620,134 @@ document; nothing else touched; no downstream consumer depends on either.
 
 ---
 
+## Runtime Iteration 2 Slice 8 — Governance script independence guard
+
+**Authoritative source:** commit `241b6ec` (`Runtime Iteration 2 Slice 8: add governance script
+independence guard`), pushed to `develop`, GitHub Actions run `29635338203` (conclusion=success).
+
+### Objective achieved
+
+Every one of Slices 2–7's own Pre-Implementation Disclosure documents had individually asserted,
+in prose, that its new script "imports nothing from" every other named Governance Runtime script
+— a claim re-verified by hand, via direct source reading, at each of six prior Selection/
+Disclosure/Review cycles, but never once mechanically checked by any tool. Per
+`IMPLEMENTATION_SLICE_08_SELECTION.md`'s selected candidate and `SLICE8_PRE_IMPLEMENTATION_
+DISCLOSURE.md`, this slice closes that gap: the "imports nothing from" independence claim now
+gains mechanical verification for the first time, without touching `REVIEW_LOG.md`,
+`REPORTABLE_EXECUTION_SIGNALS.md`, or any candidate reportable-execution semantic at all.
+
+### Final implementation summary
+
+One new, fully self-contained, read-only script, `app/scripts/
+validateGovernanceScriptIndependence.ts`. It reads the literal source text of the six
+Iteration-2-created Governance Runtime scripts (`summarizeReportableExecutionSignals.ts`,
+`validateReportableExecutionSignals.ts`, `correlateReportableExecutionSignals.ts`,
+`validateReviewLog.ts`, `validateGovernanceRegistry.ts`, `summarizeReviewLog.ts`) and classifies
+each top-level `import` statement's specifier as either (a) an allowed Node built-in module
+(matched by the `node:` prefix, a presence-style allowlist rather than an exhaustive enumeration),
+or (b) disallowed because it references one of the nine known Governance Runtime script paths (the
+six inspected plus the three Contract-phase files: `governanceRuntime.ts`, `verifyPushState.ts`,
+`validateGovernanceRule.ts`), detected by base-filename substring match tolerant of relative-path
+variation. Two additional, real, reachable code paths — an import matching neither category, and a
+target file that does not exist — are both treated as non-compliant by the same conservative
+default, documented in the Disclosure's Scope as intentional design choices rather than left
+unexplained. The script imports nothing from any of the nine scripts it inspects and contains no
+write API of any kind.
+
+### What independent review found
+
+Three independent reviews were performed against the pre-implementation disclosure and one against
+the committed code, in sequence:
+
+1. First disclosure review found Risk 4 (Misreadability) had no corresponding Verification item —
+   corrected by adding Verification item 7 (a Misreadability guard inspecting the script's own
+   printed output).
+2. Second disclosure review found the new item 7 was added but not cross-referenced — Risk 4's own
+   citation and the Exit condition's "covering every disclosed risk" claim both still attributed
+   coverage only to the five synthetic cases — corrected by citing Verification item 7 explicitly
+   in both places.
+3. Third disclosure review, re-run after that correction, found no further issue: SAFE TO
+   IMPLEMENT.
+4. A post-implementation review of the committed code found the disclosure's binary "(a) or (b)"
+   framing in Scope did not account for two real, reachable code branches already present in the
+   implementation (an import matching neither category; a missing target file) — corrected by
+   documenting both as intentional conservative design choices in Scope, per the same
+   three-way disjunctive standard (disclosed / verified / declared intentional) already
+   established for the first such gap. A final independent review, re-run after both corrections,
+   found no further issue: SAFE TO COMMIT.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Non-vacuous check: run against the real,
+current six Iteration-2-created scripts, reported `6/6 scripts compliant`, matching an independent,
+manual `grep '^import'` cross-check exactly. Separately, in an isolated scratch git repository
+containing a synthetic six-file set (never touching the real files), five deliberately-constructed
+cases were each correctly classified: a clean, well-formed set (no false positives); a single-line
+disallowed sibling-script import; the same disallowed import split across multiple lines (proving
+multi-line detection); a disallowed sibling-script import via an unused relative-path form (proving
+path-tolerant detection); and a previously-unused-but-legitimate built-in import (`node:crypto`,
+proving the allowlist is prefix-based, not a hardcoded enumeration). Zero-write guarantee: source
+inspection found no write-API calls; `sha1sum` of all six real target files was identical before
+and after every run against them. Misreadability guard: the script's own printed output states
+plainly it is "a structural independence check only," and its real-data run reported today's real
+state as fully compliant. Rollback verification: no file in the repository references the new
+script. `git status --porcelain` confirmed exactly one file changed at every checkpoint.
+Architecture guard suite: 35 files / 334 tests passing, both locally and in CI. Full test suite:
+locally, 554/554 test files passed, 14,876/14,879 tests passed, 3 skipped, 0 failed — the known,
+pre-existing Prisma timeout flake did not trigger during this slice's own final verification run;
+in CI run `29635338203`, the full test suite also reported success cleanly.
+
+### What GitHub Actions confirmed
+
+Run `29635338203`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Architecture guard suite
+and full test suite both reported success cleanly in CI.
+
+### Rollback strategy
+
+`git revert 241b6ec` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it, confirmed by direct inspection that no other file in the repository
+references the new script.
+
+### Lessons learned
+
+- **A binary "(a) or (b)" framing in a Disclosure's Scope can silently omit real code paths a
+  correct, defensive implementation still needs.** This slice's `classifyImport()` and
+  `checkFile()` each legitimately needed a third, conservative-default outcome (an unrecognized
+  import; a missing target file) beyond the two named categories — both real, reachable, and
+  initially undocumented. The fix in both cases was textual disclosure of the existing, already-
+  correct behavior as an intentional design choice, not a code change — establishing a reusable
+  three-way standard for this iteration going forward: every real code path must be explicitly
+  disclosed in Scope, explicitly verified, or explicitly declared an intentional conservative
+  design choice, and any one of the three is sufficient.
+- **A Risk bullet's mitigation citation can go stale the moment a new Verification item is added
+  to address it**, if the citation itself and any dependent claim (here, the Exit condition's
+  "covering every disclosed risk" wording) are not updated in the same pass — now confirmed twice
+  in this iteration's own review history (Slice 7's Risk 1 citation, this slice's Risk 4 citation)
+  as a recurring, mechanically-findable class of defect worth checking explicitly on every review.
+- This slice's own capability — mechanically checking the "imports nothing from" independence
+  claim — was itself dogfooded informally throughout its own review cycle: every prior Iteration 2
+  script's real import statements were re-confirmed via direct `grep` during this slice's own
+  planning, the same manual process this slice's shipped tool now replaces going forward.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_08_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains unaddressed — now flagged, after six
+  consecutive selection checkpoints carrying it forward unresolved, as likely needing its own
+  dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+  again inside a future Slice N Selection document's own reasoning.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation,
+  correlation, and independence data now available from Slices 1–8 together — that remains a
+  separate, human-judgment-gated activity, not begun here.
+- `SLICE8_PRE_IMPLEMENTATION_DISCLOSURE.md` was committed separately from the implementation file
+  in this slice's own commit history (`241b6ec` staged only the implementation file, per explicit
+  instruction) — the Disclosure document itself remained uncommitted at the time this Knowledge
+  Backfill entry was written; its own commit is a separate, later action, not part of this entry's
+  own authoritative source commit.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
