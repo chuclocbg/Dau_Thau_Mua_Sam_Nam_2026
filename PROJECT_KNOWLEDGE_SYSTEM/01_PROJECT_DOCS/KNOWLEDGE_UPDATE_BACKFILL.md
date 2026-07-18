@@ -1016,5 +1016,135 @@ references the new script.
 
 ---
 
+## Runtime Iteration 2 Slice 11 — Knowledge Backfill commit-message match check
+
+**Authoritative source:** commit `81e100e` (`Runtime Iteration 2 Slice 11: add Knowledge Backfill
+commit-message match check`), pushed to `develop`, GitHub Actions run `29644842149`
+(conclusion=success).
+
+### Objective achieved
+
+`SLICE10_PRE_IMPLEMENTATION_DISCLOSURE.md`'s own Scope explicitly named this as future,
+unaddressed territory: "confirming a hash exists and confirming its content matches its entry's
+own narrative are deliberately distinct, and only the former is this slice's boundary." Per
+`IMPLEMENTATION_SLICE_11_SELECTION.md`'s selected Candidate JJ and `SLICE11_PRE_IMPLEMENTATION_
+DISCLOSURE.md`, this slice closes the narrowest, least interpretive slice of that deferred gap:
+for each `KNOWLEDGE_UPDATE_BACKFILL.md` entry's parenthetically-quoted commit message, confirming
+it matches that hash's real `git log -1 --format=%s <hash>` subject line — literal,
+whitespace-normalized string equality only, never diff, body, or content-matching.
+
+### Final implementation summary
+
+One new, fully self-contained, read-only script, `app/scripts/
+validateKnowledgeBackfillCommitMessages.ts`. It reads `KNOWLEDGE_UPDATE_BACKFILL.md`, extracts
+each entry's hash and quoted message independently, and — only for hashes that resolve to a real
+commit (a prerequisite gate, never re-flagged as its own finding, since existence-checking remains
+exclusively Slice 10's responsibility) — compares the quoted message against `git log -1
+--format=%s <hash>`'s real subject line, both normalized by collapsing whitespace/newlines to
+single spaces. Every git invocation uses `execFileSync` with an explicit argument array, never a
+shell command string, avoiding both a cross-platform quoting hazard and any shell-injection risk.
+The script imports nothing from any of the twelve existing Governance Runtime scripts and contains
+no write API of any kind.
+
+### What independent review found
+
+Both the pre-implementation disclosure and the committed code were independently reviewed;
+corrections were applied internally within the same Runtime Orchestrator session, per explicit
+instruction, before either review concluded:
+
+1. Disclosure review found that Risk 4 (shell-metacharacter safety) relied on source inspection
+   alone, even though — unlike Slice 10's genuinely-impractical-to-reproduce hash-collision edge
+   case — constructing a scratch-repository commit with a shell-metacharacter message is trivially
+   practical; corrected by adding a fourth synthetic verification case exercising this live, and
+   updating the Exit condition's case count accordingly. A second review, re-run after this
+   correction, found no further issue: SAFE TO IMPLEMENT.
+2. A post-implementation review found the implementation already matched the corrected disclosure
+   exactly on first attempt — applying the lesson learned from Slice 10's own `execSync`/`cmd.exe`
+   quoting bug proactively (using `execFileSync` throughout from the start, including for
+   `repoRoot()`) avoided a repeat of that defect class entirely. No issue was found: SAFE TO
+   COMMIT.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Non-vacuous check: run against the real,
+current `KNOWLEDGE_UPDATE_BACKFILL.md` (10 entries), reported `Messages checked: 10` / `No
+anomalies found`, matching an independent, direct `git log -1 --format=%s` check performed against
+`27a8a5f` during the Disclosure's own drafting. Separately, in an isolated scratch git repository
+seeded with its own commit history (never touching the real repository's history), four
+deliberately-constructed cases were each correctly and distinctly handled: a real commit hash with
+its quoted message word-wrapped across multiple markdown source lines (recognized as matching once
+normalized); a fabricated hash absent from any git history (silently skipped — excluded from the
+checked count, no anomaly, no crash); a real commit hash with its quoted message deliberately
+altered (flagged as a mismatch); and a real commit hash whose actual message contained
+shell-metacharacters (`$()`, semicolons, quotes), correctly read back and compared via
+`execFileSync` with no shell involved. Zero-write guarantee: source inspection found no write-API
+calls and no shell-string `execSync` invocation anywhere in the script; `sha1sum` of the real
+`KNOWLEDGE_UPDATE_BACKFILL.md` and `git rev-parse HEAD` were both identical before and after every
+run. Misreadability guard: the script's own printed output states plainly it is a "Literal
+text-comparison check only," taking no position on any entry's content or the underlying Slice's
+own correctness. Rollback verification: no file in the repository references the new script. `git
+status --porcelain` confirmed exactly one file changed at every checkpoint; `KNOWLEDGE_UPDATE_
+BACKFILL.md` itself was never modified. Architecture guard suite: 35 files / 334 tests passing,
+both locally and in CI. Full test suite: locally, 554/554 test files passed, 14,876/14,879 tests
+passed, 3 skipped, 0 failed (the known Prisma timeout flake did not trigger during this slice's
+own final verification run); in CI run `29644842149`, the full test suite also reported success
+cleanly.
+
+### What GitHub Actions confirmed
+
+Run `29644842149`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Architecture guard suite
+and full test suite both reported success cleanly in CI.
+
+### Rollback strategy
+
+`git revert 81e100e` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it, confirmed by direct inspection that no other file in the repository
+references the new script.
+
+### Lessons learned
+
+- **A lesson from one slice's own post-implementation bug fix, applied proactively at the very
+  start of the next slice's implementation, prevented a repeat of the same defect class
+  entirely.** Slice 10 discovered, only during its own known-good real-data verification, that
+  `execSync`'s shell-string form mishandled `^{commit}` on this Windows environment. This slice's
+  own implementation used `execFileSync` with an explicit argument array from its first draft,
+  for every git invocation including `repoRoot()` itself, and the known-good real-data check
+  passed correctly on the very first run — direct, concrete evidence that a documented lesson,
+  applied proactively rather than only reactively, has measurable value within the same iteration.
+- **Constructing a live synthetic test is often more practical than it first appears**, even for a
+  risk category (shell-metacharacter handling) that another slice's analogous risk (short-hash
+  collision) had reasonably deferred to source inspection alone. The distinguishing factor was not
+  the risk category itself but the concrete cost of construction: authoring one scratch-repository
+  commit with an adversarial-looking message costs nothing extra, while reproducing a genuine SHA
+  collision would require deliberate, disproportionate effort — this iteration's own standing
+  preference for live verification over source inspection should be assessed per-case on
+  construction cost, not by superficial similarity to a previously-deferred risk.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_11_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains unaddressed — now flagged, after ten
+  consecutive selection checkpoints carrying it forward unresolved, as likely needing its own
+  dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+  again inside a future Slice N Selection document's own reasoning.
+- No validation that a cited commit's own diff, file list, or broader body content matches its
+  entry's own prose narrative remains unaddressed — the "distinct, more interpretive" half of the
+  gap this slice deliberately did not attempt.
+- Extending `validateGovernanceScriptIndependence.ts`'s own target list to also cover the scripts
+  shipped after it (Slices 8 through 11) remains a standing, disclosed, unaddressed limitation —
+  reconsidered and rejected again at this slice's own candidate selection because it would require
+  modifying a prior slice's own file.
+- A consistency check comparing `ENGINEERING_PLATFORM_IMPLEMENTATION_PLAYBOOK.md` Part 2's
+  "Implemented, non-planning artifacts" list against real files on disk remains available for a
+  future slice to resolve explicitly — its own open boundary question, first raised at Slice 9's
+  candidate selection, remains deliberately unresolved.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation,
+  independence, structural-validity, commit-existence, and commit-message data now available from
+  Slices 1–11 together — that remains a separate, human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
