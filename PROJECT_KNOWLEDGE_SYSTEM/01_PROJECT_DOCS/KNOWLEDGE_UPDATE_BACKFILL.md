@@ -1146,5 +1146,122 @@ references the new script.
 
 ---
 
+## Runtime Iteration 2 Slice 12 — Governance Registry link-target existence check
+
+**Authoritative source:** commit `5b52c16` (`Runtime Iteration 2 Slice 12: Governance Registry
+link-target existence check`), pushed to `develop`, GitHub Actions run `29649336970`
+(conclusion=success).
+
+**Slice number:** Runtime Iteration 2, Slice 12.
+
+**Implementation commit hash:** `5b52c1630ddb4eaeee77d19e9b79298028a70cd7`.
+
+**Knowledge Backfill commit dependency:** `dabf2d3` — the commit that added the Slice 11 entry
+immediately above this one, the last Knowledge Backfill commit preceding this entry.
+
+**GitHub Actions result:** Run `29649336970`: conclusion=success. Architecture guard suite and
+full test suite both reported success cleanly in CI (Type-check and Lint report success only via
+continue-on-error masking, as previously established/non-blocking).
+
+**Rollback command:** `git revert 5b52c1630ddb4eaeee77d19e9b79298028a70cd7` — trivial: one new,
+standalone file; nothing else touched; no downstream consumer depends on it, confirmed by direct
+inspection that no other file in the repository references the new script.
+
+**Implementation summary:** One new, fully self-contained, read-only script, `app/scripts/
+validateGovernanceRegistryLinks.ts`, per `IMPLEMENTATION_SLICE_12_SELECTION.md`'s selected
+Candidate KK and `SLICE12_PRE_IMPLEMENTATION_DISCLOSURE.md`. It reads `governance-rules/
+REGISTRY.md`, bounds its markdown table to the first contiguous run of `|`-prefixed lines (so the
+file's own trailing prose footer note is never misparsed as a data row), locates the separator
+row, and for every data row after it inspects the first cell's markdown link. A well-formed link's
+target is resolved relative to `REGISTRY.md`'s own containing directory (a `#fragment` suffix
+stripped first) and checked for existence via `existsSync` only — the target file's own content is
+never opened or read. An external (`http://`/`https://`) target is recognized and excluded from
+existence-checking, reported as "not checked" rather than broken or passing. A first cell that does
+not parse as `[text](target)` at all is flagged as a distinct "malformed link syntax" anomaly. The
+script iterates generically over every data row found, not hardcoded to one rule ID or row count —
+unlike `validateGovernanceRegistry.ts` (Slice 6's own script), which is hardcoded to look up one
+named row and reads only that link's text, never its target; confirmed non-duplicative by direct
+re-reading of Slice 6's own source during this slice's Disclosure drafting. The script imports
+nothing from any of the thirteen existing Governance Runtime scripts and contains no write API of
+any kind.
+
+**Verification summary:** `npx tsc -b`: zero errors attributable to the new file. Known-good
+real-data check: run against the real, current `REGISTRY.md` (1 data row), reported 1 data row
+found, 1 link target resolved, 0 anomalies of any kind — including confirming the file's own
+trailing footer note was correctly excluded from table parsing. Isolated synthetic verification, in
+a scratch git repository seeded with the same nested directory structure (never touching real
+data): a working relative link (resolved), a broken link (flagged), malformed link syntax (flagged,
+distinct from broken), an external URL (reported skipped, not broken), a `#fragment`-suffixed link
+to a real file (fragment stripped, resolved) — all five combined in one multi-row synthetic table,
+each row receiving its own independent verdict; and, in two further separate scratch runs, a
+missing `REGISTRY.md` file and a header-only table with no separator/data rows, each reporting
+plainly and exiting without crashing. Zero-write guarantee: source inspection found no write-API
+calls and confirmed the only git invocation (`repoRoot()`) uses `execFileSync` with an explicit
+argument array; `sha1sum` of the real `REGISTRY.md` and `REVIEW-3.md`, and `git rev-parse HEAD`,
+were identical before and after every run. Misreadability guard: the script's own printed output
+states plainly it takes no position on the correctness of any governance rule or on which artifact
+— the link or its target — should change. Rollback verification: no file in the repository
+references the new script. `git status --porcelain` confirmed exactly one file changed at every
+checkpoint; `REGISTRY.md` and `REVIEW-3.md` were never modified. Architecture guard suite: 35 files
+/ 334 tests passing, both locally and in CI. Full test suite: locally, 552/554 test files passed,
+14,874/14,879 tests passed, 3 skipped, 2 failed — both failures the known, pre-existing `prisma
+validate` timeout flake (`x10-prisma-integration.test.ts`, `x13-prisma-recovery-repository.test.ts`),
+unrelated to this slice; in CI run `29649336970`, the full test suite reported success cleanly.
+
+**Deferred candidates:** `IMPLEMENTATION_SLICE_12_SELECTION.md`'s own Candidate S (a bidirectional
+signal-to-report correlation check using a self-defining cutoff) remains unaddressed — now flagged,
+after eleven consecutive selection checkpoints carrying it forward unresolved, as likely needing its
+own dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+again inside a future Slice N Selection document's own reasoning. A GitHub Actions run-ID existence
+check for Knowledge Backfill entries (confirming each cited CI run corresponds to a real workflow
+run via the GitHub API) was considered during this slice's own candidate selection and rejected
+specifically because it would introduce this iteration's first live network dependency, a
+materially different risk category from every other candidate considered — not resolved on its
+merits, only deferred pending its own dedicated consideration. Extending `validateGovernanceScriptIndependence.ts`'s
+own target list to also cover the scripts shipped after it (Slices 8 through 12) remains a standing,
+disclosed, unaddressed limitation — reconsidered and rejected again at this slice's own candidate
+selection because it would require modifying a prior slice's own file. A consistency check comparing
+`ENGINEERING_PLATFORM_IMPLEMENTATION_PLAYBOOK.md` Part 2's "Implemented, non-planning artifacts"
+list against real files on disk remains available for a future slice to resolve explicitly — its
+own open boundary question, first raised at Slice 9's candidate selection, remains deliberately
+unresolved.
+
+**Explicit non-goals preserved:** No semantic selection, ranking, scoring, or recommendation of any
+kind was made. No reportable-execution semantic was touched — this slice never reads
+`REVIEW_LOG.md` or `REPORTABLE_EXECUTION_SIGNALS.md`. No repair, deletion, or modification of
+`governance-rules/REGISTRY.md` was performed — detection and reporting only. No reading of a link
+target's own file content occurred — existence only; field-agreement comparison between
+`REGISTRY.md` and `REVIEW-3.md`'s own YAML remains Slice 6's own, unmodified responsibility. No
+validation of the Script or Command column's own resolution was attempted. No Knowledge Backfill
+involvement occurred during implementation. No extension or modification of
+`validateGovernanceScriptIndependence.ts`'s own target list was made. No network dependency of any
+kind was introduced. No Runtime Contract change was made. No modification to any of Slices 1–11's
+own files occurred. No Decision Matrix re-scoring was performed.
+
+**Architectural observations:** `governance-rules/REGISTRY.md` holds exactly one data row today, so
+this slice's own iterate-over-every-row design is currently exercised by real data in only its
+single-row form — its generality was confirmed instead via synthetic multi-row data, not real data,
+an accepted limitation disclosed at the Disclosure stage. The file's own trailing `**Not yet in
+this registry:**` prose footer note, present since before this slice existed, is the first real,
+in-repository example this iteration has encountered of non-table prose directly adjacent to a
+markdown table a script inspects — table-extent bounding (contiguous `|`-prefixed lines only) is
+now an established, reusable pattern for any future script reading a markdown table embedded in a
+larger prose document. This slice is the first in Runtime Iteration 2 to explicitly recognize and
+separately classify an external (non-filesystem) link target, distinguishing "not checked" from
+both "passing" and "broken" as a third, deliberately non-committal outcome — a pattern worth
+reusing if a future slice ever inspects another table or document containing mixed
+internal/external references.
+
+**Follow-up work intentionally deferred:** No auto-repair of any anomaly this or any prior slice's
+script could detect — this track remains detection-only by explicit design across all twelve
+slices. No wiring of this slice's script into `verifyPushState.ts` or any enforcement path — it
+remains an on-demand, informational tool only. No Decision Matrix re-scoring using the signal,
+summary, validation, independence, structural-validity, commit-existence, commit-message, and now
+registry-link-existence data available from Slices 1–12 together — that remains a separate,
+human-judgment-gated activity, not begun here. The `--explicit-intent` flag still has zero real
+callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
