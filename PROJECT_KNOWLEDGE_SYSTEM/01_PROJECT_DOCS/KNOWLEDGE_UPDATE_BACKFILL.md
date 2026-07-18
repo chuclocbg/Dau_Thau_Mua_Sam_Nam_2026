@@ -879,5 +879,142 @@ references the new script.
 
 ---
 
+## Runtime Iteration 2 Slice 10 — Knowledge Backfill commit-hash existence check
+
+**Authoritative source:** commit `33b3f65` (`Runtime Iteration 2 Slice 10: add Knowledge Backfill
+commit-hash existence check`), pushed to `develop`, GitHub Actions run `29643845313`
+(conclusion=success).
+
+### Objective achieved
+
+`IMPLEMENTATION_SLICE_09_SELECTION.md`'s own Explicit non-goals explicitly named this as a
+distinct, deferred candidate: "No cross-file comparison against `REVIEW_LOG.md`,
+`REPORTABLE_EXECUTION_SIGNALS.md`, or git history to confirm a cited commit hash actually exists
+or matches its claimed content — that would be a distinct, more complex candidate, not this one."
+Per `IMPLEMENTATION_SLICE_10_SELECTION.md`'s selected Candidate II and `SLICE10_PRE_
+IMPLEMENTATION_DISCLOSURE.md`, this slice closes exactly that narrower half of the gap: for each
+of `KNOWLEDGE_UPDATE_BACKFILL.md`'s `**Authoritative source:** commit \`<hash>\`` citations,
+confirming the hash resolves to a real, existing commit object in this repository's own git
+history — existence only, never content-matching.
+
+### Final implementation summary
+
+One new, fully self-contained, read-only script, `app/scripts/
+validateKnowledgeBackfillCommits.ts`. It reads `KNOWLEDGE_UPDATE_BACKFILL.md`, extracts every
+entry's Authoritative-source hash, and for each one confirms it resolves to a real commit object
+via `git rev-parse --verify <hash>^{commit}` — not merely any git object (a blob or tree
+coincidentally sharing a prefix would not satisfy the `^{commit}` suffix). A hash is first
+validated as hex-only, reasonable-length (4–40 characters) before ever being passed to `git`; an
+invalid-shaped hash is flagged as a malformed-hash anomaly directly, without ever reaching a git
+invocation. The script imports nothing from any of the eleven existing Governance Runtime scripts
+and contains no write API of any kind — including no write to git's own object database, which it
+only ever queries.
+
+### What independent review found
+
+Two independent reviews were performed against the pre-implementation disclosure and once against
+the committed code, in sequence, all performed internally within a single Runtime Orchestrator
+session per explicit instruction:
+
+1. Disclosure review found that Verification item 3's case (d) had been mislabeled as testing
+   Risk 1 (ambiguous short-hash prefix), when genuinely reproducing a real hash collision for a
+   live test is impractical; corrected by adding a new Verification item (source inspection of the
+   script's uniform, non-distinguishing failure handling), relabeling case (d) to accurately
+   describe what it actually tests (a malformed hash string, under Risk 3), and updating Risk 3's
+   own citation to acknowledge both of its verifying cases. A second review, re-run after these
+   corrections, found no further issue: SAFE TO IMPLEMENT.
+2. A post-implementation review found the initial implementation contained a real, concrete bug:
+   Node's `execSync` on this Windows environment shells through `cmd.exe`, which mishandles the
+   `^{commit}` suffix (`^` is `cmd.exe`'s own escape character), causing all nine real hash
+   citations to falsely report as non-resolving during the known-good real-data verification step.
+   Corrected by switching the git-verify call to `execFileSync` with an argument array (no shell
+   involved) — still `node:child_process`, same disclosed git invocation and semantics, now
+   cross-platform correct and additionally safer against shell-injection from interpolated text.
+   Verification was re-run in full after the fix; the final independent review found no further
+   issue: SAFE TO COMMIT.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Non-vacuous check: run against the real,
+current `KNOWLEDGE_UPDATE_BACKFILL.md` (9 entries, 9 hashes), reported `Hashes checked: 9` / `No
+anomalies found` after the `execFileSync` fix, matching an independent, direct `git rev-parse
+--verify` check performed against all nine during the Disclosure's own drafting. Separately, in an
+isolated scratch git repository seeded with its own commit history (never touching the real
+repository's history), four deliberately-constructed cases were each correctly and distinctly
+classified: a real commit hash from the scratch repository (resolved); a fabricated hash
+guaranteed absent from any git history (flagged, not resolving); a real blob hash from the scratch
+repository cited in place of a commit hash (flagged, not resolving to a commit); and a malformed
+hash string (flagged directly via pre-validation, never reaching git). Zero-write guarantee:
+source inspection found no write-API calls; `sha1sum` of the real `KNOWLEDGE_UPDATE_BACKFILL.md`
+was identical before and after every run; `git rev-parse HEAD` was identical before and after,
+confirming no git-history artifact was created or altered. Misreadability guard: the script's own
+printed output states plainly it is an "Existence check of cited hashes only," taking no position
+on any entry's content or the underlying Slice's own correctness. Rollback verification: no file
+in the repository references the new script. `git status --porcelain` confirmed exactly one file
+changed at every checkpoint; `KNOWLEDGE_UPDATE_BACKFILL.md` itself was never modified. Architecture
+guard suite: 35 files / 334 tests passing, both locally and in CI. Full test suite: locally,
+554/554 test files passed, 14,876/14,879 tests passed, 3 skipped, 0 failed (the known,
+pre-existing Prisma timeout flake did not trigger during this slice's own final verification run);
+in CI run `29643845313`, the full test suite also reported success cleanly.
+
+### What GitHub Actions confirmed
+
+Run `29643845313`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Architecture guard suite
+and full test suite both reported success cleanly in CI.
+
+### Rollback strategy
+
+`git revert 33b3f65` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it, confirmed by direct inspection that no other file in the repository
+references the new script.
+
+### Lessons learned
+
+- **A shell-string command invocation can behave differently across platforms even when the
+  literal command text is identical.** `git rev-parse --verify <hash>^{commit}` is valid,
+  unambiguous POSIX-shell syntax, but Node's `execSync` defaults to `cmd.exe` on Windows, where
+  `^` is itself an escape character — silently corrupting the command before `git` ever saw it.
+  This went undetected until the mandated known-good real-data verification step actually ran the
+  script against real data, rather than merely compiling or reasoning about it — direct, concrete
+  evidence for why this iteration's own standing discipline (every verification must exercise
+  real, externally observable behavior, never presumed from source reading alone) exists.
+  `execFileSync` with an argument array avoids shell interpretation entirely and is now the
+  preferred pattern for any future Iteration 2 script that must pass a value containing
+  shell-significant characters (`^`, `{`, `}`, quotes, etc.) to a subprocess.
+- **A Disclosure's own synthetic test case can be mislabeled as covering a risk it does not
+  actually exercise**, discovered only by asking, case by case, "does this specific construction
+  actually reproduce the failure mode the cited Risk describes" rather than trusting the label.
+  Genuinely reproducing a short-hash collision live was judged impractical and disproportionate
+  for an already-disclosed, low-probability edge case; source inspection of the script's uniform
+  (non-distinguishing) failure handling was the more honest, proportionate verification for that
+  one risk specifically — mirroring precedent already established for other impractical-to-live-
+  test branches earlier in this iteration (Slice 2's own "file does not exist" branch).
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_10_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains unaddressed — now flagged, after nine
+  consecutive selection checkpoints carrying it forward unresolved, as likely needing its own
+  dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+  again inside a future Slice N Selection document's own reasoning.
+- Extending `validateGovernanceScriptIndependence.ts`'s own target list to also cover the scripts
+  shipped after it (Slices 8, 9, and now 10) was considered during Slice 10's own candidate
+  selection and rejected specifically because it would require modifying a prior slice's own file
+  — the staleness itself remains a standing, disclosed, unaddressed limitation, not resolved here.
+- No validation that a cited commit's own message, diff, or content matches its entry's own prose
+  claims — explicitly out of scope for this slice, the "distinct, more complex candidate" still
+  unaddressed.
+- A consistency check comparing `ENGINEERING_PLATFORM_IMPLEMENTATION_PLAYBOOK.md` Part 2's
+  "Implemented, non-planning artifacts" list against the real files on disk remains available for
+  a future slice to resolve explicitly (its own open boundary question, first raised at Slice 9's
+  own candidate selection, remains unresolved).
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation,
+  independence, structural-validity, and commit-existence data now available from Slices 1–10
+  together — that remains a separate, human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
