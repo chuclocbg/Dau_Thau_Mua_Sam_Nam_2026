@@ -524,5 +524,101 @@ consumer depends on it.
 
 ---
 
+## Runtime Iteration 2 Slice 7 — Review log summary reporter
+
+**Authoritative source:** commit `110f3f8` (`Runtime Iteration 2 Slice 7: add review log summary
+reporter`), pushed to `develop`, GitHub Actions run `29633175983` (conclusion=success).
+
+### Final changed files
+
+Two files, per the approved `SLICE7_PRE_IMPLEMENTATION_DISCLOSURE.md` boundary plus its own
+independent-review correction cycle: `app/scripts/summarizeReviewLog.ts` (new file) and
+`PROJECT_KNOWLEDGE_SYSTEM/01_PROJECT_DOCS/SLICE7_PRE_IMPLEMENTATION_DISCLOSURE.md` (the disclosure
+document itself, corrected during its own review cycle before implementation). No other file
+changed.
+
+### Final externally observable capability
+
+`app/scripts/summarizeReviewLog.ts` is a new, fully self-contained, read-only script, per
+`IMPLEMENTATION_SLICE_07_SELECTION.md`'s Candidate FF. It reads `REVIEW_LOG.md` and prints
+aggregate counts of the overall `**Verdict:**` distribution (`ALL CHECKS PASSED` / `FAILED` / `not
+recognized`) and, separately, the per-named-Check distribution (`PASS` / `FAIL` / `not recognized`)
+for each of the three Check lines every entry carries (`HEAD == origin`, `Working tree clean
+(tracked files)`, `CI result`). The script imports nothing from any of the eight existing
+Governance Runtime scripts and contains no write API of any kind. `REVIEW_LOG.md`'s Verdict/Check
+fields belong entirely to Contract Phase 3's three pre-existing Checks and have no relationship to
+`REPORTABLE_EXECUTION_SIGNALS.md` or any candidate reportable-execution semantic — the script's own
+printed output states this plainly.
+
+### Verification evidence
+
+- `npx tsc -b`: zero errors attributable to the new file.
+- Architecture guard suite: 35 files / 334 tests passing, both locally and in CI.
+- Full test suite: locally, 552/554 test files passed, 14,874/14,879 tests passed, 3 skipped, 2
+  failed — both failures the known, pre-existing `prisma validate` timeout flake
+  (`x10-prisma-integration.test.ts`, `x13-prisma-recovery-repository.test.ts`), unrelated to this
+  slice; in CI run `29633175983`, the full test suite reported success cleanly — the flake did not
+  trigger that run.
+- Real-data verification: run against the real, current `REVIEW_LOG.md` (28 entries); printed
+  counts (Verdict `FAILED`×28/`ALL CHECKS PASSED`×0; `HEAD == origin` `PASS`×28/`FAIL`×0; `Working
+  tree clean` `PASS`×0/`FAIL`×28; `CI result` `PASS`×25/`FAIL`×3) matched an independent, manual
+  count taken directly from the real file exactly.
+- Synthetic verification, in an isolated scratch git repository, never touching the real file:
+  case (a) an entry with `**Verdict:** ALL CHECKS PASSED` and all three Checks `PASS`, correctly
+  counted; case (a2) an entry with `HEAD == origin` marked `FAIL`, correctly counted — together with
+  the real data, exercising both `PASS` and `FAIL` for all three named Check fields; case (b) an
+  entry with a malformed `Working tree clean` line, correctly reported under `not recognized`
+  rather than silently dropped or miscounted; case (c) an entry with a malformed/unrecognized
+  `**Verdict:**` value (neither `ALL CHECKS PASSED` nor `FAILED`), correctly reported under `not
+  recognized` — added during this slice's own independent-review cycle after a post-implementation
+  review found the `Verdict` `not recognized` branch was real, reachable code with zero verification
+  coverage.
+- No-write guarantee: source inspection confirmed zero write-API calls in the script; `sha1sum` of
+  the real `REVIEW_LOG.md` taken before and after every run against it was identical each time.
+- `git status --porcelain`: confirmed exactly the two declared files in the diff at every
+  checkpoint.
+
+### What GitHub Actions confirmed
+
+Run `29633175983`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Architecture guard suite
+and full test suite both reported success cleanly in CI — the known, pre-existing Prisma
+integration-test timeout flake did not trigger this particular run.
+
+### Rollback strategy
+
+`git revert 110f3f8` — trivial: one new, standalone script and its own already-approved planning
+document; nothing else touched; no downstream consumer depends on either.
+
+### Lessons learned
+
+- A post-implementation independent review found a real, reachable code path (`parseVerdict()`'s
+  `not recognized` fallback) with zero non-vacuous verification coverage, even though the
+  implementation was already fully compliant with the Disclosure's own literal verification
+  requirements — the Disclosure's malformed-case requirement (Verification item 3(b)) was scoped
+  only to the three Check lines, never to the `**Verdict:**` line, so the implementation's
+  additional defensive symmetry for `Verdict` went untested by design, not by oversight. This was
+  closed by a minimal, surgical correction to the Disclosure's Verification strategy item 3 (adding
+  case (c)) followed by re-running the isolated synthetic verification with the added case — not by
+  any code change, since the existing fallback logic was already correct on inspection.
+- The same "risk citation must name every verification sub-case that actually mitigates it"
+  discipline established during this slice's own pre-implementation review cycle (Risk 1 and Risk 2
+  citations tracking the addition of sub-cases (a2) and (c) respectively) proved reusable across
+  both the planning stage and the post-implementation stage of the same slice.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_07_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains unaddressed — now flagged, after five
+  consecutive selection checkpoints carrying it forward unresolved, as likely needing its own
+  dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+  again inside a future Slice N Selection document's own reasoning.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation, and
+  correlation data now available from Slices 1–7 together — that remains a separate,
+  human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
