@@ -442,5 +442,87 @@ consumer depends on it.
 
 ---
 
+## Runtime Iteration 2 Slice 6 — Governance registry consistency check
+
+**Authoritative source:** commit `a6c8950` (`Runtime Iteration 2 Slice 6: add governance registry
+consistency check`), pushed to `develop`, GitHub Actions run `29623506119` (conclusion=success).
+
+### What was implemented
+
+One new, fully self-contained, read-only script, `app/scripts/validateGovernanceRegistry.ts`, per
+`IMPLEMENTATION_SLICE_06_SELECTION.md`'s Candidate AA and `SLICE6_PRE_IMPLEMENTATION_
+DISCLOSURE.md`. It compares `governance-rules/REGISTRY.md`'s one-row `REVIEW-3` table against
+`governance-rules/REVIEW-3.md`'s own YAML `RuleDefinition` block across five field-pairs: Rule ID /
+`rule_id`, Category / `category`, Status / `status`, and Script / `script` by literal-string
+equality, and Command / `command_adapter` via a known, fixed naming correspondence
+(`.claude/commands/<name>.md` ↔ `/<name>`) rather than literal equality, since the two artifacts
+state that fact in different, already-established conventions. It reports any disagreeing
+field-pair, or reports that all five agree, taking no position on which artifact should change.
+Unlike Slices 1–5, this slice checks a different Contract Phase 0 artifact pair, not
+`REVIEW_LOG.md`/`REPORTABLE_EXECUTION_SIGNALS.md` — a topical shift `IMPLEMENTATION_SLICE_
+06_SELECTION.md` disclosed explicitly rather than assumed, since Runtime Iteration 2 was never
+topically restricted by definition. The script imports nothing from any of the six existing
+Governance Runtime scripts (including `validateGovernanceRule.ts`, despite its related
+YAML-reading purpose) and contains no write API of any kind.
+
+### What independent review found
+
+Two independent reviews were performed against the pre-implementation disclosure. The first found
+one real gap: the disclosure's Verification strategy item 3 required two synthetic mismatch tests
+but named only literal-equality field examples, never requiring a test of the Command /
+`command_adapter` correspondence mechanism specifically — even though the disclosure's own Risks
+section named that mechanism as the one most likely to have an implementation bug, being the one
+field-pair compared by a derived correspondence rather than literal equality. A minimal, surgical
+correction was applied to item 3 only, requiring coverage of at least one literal-equality
+field-pair beyond the first and, separately, the Command / `command_adapter` correspondence
+specifically. The second review, re-run after the correction, found no further issue: SAFE TO
+IMPLEMENT. A third, independent review of the committed code likewise found no issue: SAFE TO
+COMMIT — and confirmed the correction was not just correctly worded but genuinely exercised in the
+actual implementation's own verification run.
+
+### What verification proved
+
+Per `SLICE6_PRE_IMPLEMENTATION_DISCLOSURE.md`'s Verification strategy: `npx tsc -b` reported zero
+errors attributable to the new file. The script was run against the real, current `REGISTRY.md`/
+`REVIEW-3.md` pair and reported zero mismatches, matching the current, known-good, agreeing state.
+Separately, in an isolated scratch git repository containing synthetic copies of both files (never
+touching either real file), deliberately-altered field-pairs were each correctly and individually
+flagged — including a `Status`/`status` mismatch (`deprecated` vs. `active`) and, specifically, a
+`Command`/`command_adapter` mismatch (`/wrong-command` in the registry table vs. the value derived
+from `command_adapter: .claude/commands/ci-review.md`), the one field-pair compared by the derived
+correspondence rather than literal equality. Source inspection confirmed the script contains no
+file-write API of any kind, and the real `REGISTRY.md`/`REVIEW-3.md` pair was confirmed unaltered
+by the run. `git status --porcelain` and the final commit both confirmed exactly one file changed:
+`app/scripts/validateGovernanceRegistry.ts`, 157 insertions, 0 deletions.
+
+### What GitHub Actions confirmed
+
+Run `29623506119`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Architecture guard suite
+and full test suite both reported success cleanly in CI — the known, pre-existing Prisma
+integration-test timeout flake did not trigger this particular run.
+
+### Rollback strategy
+
+`git revert a6c8950` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_06_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains unaddressed — now flagged, after four
+  consecutive selection checkpoints carrying it forward unresolved, as likely needing its own
+  dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+  again inside a future Slice N Selection document's own reasoning.
+- `REGISTRY.md`'s single-row scope means this slice's check has exactly one row to compare today;
+  its value grows only if and when a second governance rule is ever registered — disclosed in the
+  Disclosure's own Risks section as a known, accepted limitation, not a defect.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation, and
+  correlation data now available from Slices 1–6 together — that remains a separate,
+  human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
