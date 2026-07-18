@@ -749,5 +749,135 @@ references the new script.
 
 ---
 
+## Runtime Iteration 2 Slice 9 — Knowledge Backfill structural validator
+
+**Authoritative source:** commit `04142d9` (`Runtime Iteration 2 Slice 9: add Knowledge Backfill
+structural validator`), pushed to `develop`, GitHub Actions run `29641499720`
+(conclusion=success).
+
+### Objective achieved
+
+Every one of Slices 1 through 8's own Knowledge Backfill updates has manually appended a new
+`## Runtime Iteration N Slice M` section in strictly increasing `N` order, by hand, re-verified by
+direct reading at each of eight prior update cycles — but never once mechanically checked by any
+tool. Per `IMPLEMENTATION_SLICE_09_SELECTION.md`'s selected Candidate HH and
+`SLICE9_PRE_IMPLEMENTATION_DISCLOSURE.md`, this slice closes that gap: `KNOWLEDGE_UPDATE_
+BACKFILL.md`'s own append-only, strictly-ordered structure now gains mechanical verification for
+the first time, without touching `REVIEW_LOG.md`, `REPORTABLE_EXECUTION_SIGNALS.md`, or any
+candidate reportable-execution semantic.
+
+### Final implementation summary
+
+One new, fully self-contained, read-only script, `app/scripts/validateKnowledgeBackfill.ts`. It
+reads the literal text of `KNOWLEDGE_UPDATE_BACKFILL.md` and checks two structural properties per
+entry: (1) header sequencing — each `## Runtime Iteration N Slice M` header's `M` (Slice) number
+must form a strictly increasing, gap-free, duplicate-free sequence starting at 1, within each
+Iteration `N` group, in file-physical order; (2) Authoritative-source presence — each entry must
+contain a `**Authoritative source:**` line naming a non-empty commit hash in backticks. A block
+whose header does not parse into a valid `N`/`M` pair, or whose Authoritative-source line does not
+parse, is flagged as an explicit, named anomaly rather than silently skipped or treated as
+compliant. Two additional, real, reachable code paths — `KNOWLEDGE_UPDATE_BACKFILL.md` not
+existing, and the file existing but containing zero entries — are both treated as plain,
+non-crashing early returns, documented in the Disclosure's Scope as intentional conservative
+design choices. The script imports nothing from any of the ten existing Governance Runtime scripts
+and contains no write API of any kind.
+
+### What independent review found
+
+Two independent reviews were performed against the pre-implementation disclosure, in sequence:
+
+1. First disclosure review found two issues: Risk 4 (Misreadability) did not cite the Verification
+   item that mitigates it, and Scope did not disclose the script's real, reachable behavior when
+   `KNOWLEDGE_UPDATE_BACKFILL.md` itself does not exist — corrected by citing Verification item 7
+   explicitly in Risk 4, and by appending a sentence to Scope documenting the missing-file
+   early-return as an intentional conservative default.
+2. Second disclosure review, re-run after that correction, found no further issue: SAFE TO
+   IMPLEMENT.
+3. A post-implementation review of the committed code found one further real, reachable branch
+   Scope still did not account for: the file existing but containing zero entries (a sibling case
+   to the already-disclosed missing-file case) — corrected by appending one further sentence to
+   Scope documenting this early-return as an intentional conservative default too, following the
+   same three-way disjunctive standard (disclosed / verified / declared intentional) already
+   established across this iteration. A final independent review, re-run after that correction,
+   found no further issue: SAFE TO COMMIT.
+
+### What verification proved
+
+`npx tsc -b`: zero errors attributable to the new file. Non-vacuous check: run against the real,
+current `KNOWLEDGE_UPDATE_BACKFILL.md` (8 entries), reported `Entries checked: 8` / `No anomalies
+found`, matching an independent, manual header-by-header inspection exactly. Separately, in an
+isolated scratch git repository containing a synthetic Knowledge-Backfill-shaped file (never
+touching the real file), five deliberately-constructed cases were each correctly and distinctly
+classified: a clean, correctly-sequential three-entry set (no false positives); a duplicate Slice
+number; a numbering gap; a missing Authoritative-source line; and entries physically out of file
+order — each of the last four flagged with its own distinct, non-overlapping anomaly description.
+Zero-write guarantee: source inspection found no write-API calls; `sha1sum` of the real
+`KNOWLEDGE_UPDATE_BACKFILL.md` was identical before and after every run against it. Misreadability
+guard: the script's own printed output states plainly it is "Structural check only," taking no
+position on any entry's content. Rollback verification: no file in the repository references the
+new script. `git status --porcelain` confirmed exactly one file changed at every checkpoint;
+`KNOWLEDGE_UPDATE_BACKFILL.md` itself was never modified. Architecture guard suite: 35 files / 334
+tests passing, both locally and in CI. Full test suite: locally, results varied run to run between
+552–554/554 test files passed depending on whether the known, pre-existing Prisma timeout flake
+(`x10-prisma-integration.test.ts`, `x13-prisma-recovery-repository.test.ts`) triggered; in CI run
+`29641499720`, the full test suite reported success cleanly.
+
+### What GitHub Actions confirmed
+
+Run `29641499720`: conclusion=success, all steps passed (Type-check and Lint report success only
+via continue-on-error masking, as previously established/non-blocking). Architecture guard suite
+and full test suite both reported success cleanly in CI.
+
+### Rollback strategy
+
+`git revert 04142d9` — trivial: one new, standalone file; nothing else touched; no downstream
+consumer depends on it, confirmed by direct inspection that no other file in the repository
+references the new script.
+
+### Lessons learned
+
+- **A Disclosure's own Scope can under-describe a document-reading script's real, reachable early
+  returns even after one such gap has already been found and fixed once.** This slice's Scope
+  needed two separate corrections for two sibling cases — the target file not existing, and the
+  target file existing but being empty — found in two different review passes (pre-implementation
+  and post-implementation respectively) rather than both at once. This reinforces, for a third
+  time this iteration, that "no undocumented reachable branch" must be re-checked freshly at every
+  review stage, not assumed closed once one instance of the pattern has been fixed.
+- **Grouping-and-sequencing logic for a two-number header format (`Iteration N`, `Slice M`) is
+  more subtle to verify completely than a single-number sequence.** Three distinct anomaly types —
+  duplicate, gap, and out-of-order — needed three separate, mutually-exclusive synthetic test
+  cases to prove they are each individually and correctly distinguished, not merely that "some"
+  anomaly is reported; this is a stricter bar than `REVIEW_LOG.md`'s own single "chronological
+  non-decreasing" check (Slice 5) and is disclosed as a deliberate design difference, not an
+  oversight.
+- `SLICE9_PRE_IMPLEMENTATION_DISCLOSURE.md` was committed separately from the implementation file
+  in this slice's own commit history (`04142d9` staged only the implementation file, per explicit
+  instruction, mirroring the same pattern already established for Slice 8) — the Disclosure
+  document itself remained uncommitted at the time this Knowledge Backfill entry was written; its
+  own commit is a separate, later action, not part of this entry's own authoritative source
+  commit.
+
+### Open items intentionally deferred to later slices
+
+- `IMPLEMENTATION_SLICE_09_SELECTION.md`'s own Candidate S (a bidirectional signal-to-report
+  correlation check using a self-defining cutoff) remains unaddressed — now flagged, after seven
+  consecutive selection checkpoints carrying it forward unresolved, as likely needing its own
+  dedicated pre-implementation-disclosure-and-independent-review cycle rather than being deferred
+  again inside a future Slice N Selection document's own reasoning.
+- A consistency check comparing `ENGINEERING_PLATFORM_IMPLEMENTATION_PLAYBOOK.md` Part 2's
+  "Implemented, non-planning artifacts" list against the real files on disk was considered during
+  Slice 9's own candidate selection and set aside undecided (an open boundary question about
+  whether the Playbook falls within this iteration's Contract-adjacent-document scope-caution),
+  not rejected on its merits — it remains available for a future slice to resolve explicitly.
+- No cross-file comparison against `REVIEW_LOG.md`, `REPORTABLE_EXECUTION_SIGNALS.md`, or git
+  history to confirm a Knowledge Backfill entry's cited commit hash actually exists or matches its
+  claimed content — explicitly out of scope for this slice, a distinct, more complex candidate.
+- No Decision Matrix re-scoring has been performed using the signal, summary, validation,
+  independence, and structural-validity data now available from Slices 1–9 together — that remains
+  a separate, human-judgment-gated activity, not begun here.
+- The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
