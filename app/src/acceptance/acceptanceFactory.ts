@@ -1,6 +1,6 @@
 import type { CreateAcceptanceParams, AcceptanceType } from './acceptanceTypes';
 export { createMemoryAcceptanceRepositories } from './memoryAcceptanceRepositories';
-export { createPrismaAcceptanceRepositories } from './prismaAcceptanceRepositories';
+export { buildPrismaAcceptanceRepositories } from './prismaAcceptanceRepositories';
 
 export function generateAcceptanceCode(type: AcceptanceType, year: number, sequence: number): string {
   const tag = type === 'PARTIAL' ? 'NT' : type === 'FINAL' ? 'NTH' : 'NTB';

@@ -1,6 +1,6 @@
 import type { ApprovalType, SubjectType, CreateApprovalRequestParams } from './approvalTypes';
 export { createMemoryApprovalRepositories } from './memoryApprovalRepositories';
-export { createPrismaApprovalRepositories } from './prismaApprovalRepositories';
+export { buildPrismaApprovalRepositories } from './prismaApprovalRepositories';
 
 export function generateApprovalCode(type: ApprovalType, year: number, sequence: number): string {
   const typeTag: Record<ApprovalType, string> = {

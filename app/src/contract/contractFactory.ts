@@ -1,6 +1,6 @@
 import type { ContractType, CreateContractParams } from './contractTypes';
 export { createMemoryContractRepositories } from './memoryContractRepositories';
-export { createPrismaContractRepositories } from './prismaContractRepositories';
+export { buildPrismaContractRepositories } from './prismaContractRepositories';
 
 export function generateContractNumber(year: number, sequence: number): string {
   return `HĐ/DTMS/${year}/${String(sequence).padStart(4, '0')}`;
