@@ -1263,5 +1263,125 @@ callers, unchanged since Slice 1.
 
 ---
 
+## Runtime Iteration 2 Slice 13 — Knowledge Backfill planning-document citation existence check
+
+**Authoritative source:** commit `9d10fbf` (`Runtime Iteration 2 Slice 13: Knowledge Backfill
+planning-document citation existence check`), pushed to `develop`, GitHub Actions run
+`29671863236` (conclusion=success).
+
+**Slice number:** Runtime Iteration 2, Slice 13.
+
+**Implementation commit hash:** `9d10fbf33bd9ff00fcc9c9ca2363c36d380b3853`.
+
+**Knowledge Backfill commit hash (after commit):** the commit that adds this very entry —
+structurally unknowable at authoring time, since a commit's own hash is derived from its tree
+content, which includes this file; a commit cannot cite its own hash before it exists. Reported
+separately, as this task's own final report, once the commit exists.
+
+**GitHub Actions result:** Run `29671863236`: conclusion=success. Architecture guard suite and
+full test suite both reported success cleanly in CI (Type-check and Lint report success only via
+continue-on-error masking, as previously established/non-blocking).
+
+**Rollback command:** `git revert 9d10fbf33bd9ff00fcc9c9ca2363c36d380b3853` — trivial: one new,
+standalone file; nothing else touched; no downstream consumer depends on it, confirmed by direct
+inspection that no other file in the repository references the new script.
+
+**Implementation summary:** One new, fully self-contained, read-only script, `app/scripts/
+validateKnowledgeBackfillCitations.ts`, per `IMPLEMENTATION_SLICE_13_SELECTION.md`'s selected
+Candidate LL and `SLICE13_PRE_IMPLEMENTATION_DISCLOSURE.md`. It reads `KNOWLEDGE_UPDATE_
+BACKFILL.md`, extracts every backtick-delimited span from its raw text, normalizes embedded
+whitespace (including markdown word-wrap newlines) to nothing, and tests each normalized span
+against two fixed patterns: `^IMPLEMENTATION_SLICE_\d+_SELECTION\.md$` and
+`^SLICE\d+_PRE_IMPLEMENTATION_DISCLOSURE\.md$`. A span matching neither pattern — including
+`RUNTIME_CAPABILITY_SURFACE_SELECTION.md` (Slice 1's own citation, outside both patterns) and every
+citation of `REVIEW_LOG.md`, `REPORTABLE_EXECUTION_SIGNALS.md`, `REGISTRY.md`, or any Contract/
+Playbook document — is silently and deliberately excluded, never reported. Matching spans are
+de-duplicated via a `Set<string>` before each distinct citation is resolved against
+`PROJECT_KNOWLEDGE_SYSTEM/01_PROJECT_DOCS/` and checked for existence via `existsSync` only — the
+cited file's own content is never opened or read. Distinct from Slices 9–11 (which check the
+document's own internal structure and its commit citations, never citations to *other* documents)
+and from Slice 12 (which checks link targets inside `REGISTRY.md`, an unrelated file). The script
+imports nothing from any of the fourteen existing Governance Runtime scripts and contains no write
+API of any kind.
+
+**Verification summary:** `npx tsc -b`: zero errors attributable to the new file. Known-good
+real-data check: run against the real, current `KNOWLEDGE_UPDATE_BACKFILL.md` (twelve entries),
+reported 23 distinct citations checked, 0 missing — matching an independent, direct
+extraction-and-existence confirmation performed during the Disclosure's own drafting, including
+correct handling of several real citations that are genuinely word-wrapped across markdown source
+lines. Isolated synthetic verification, in a scratch git repository seeded with the same nested
+directory structure (never touching real data): a citation deliberately wrapped across multiple
+markdown source lines (resolved correctly); a non-matching-pattern citation (silently excluded,
+never reported); a citation naming a guaranteed-absent file (flagged missing); the same matching
+filename cited twice (checked and reported exactly once) — all four combined in one synthetic
+multi-entry file, confirmed together in a single run (2 distinct citations checked, 1 resolved, 1
+missing); and, in two further separate scratch runs, a missing `KNOWLEDGE_UPDATE_BACKFILL.md` file
+and a file present but containing zero matching citations, each reporting plainly and exiting
+without crashing. Zero-write guarantee: source inspection found no write-API calls and confirmed
+the only git invocation (`repoRoot()`) uses `execFileSync` with an explicit argument array;
+`sha1sum` of the real `KNOWLEDGE_UPDATE_BACKFILL.md` and `git rev-parse HEAD` were identical before
+and after every run. Misreadability guard: the script's own printed output states plainly it is a
+literal filename-existence check only, taking no position on any entry's content, and states its
+own scope is limited to the two named patterns. Rollback verification: no file in the repository
+references the new script. `git status --porcelain` confirmed exactly one file changed at every
+checkpoint; `KNOWLEDGE_UPDATE_BACKFILL.md` itself was never modified. Architecture guard suite: 35
+files / 334 tests passing, both locally and in CI. Full test suite: locally, 552/554 test files
+passed, 14,874/14,879 tests passed, 3 skipped, 2 failed — both failures the known, pre-existing
+`prisma validate` timeout flake (`x10-prisma-integration.test.ts`,
+`x13-prisma-recovery-repository.test.ts`), unrelated to this slice; in CI run `29671863236`, the
+full test suite reported success cleanly.
+
+**Architectural observations:** This is the first Iteration 2 script whose subject is
+`KNOWLEDGE_UPDATE_BACKFILL.md`'s own citations of *other* documents, rather than the document's own
+internal structure (Slice 9), its commit-hash citations (Slice 10), or its commit-message citations
+(Slice 11) — extending the "things `KNOWLEDGE_UPDATE_BACKFILL.md` asserts that could be mechanically
+checked" surface into a fourth, previously-unaddressed dimension. The word-wrap-tolerant,
+collapse-to-nothing whitespace normalization used here is a deliberate variant of Slice 11's own
+collapse-to-single-space technique — the correct choice depends on whether the normalized value is
+a filename (no legitimate internal whitespace, so collapse to nothing) or human-readable prose (a
+single space preserves word boundaries) — a distinction worth remembering before reusing either
+technique in a future slice. Real data already contains a repeated citation of the same planning
+document across different entries (e.g. `IMPLEMENTATION_SLICE_03_SELECTION.md`,
+`IMPLEMENTATION_SLICE_09_SELECTION.md`), making de-duplication a real, exercised behavior in
+known-good real-data verification, not merely a synthetic-only concern.
+
+**Deferred candidates:** `IMPLEMENTATION_SLICE_13_SELECTION.md`'s own Candidate S (a bidirectional
+signal-to-report correlation check using a self-defining cutoff) remains unaddressed — now flagged,
+after twelve consecutive selection checkpoints carrying it forward unresolved, as likely needing
+its own dedicated pre-implementation-disclosure-and-independent-review cycle rather than being
+deferred again inside a future Slice N Selection document's own reasoning. A GitHub Actions run-ID
+existence check for Knowledge Backfill entries remains rejected for the same network-dependency
+reason it was rejected at Slice 12. Extending `validateGovernanceScriptIndependence.ts`'s own
+target list to also cover the scripts shipped after it (Slices 9 through 13) remains a standing,
+disclosed, unaddressed limitation. A consistency check comparing `ENGINEERING_PLATFORM_
+IMPLEMENTATION_PLAYBOOK.md` Part 2's "Implemented, non-planning artifacts" list against real files
+on disk remains available for a future slice to resolve explicitly — its own open boundary
+question, first raised at Slice 9's candidate selection, remains deliberately unresolved.
+
+**Explicit non-goals preserved:** No semantic selection, ranking, scoring, or recommendation of any
+kind was made. No reportable-execution semantic was touched — this slice never reads
+`REVIEW_LOG.md` or `REPORTABLE_EXECUTION_SIGNALS.md`. No repair, deletion, or modification of
+`KNOWLEDGE_UPDATE_BACKFILL.md` was performed — detection and reporting only. No reading of a cited
+planning document's own content occurred — existence only; the structural, hash-existence, and
+commit-message-match checks over `KNOWLEDGE_UPDATE_BACKFILL.md` itself remain Slices 9, 10, and
+11's own, unmodified responsibility. No checking of any backtick-quoted filename outside the two
+named patterns was attempted. No cross-file field comparison of the `REGISTRY.md`/`REVIEW-3.md`
+kind or the link-target-existence kind (Slices 6 and 12's own, unmodified responsibilities,
+unrelated files) was attempted. No extension or modification of
+`validateGovernanceScriptIndependence.ts`'s own target list was made. No network dependency of any
+kind was introduced. No Runtime Contract change was made. No modification to any of Slices 1–12's
+own files occurred. No Decision Matrix re-scoring was performed.
+
+**Follow-up work intentionally deferred:** No auto-repair of any anomaly this or any prior slice's
+script could detect — this track remains detection-only by explicit design across all thirteen
+slices. No wiring of this slice's script into `verifyPushState.ts` or any enforcement path — it
+remains an on-demand, informational tool only. No Decision Matrix re-scoring using the signal,
+summary, validation, independence, structural-validity, commit-existence, commit-message,
+registry-link-existence, and now citation-existence data available from Slices 1–13 together —
+that remains a separate, human-judgment-gated activity, not begun here. The `--explicit-intent`
+flag still has zero real callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
