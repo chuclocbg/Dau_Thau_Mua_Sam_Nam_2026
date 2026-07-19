@@ -1600,5 +1600,116 @@ callers, unchanged since Slice 1.
 
 ---
 
+## Runtime Iteration 2 Slice 16 — Knowledge Backfill implementation-hash internal consistency check
+
+**Authoritative source:** commit `308740e` (`Runtime Iteration 2 Slice 16: Knowledge Backfill
+implementation-hash internal consistency check`), pushed to `develop`, GitHub Actions run
+`29688089536` (conclusion=success).
+
+**Slice number:** Runtime Iteration 2, Slice 16.
+
+**Candidate implemented:** `IMPLEMENTATION_SLICE_16_SELECTION.md`'s selected Candidate OO —
+Knowledge Backfill "Implementation commit hash" field consistency check.
+
+**Exact implementation boundary:** One new, fully self-contained, read-only script, `app/scripts/
+validateKnowledgeBackfillImplementationHashConsistency.ts`, per `SLICE16_PRE_IMPLEMENTATION_
+DISCLOSURE.md`. It reads `KNOWLEDGE_UPDATE_BACKFILL.md`, splits it into per-entry blocks at each
+`## Runtime Iteration N Slice M` header, and for each entry independently extracts its own
+`**Authoritative source:**` commit hash and its own `**Implementation commit hash:**` field (a
+newer field present only in Slices 12–15's own entries). An entry missing either value is silently
+skipped, no anomaly raised — Authoritative-source presence remains Slice 9's own responsibility,
+and the `Implementation commit hash` field's own absence in older entries reflects the document's
+own real history, not a defect. An entry with both values present is compared via the same
+prefix-relationship rule Slice 14's own script established (the shorter hash must be an exact,
+case-sensitive prefix of the longer one); a non-prefix pair is flagged as an explicit
+"implementation-hash mismatch" anomaly. The script imports nothing from any of the seventeen
+existing Governance Runtime scripts and contains no write API of any kind — including no
+re-derivation of Slice 14's own Authoritative-source-vs-Rollback comparison, which it never
+attempts.
+
+**Verification performed:** `npx tsc -b`: zero errors attributable to the new file. Known-good
+real-data check: run against the real, current `KNOWLEDGE_UPDATE_BACKFILL.md` (fifteen entries),
+reported 15 entries checked, 4 consistent, 0 mismatches, 11 skipped — matching an independent,
+direct per-entry confirmation performed during the Disclosure's own drafting. Isolated synthetic
+verification, in a scratch git repository seeded with the same nested directory structure (never
+touching real data): a matching short/full hash pair (consistent); a deliberately mismatched pair
+(flagged); an entry with only an Authoritative-source citation (skipped); an entry with only an
+Implementation-commit-hash field (skipped) — all four combined in one synthetic multi-entry file,
+confirmed together in a single run (4 entries, 1 consistent, 1 mismatch, 2 skipped); and, in two
+further separate scratch runs, a missing `KNOWLEDGE_UPDATE_BACKFILL.md` file and a file present but
+containing zero matching entry headers, each reporting plainly and exiting without crashing.
+Zero-write guarantee: source inspection found no write-API calls and confirmed the only git
+invocation (`repoRoot()`) uses `execFileSync` with an explicit argument array; `sha1sum` of the
+real `KNOWLEDGE_UPDATE_BACKFILL.md` and `git rev-parse HEAD` were identical before and after every
+run. Rollback verification: no file in the repository references the new script. `git status
+--porcelain` confirmed exactly one file changed at every checkpoint; `KNOWLEDGE_UPDATE_BACKFILL.md`
+itself was never modified. Architecture guard suite: 35 files / 334 tests passing, both locally and
+in CI. Full test suite: locally, 552/554 test files passed, 14,874/14,879 tests passed, 3 skipped,
+2 failed — both failures the known, pre-existing `prisma validate` timeout flake
+(`x10-prisma-integration.test.ts`, `x13-prisma-recovery-repository.test.ts`), unrelated to this
+slice; in CI run `29688089536`, the full test suite reported success cleanly.
+
+**Independent review outcome:** Both the pre-implementation Disclosure and the committed
+implementation were independently reviewed for first-principles compliance with the Runtime
+Contract and Playbook. The Disclosure review confirmed every disclosed risk cites at least one
+verification item, every cited verification item maps back to exactly one risk, and every
+reachable branch (Authoritative-source missing, Implementation-commit-hash field missing, matching
+pair, mismatching pair, missing-file, zero-entries) is explicitly disclosed and covered by a
+verification case. The post-implementation review confirmed the committed code matches the
+Disclosure's own decision table exactly, including the deliberate collapse of the two distinct
+"missing" cases (Authoritative-source absent; Implementation-commit-hash field absent) into a
+single unified "skipped" outcome, as disclosed. No issue was found in either review: SAFE TO
+IMPLEMENT, then SAFE TO COMMIT.
+
+**GitHub Actions result:** Run `29688089536`: conclusion=success. Architecture guard suite and
+full test suite both reported success cleanly in CI (Type-check and Lint report success only via
+continue-on-error masking, as previously established/non-blocking).
+
+**Implementation commit hash:** `308740e67234ff48b11b33ebacfc70e25af87461`.
+
+**Rollback command:** `git revert 308740e67234ff48b11b33ebacfc70e25af87461` — trivial: one new,
+standalone file; nothing else touched; no downstream consumer depends on it, confirmed by direct
+inspection that no other file in the repository references the new script.
+
+**Follow-up work intentionally deferred:** No auto-repair of any anomaly this or any prior slice's
+script could detect — this track remains detection-only by explicit design across all sixteen
+slices. No wiring of this slice's script into `verifyPushState.ts` or any enforcement path — it
+remains an on-demand, informational tool only. No re-derivation of Slice 14's own
+Authoritative-source-vs-Rollback comparison was attempted, and none is planned. No Decision Matrix
+re-scoring using the signal, summary, validation, independence, structural-validity,
+commit-existence, commit-message, registry-link-existence, citation-existence,
+rollback-hash-consistency, run-ID-consistency, and now implementation-hash-consistency data
+available from Slices 1–16 together — that remains a separate, human-judgment-gated activity, not
+begun here. The `--explicit-intent` flag still has zero real callers, unchanged since Slice 1.
+
+**Architectural observations:** This is the third Iteration 2 script in the "internal citation
+consistency" family (after Slices 14 and 15), and the first to demonstrate the family's own
+"missing value" handling can itself vary by design: Slice 14 actively flags a missing `git revert`
+citation (expected in every entry, any era), while this slice silently skips a missing
+`Implementation commit hash` field (a genuinely optional, version-dependent field, absent by design
+in Slices 1–11) — the correct treatment of a "missing" case depends on whether the field is
+universally expected or era-dependent, not on the family pattern alone. This slice's own existence
+also confirms, for the first time, that `KNOWLEDGE_UPDATE_BACKFILL.md` now carries *three*
+independent hash citations per newer entry (Authoritative-source, Implementation commit hash,
+Rollback command's own `git revert` target) — Slice 14 checks one pairing, this slice checks a
+second, and the third possible pairing (Implementation-commit-hash field vs. Rollback command)
+remains unaddressed, available for a future slice to consider on its own merits rather than being
+implicitly assumed correct by transitivity.
+
+**Explicit non-goals preserved:** No semantic selection, ranking, scoring, or recommendation of any
+kind was made. No reportable-execution semantic was touched — this slice never reads
+`REVIEW_LOG.md` or `REPORTABLE_EXECUTION_SIGNALS.md`. No repair, deletion, or modification of
+`KNOWLEDGE_UPDATE_BACKFILL.md` was performed — detection and reporting only. No external
+git-history validation of either hash was performed. No re-derivation of the
+Authoritative-source-vs-Rollback comparison was attempted — that remains Slice 14's own,
+unmodified responsibility. No commit-message content checking, no planning-document citation
+checking, no run-ID consistency checking were attempted — those remain Slices 11, 13, and 15's
+own, respectively unmodified responsibilities. No flagging of an entry's own absence of an
+`Implementation commit hash` field as an anomaly was made. No network dependency of any kind was
+introduced. No Runtime Contract change was made. No modification to any of Slices 1–15's own files
+occurred. No Decision Matrix re-scoring was performed.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
