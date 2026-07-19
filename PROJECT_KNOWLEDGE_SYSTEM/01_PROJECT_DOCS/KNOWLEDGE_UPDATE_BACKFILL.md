@@ -1492,5 +1492,113 @@ Slices 1–14 together — that remains a separate, human-judgment-gated activit
 
 ---
 
+## Runtime Iteration 2 Slice 15 — Knowledge Backfill run-ID internal consistency check
+
+**Authoritative source:** commit `fbda9d4` (`Runtime Iteration 2 Slice 15: Knowledge Backfill
+run-ID internal consistency check`), pushed to `develop`, GitHub Actions run `29686708427`
+(conclusion=success).
+
+**Slice number:** Runtime Iteration 2, Slice 15.
+
+**Implementation commit hash:** `fbda9d44c23e2c90f40382fe51abadc3ceb39cc6`.
+
+**GitHub Actions result:** Run `29686708427`: conclusion=success. Architecture guard suite and
+full test suite both reported success cleanly in CI (Type-check and Lint report success only via
+continue-on-error masking, as previously established/non-blocking).
+
+**Rollback command:** `git revert fbda9d44c23e2c90f40382fe51abadc3ceb39cc6` — trivial: one new,
+standalone file; nothing else touched; no downstream consumer depends on it, confirmed by direct
+inspection that no other file in the repository references the new script.
+
+**Implementation summary:** One new, fully self-contained, read-only script, `app/scripts/
+validateKnowledgeBackfillRunIdConsistency.ts`, per `IMPLEMENTATION_SLICE_15_SELECTION.md`'s
+selected Candidate NN and `SLICE15_PRE_IMPLEMENTATION_DISCLOSURE.md`. It reads `KNOWLEDGE_UPDATE_
+BACKFILL.md`, splits it into per-entry blocks at each `## Runtime Iteration N Slice M` header, and
+for each entry extracts every backtick-quoted, purely-numeric token of at least 6 digits, in
+document order — a threshold confirmed safe against real data, which contains exactly one other
+backtick-quoted numeric token (a lone `0`, 1 digit, from Slice 1's own exit-code discussion) far
+below the threshold. Every token after the first is compared against the first for exact string
+equality — a deliberate difference from Slice 14's own prefix-relationship rule for commit hashes,
+since no abbreviated form of a run-ID citation exists anywhere in the document. An entry with zero
+matching tokens is flagged as a "missing run-ID citation" anomaly; an entry with exactly one token
+is a vacuous pass; an entry with two or more tokens where any differs from the first is flagged as
+a "run-ID mismatch" anomaly. This is a purely internal, intra-entry check — no GitHub API call, no
+external validation of any run ID's own real existence or conclusion. The script imports nothing
+from any of the sixteen existing Governance Runtime scripts and contains no write API of any kind.
+
+**Verification summary:** `npx tsc -b`: zero errors attributable to the new file. Known-good
+real-data check: run against the real, current `KNOWLEDGE_UPDATE_BACKFILL.md` (fourteen entries),
+reported 14 entries checked, 14 consistent, 0 mismatches, 0 missing citations — matching an
+independent, direct per-entry confirmation performed during the Disclosure's own drafting,
+including confirmation that the real document's own lone `0` token produced no false positive.
+Isolated synthetic verification, in a scratch git repository seeded with the same nested directory
+structure (never touching real data): an entry with a short numeric token alongside a genuine
+run-ID citation (short token correctly excluded); an entry with no run-ID citation (flagged as
+missing); an entry with exactly one citation (vacuous pass, no crash); an entry with two citations
+that deliberately differ (flagged as a mismatch) — all four combined in one synthetic multi-entry
+file, confirmed together in a single run (4 entries, 2 consistent, 1 mismatch, 1 missing); and, in
+two further separate scratch runs, a missing `KNOWLEDGE_UPDATE_BACKFILL.md` file and a file present
+but containing zero matching entry headers, each reporting plainly and exiting without crashing.
+Zero-write guarantee: source inspection found no write-API calls and confirmed the only git
+invocation (`repoRoot()`) uses `execFileSync` with an explicit argument array; `sha1sum` of the real
+`KNOWLEDGE_UPDATE_BACKFILL.md` and `git rev-parse HEAD` were identical before and after every run.
+Misreadability guard: the script's own printed output states plainly it is a literal, internal
+cross-field consistency check only, performing no external validation. Rollback verification: no
+file in the repository references the new script. `git status --porcelain` confirmed exactly one
+file changed at every checkpoint; `KNOWLEDGE_UPDATE_BACKFILL.md` itself was never modified.
+Architecture guard suite: 35 files / 334 tests passing, both locally and in CI. Full test suite:
+locally, 552/554 test files passed, 14,874/14,879 tests passed, 3 skipped, 2 failed — both failures
+the known, pre-existing `prisma validate` timeout flake (`x10-prisma-integration.test.ts`,
+`x13-prisma-recovery-repository.test.ts`), unrelated to this slice; in CI run `29686708427`, the
+full test suite reported success cleanly.
+
+**Architectural observations:** This is the second Iteration 2 script in the "internal citation
+consistency" family Slice 14 established, and the first to demonstrate the family's own comparison
+rule is not one-size-fits-all: Slice 14's commit-hash comparison needed a prefix relationship
+because real data contains both short and full hash forms, while this slice's run-ID comparison
+uses plain exact equality because no abbreviated run-ID form exists anywhere in real data — the
+correct rule depends on whether the cited value has an established abbreviation convention in this
+document's own history, not on the field type alone. Real data also confirms every entry now
+carries at least two independent citations of its own run ID (Slice 1 has exactly two; later
+entries typically three), making this candidate's core comparison exercised by real data in every
+single entry, unlike Slice 12's own single-row limitation.
+
+**Deferred candidates:** `IMPLEMENTATION_SLICE_15_SELECTION.md`'s own Candidate S (a bidirectional
+signal-to-report correlation check using a self-defining cutoff) remains unaddressed — now flagged,
+after fifteen consecutive selection checkpoints carrying it forward unresolved, as likely needing
+its own dedicated pre-implementation-disclosure-and-independent-review cycle rather than being
+deferred again inside a future Slice N Selection document's own reasoning. A GitHub Actions run-ID
+*existence* check via the GitHub API remains rejected for the same network-dependency reason it was
+rejected at Slices 12, 13, and 14 — explicitly distinguished from this slice's own purely internal,
+network-free comparison. Extending `validateGovernanceScriptIndependence.ts`'s own target list to
+also cover the scripts shipped after it (Slices 9 through 15) remains a standing, disclosed,
+unaddressed limitation. A consistency check comparing `ENGINEERING_PLATFORM_IMPLEMENTATION_
+PLAYBOOK.md` Part 2's "Implemented, non-planning artifacts" list against real files on disk remains
+available for a future slice to resolve explicitly — its own open boundary question, first raised
+at Slice 9's candidate selection, remains deliberately unresolved.
+
+**Explicit non-goals preserved:** No semantic selection, ranking, scoring, or recommendation of any
+kind was made. No reportable-execution semantic was touched — this slice never reads
+`REVIEW_LOG.md` or `REPORTABLE_EXECUTION_SIGNALS.md`. No repair, deletion, or modification of
+`KNOWLEDGE_UPDATE_BACKFILL.md` was performed — detection and reporting only. No external GitHub API
+validation of any run ID's own real existence or conclusion was performed. No external git-history
+validation, no commit-message content checking, no planning-document citation checking, no
+rollback-hash checking were attempted — those remain Slices 10, 11, 13, and 14's own, respectively
+unmodified responsibilities. No network dependency of any kind was introduced. No Runtime Contract
+change was made. No modification to any of Slices 1–14's own files occurred. No Decision Matrix
+re-scoring was performed.
+
+**Follow-up work intentionally deferred:** No auto-repair of any anomaly this or any prior slice's
+script could detect — this track remains detection-only by explicit design across all fifteen
+slices. No wiring of this slice's script into `verifyPushState.ts` or any enforcement path — it
+remains an on-demand, informational tool only. No Decision Matrix re-scoring using the signal,
+summary, validation, independence, structural-validity, commit-existence, commit-message,
+registry-link-existence, citation-existence, rollback-hash-consistency, and now
+run-ID-consistency data available from Slices 1–15 together — that remains a separate,
+human-judgment-gated activity, not begun here. The `--explicit-intent` flag still has zero real
+callers, unchanged since Slice 1.
+
+---
+
 *This document is append-only. Do not edit any entry above in any future update — add a new
 `## Runtime Iteration N Slice M` section below the last one instead.*
