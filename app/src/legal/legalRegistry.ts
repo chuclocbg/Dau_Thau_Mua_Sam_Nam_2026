@@ -82,6 +82,7 @@ export interface LegalDocument {
   readonly tags:          readonly string[];
   readonly summary:       string;
   readonly confidence:    number;              // 0.0–1.0
+  readonly fullText?:     string;
 }
 
 // ─── Registry aggregate ───────────────────────────────────────────────────────

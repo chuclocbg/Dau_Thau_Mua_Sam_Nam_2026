@@ -48,16 +48,16 @@ export class PrismaLegalDocumentRepository implements ILegalDocumentRepository {
       type: doc.type,
       issuer: doc.issuer,
       effectiveDate: doc.effectiveDate,
-      expiredDate: doc.expiredDate,
+      expiredDate: doc.expiredDate ?? null,
       status: doc.status,
-      supersededBy: doc.supersededBy,
-      replaces: [...doc.replaces],
+      supersededBy: doc.supersededBy ?? null,
+      replaces: doc.replaces !== undefined ? [...doc.replaces] : [],
       source: doc.source,
       priority: doc.priority,
       tags: [...doc.tags],
       summary: doc.summary,
       confidence: doc.confidence,
-      fullText: doc.fullText,
+      fullText: doc.fullText ?? null,
     };
     await prisma.legalDocument.upsert({
       where: { id: doc.id },
@@ -331,7 +331,7 @@ export class PrismaKeywordRepository implements IKeywordRepository {
 
   async listKeywords(domain?: string): Promise<readonly LegalKeyword[]> {
     const prisma = getPrismaClient();
-    const rows = await prisma.legalKeyword.findMany(domain ? { where: { domain } } : {});
+    const rows = await prisma.legalKeyword.findMany(domain ? { where: { domain } } : undefined);
     return rows as unknown as LegalKeyword[];
   }
 
