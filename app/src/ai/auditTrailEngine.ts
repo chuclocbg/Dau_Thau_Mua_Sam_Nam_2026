@@ -106,10 +106,10 @@ export function computeStageStatus(stageIndex: number, impactLevel: ImpactLevel)
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-function stageDetails(name: string, notification: UpdateNotification): string {
+function stageDetails(name: string, notification: UpdateNotification, oldDate: string, newDate: string): string {
   switch (name) {
     case 'Resolve versions':
-      return `Regulation versions resolved for ${notification.oldDate} → ${notification.newDate}`;
+      return `Regulation versions resolved for ${oldDate} → ${newDate}`;
     case 'Load snapshots':
       return `Snapshots loaded; ${notification.affectedAreas.length} area(s) affected`;
     case 'Compute diff':
@@ -145,7 +145,7 @@ export function buildAuditTrail(
     stages: STAGE_NAMES.map((name, i) => ({
       name,
       status:  computeStageStatus(i, impactLevel),
-      details: stageDetails(name, notification),
+      details: stageDetails(name, notification, oldDate, newDate),
     })),
     summary: SUMMARIES[impactLevel],
   };
