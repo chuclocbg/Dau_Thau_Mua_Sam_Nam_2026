@@ -21,8 +21,7 @@ export async function resolveDepartmentForAttachment(
   if (!ref) return null
 
   // moduleType may equal a department code or may be used to find the owning dept
-  const depts = await masterdata.departments.findAll()
-  return depts.find(d => d.code === ref.moduleType) ?? null
+  return await masterdata.departments.findByCode(ref.moduleType) ?? null
 }
 
 // ── Attachment reference lookup (called by frozen modules via id string) ───────

@@ -10,7 +10,9 @@ import type { Department } from '../masterdata/masterdataTypes.ts'
 
 function mockMasterData(departments: readonly Department[]): MasterDataRepositories {
   return {
-    departments: { findAll: async () => departments } as unknown as MasterDataRepositories['departments'],
+    departments: {
+      findByCode: async (code: string) => departments.find(d => d.code === code) ?? null,
+    } as unknown as MasterDataRepositories['departments'],
   } as unknown as MasterDataRepositories
 }
 

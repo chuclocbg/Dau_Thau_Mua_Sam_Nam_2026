@@ -26,8 +26,7 @@ export async function resolveDepartmentForNotification(
   masterdata: MasterDataRepositories,
 ): Promise<Department | null> {
   if (!notification.moduleType) return null
-  const depts = await masterdata.departments.findAll()
-  return depts.find(d => d.code === notification.moduleType) ?? null
+  return await masterdata.departments.findByCode(notification.moduleType) ?? null
 }
 
 // ── Event ingestion from a business module ────────────────────────────────────
