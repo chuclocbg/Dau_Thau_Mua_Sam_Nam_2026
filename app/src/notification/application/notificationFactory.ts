@@ -50,6 +50,7 @@ export function buildNotification(params: BuildNotificationParams): CreateNotifi
     batchId: params.batchId,
     ruleId: params.ruleId,
     status: 'QUEUED',
+    createdBy: params.createdBy,
   }
 }
 
