@@ -5,7 +5,7 @@ import { AuthError } from '../types/authTypes.ts'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function requireNonEmpty(value: string, field: string, code: Parameters<typeof AuthError>[0] = 'VALIDATION_FAILED'): void {
+function requireNonEmpty(value: string, field: string, code: ConstructorParameters<typeof AuthError>[0] = 'VALIDATION_FAILED'): void {
   if (!value || !value.trim()) throw new AuthError(code, field, `${field} is required`)
 }
 
