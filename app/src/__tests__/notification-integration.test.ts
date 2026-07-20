@@ -5,8 +5,8 @@ import {
 } from '../notification/integration/notificationIntegration.ts'
 import { buildMemoryNotificationRepositories } from '../notification/infrastructure/memoryNotificationRepositories.ts'
 import { buildNotification } from '../notification/application/notificationFactory.ts'
-import type { MasterDataRepositories } from '../../masterdata/masterdataRepository.ts'
-import type { Department } from '../../masterdata/masterdataTypes.ts'
+import type { MasterDataRepositories } from '../masterdata/masterdataRepository.ts'
+import type { Department } from '../masterdata/masterdataTypes.ts'
 
 function mockMasterData(departments: readonly Department[]): MasterDataRepositories {
   return {
