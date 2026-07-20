@@ -22,7 +22,7 @@ export async function computeChecksumHex(
       `Algorithm ${algorithm} cannot be computed by the platform. Provide a pre-computed value for legacy MD5.`,
     )
   }
-  const buffer = await crypto.subtle.digest(algo, data)
+  const buffer = await crypto.subtle.digest(algo, data as BufferSource)
   return Array.from(new Uint8Array(buffer))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
