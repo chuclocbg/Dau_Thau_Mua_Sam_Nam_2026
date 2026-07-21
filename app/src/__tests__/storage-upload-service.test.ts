@@ -236,6 +236,6 @@ describe('cleanupExpiredSessions', () => {
 // ── Helper ────────────────────────────────────────────────────────────────────
 
 async function computeSHA256(data: Uint8Array): Promise<string> {
-  const buffer = await crypto.subtle.digest('SHA-256', data)
+  const buffer = await crypto.subtle.digest('SHA-256', data as BufferSource)
   return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
