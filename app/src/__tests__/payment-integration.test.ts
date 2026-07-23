@@ -119,12 +119,12 @@ describe('acceptanceToPaymentBaseParams — amount', () => {
   it('amount is passed through', () => {
     const amount = createMoney(12_345_678n, 'VND');
     const p = acceptanceToPaymentBaseParams(sampleAcceptance, amount, 'u', 'D');
-    expect(p.amount.amount).toBe(12_345_678n);
+    expect(p.amount!.amount).toBe(12_345_678n);
   });
   it('amount currency preserved', () => {
     const amount = createMoney(5_000_000n, 'USD');
     const p = acceptanceToPaymentBaseParams(sampleAcceptance, amount, 'u', 'D');
-    expect(p.amount.currency).toBe('USD');
+    expect(p.amount!.currency).toBe('USD');
   });
   it('returns required fields', () => {
     const p = acceptanceToPaymentBaseParams(sampleAcceptance, createMoney(1n, 'VND'), 'u', 'D');
