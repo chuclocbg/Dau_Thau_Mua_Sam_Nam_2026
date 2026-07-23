@@ -85,7 +85,7 @@ function makeHighRisk(): RiskOutput {
     overallRisk:   'HIGH',
     riskMatrix:    [{
       severity:  'HIGH',
-      category:  'brand-locking',
+      category:  'legal',
       finding:   makeFinding(),
       likelihood: 4, impact: 4, riskScore: 16,
     }],
@@ -96,7 +96,7 @@ function makeHighRisk(): RiskOutput {
       estimatedImpact:   'Nguy cơ bị kiểm toán phát hiện vi phạm cao.',
     },
     mitigationPlan: [{
-      priority: 1, action: 'Chỉnh sửa HSYC.', responsible: '[Tổ chuyên gia]',
+      priority: 1, action: 'Chỉnh sửa HSYC.', responsible: '[Tổ chuyên gia]', riskCodes: [],
     }],
     legalBasis:     ['Điều 44 khoản 7 Luật Đấu thầu 22/2023/QH15'],
   };
