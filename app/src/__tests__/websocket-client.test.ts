@@ -12,6 +12,7 @@ import {
 // ─── Mock transport ───────────────────────────────────────────────────────────
 
 interface MockTransport extends WebSocketTransport {
+  readyState:  number;
   sentData:    (string | ArrayBuffer)[];
   closedWith:  { code?: number; reason?: string }[];
   simulateOpen():                                                  Promise<void>;
