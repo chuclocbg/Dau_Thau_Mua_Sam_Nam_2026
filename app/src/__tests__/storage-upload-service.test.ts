@@ -15,6 +15,12 @@ const auth: AuthContext = Object.freeze({
   approvalHierarchies: [],
   issuedAt: '2024-01-01T00:00:00Z',
   expiresAt: '2099-01-01T00:00:00Z',
+  username: 'user-1',
+  email: 'user-1@example.com',
+  displayName: 'Test User',
+  departmentId: 'dept-1',
+  activeDelegations: [],
+  metadata: {},
 })
 
 const bytes = (s: string) => new TextEncoder().encode(s)
