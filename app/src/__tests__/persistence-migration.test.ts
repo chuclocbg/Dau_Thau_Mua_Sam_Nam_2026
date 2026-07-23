@@ -443,7 +443,7 @@ describe('MigratingSessionStore', () => {
   it('MS-05: loadSession throws MigrationError(DOWNGRADE) for a future-version record', async () => {
     await inner.saveSession({ ...makeV1Session(), schemaVersion: 99 });
     await expect(store.loadSession('sess-001')).rejects.toBeInstanceOf(MigrationError);
-    const err = await store.loadSession('sess-001').catch((e) => e as MigrationError);
+    const err = (await store.loadSession('sess-001').catch((e) => e as MigrationError)) as MigrationError;
     expect(err.code).toBe('DOWNGRADE');
   });
 
