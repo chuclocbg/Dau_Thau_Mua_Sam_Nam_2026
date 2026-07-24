@@ -113,7 +113,7 @@ describe('validateRetentionPolicy', () => {
   const valid = {
     documentType: 'CONTRACT' as const,
     retentionDays: 3650,
-    legalBasis: [{ lawCode: 'LTA-2011', article: '10', description: 'Archive' }],
+    legalBasis: [{ document: 'LTA-2011', article: '10' }],
     isActive: true,
   }
 
