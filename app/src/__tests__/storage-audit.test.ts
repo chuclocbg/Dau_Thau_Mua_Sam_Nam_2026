@@ -23,8 +23,8 @@ describe('MemoryStorageAuditRepository', () => {
 
   it('does not expose update or delete methods', () => {
     const repo = new MemoryStorageAuditRepository()
-    expect((repo as Record<string, unknown>)['update']).toBeUndefined()
-    expect((repo as Record<string, unknown>)['delete']).toBeUndefined()
+    expect((repo as unknown as Record<string, unknown>)['update']).toBeUndefined()
+    expect((repo as unknown as Record<string, unknown>)['delete']).toBeUndefined()
   })
 
   it('count reflects total appended events', async () => {

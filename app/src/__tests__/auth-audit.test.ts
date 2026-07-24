@@ -19,8 +19,8 @@ describe('IAuditEventRepository (MemoryAuditEventRepository)', () => {
   })
 
   it('has no update or delete (append-only)', () => {
-    expect((repo as Record<string, unknown>)['update']).toBeUndefined()
-    expect((repo as Record<string, unknown>)['delete']).toBeUndefined()
+    expect((repo as unknown as Record<string, unknown>)['update']).toBeUndefined()
+    expect((repo as unknown as Record<string, unknown>)['delete']).toBeUndefined()
   })
 
   it('findById returns the appended event', async () => {
