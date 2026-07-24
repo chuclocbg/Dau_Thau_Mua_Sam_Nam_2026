@@ -66,7 +66,8 @@ describe('Reasoning domain types', () => {
       explanation: 'x', missingFields: [],
     }
     const threshold: LegalThresholdResult = {
-      thresholdItemId: 't-1', thresholdCode: 'OPEN_TENDER_GOODS_MIN', thresholdValue: 2_000_000_000n,
+      thresholdItemId: 't-1', thresholdCode: 'OPEN_TENDER_GOODS_MIN', description: 'OPEN_TENDER_GOODS_MIN',
+      thresholdValue: 2_000_000_000n,
       contextValue: 3_000_000_000n, operator: 'GT', passed: true, legalBasis: [],
     }
     expect(rule.status).toBe('PASS')
