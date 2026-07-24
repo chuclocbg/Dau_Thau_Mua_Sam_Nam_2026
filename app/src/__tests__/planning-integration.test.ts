@@ -50,7 +50,7 @@ async function seedMaster() {
   const repos = createMemoryMasterDataRepositories();
   await seedDefaultData(repos);
   // Add dept that matches our test plan's responsibleDepartment
-  await repos.departments.create({ code: 'PHONG-TC', name: 'Phòng Tài chính', isActive: true, isArchived: false });
+  await repos.departments.create({ code: 'PHONG-TC', name: 'Phòng Tài chính', isActive: true, isArchived: false, level: 1 });
   return repos;
 }
 
@@ -95,7 +95,7 @@ describe('PLI-02 validatePlanAgainstMasterData() catches unknown department', ()
   });
   it('archived department returns error', async () => {
     const masterRepos = await seedMaster();
-    await masterRepos.departments.create({ code: 'ARCHIVED-DEPT', name: 'Archived', isActive: false, isArchived: true });
+    await masterRepos.departments.create({ code: 'ARCHIVED-DEPT', name: 'Archived', isActive: false, isArchived: true, level: 1 });
     const plan = makePlan({ responsibleDepartment: 'ARCHIVED-DEPT' });
     const result = await validatePlanAgainstMasterData(plan, [makeRequest()], masterRepos);
     expect(result.valid).toBe(false);
