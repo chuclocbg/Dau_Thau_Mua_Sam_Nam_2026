@@ -132,9 +132,9 @@ export function createConfig(input: {
   readonly status?:       ConfigStatus;
   readonly priority?:     number;
   readonly expiredDate?:  string;
-  readonly metadata?:     Record<string, string>;
+  readonly metadata?:     Readonly<Record<string, string>>;
   readonly confidence?:   number;
-  readonly tags?:         string[];
+  readonly tags?:         readonly string[];
 }): GovernanceConfig {
   return {
     id:            input.id,
