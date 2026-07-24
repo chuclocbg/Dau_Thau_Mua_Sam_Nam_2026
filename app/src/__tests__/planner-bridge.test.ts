@@ -270,7 +270,7 @@ describe('PI-06 · mapPlannerOutputToWorkflowResult() — WorkflowResult fields'
   });
 
   it('PI-06-04: result.selectedDocumentIds contains at least one WORKFLOW_DOCUMENT_ID', () => {
-    const wfIds = [...WORKFLOW_DOCUMENT_IDS];
+    const wfIds: number[] = [...WORKFLOW_DOCUMENT_IDS];
     const hasOverlap = result.selectedDocumentIds.some(id => wfIds.includes(id));
     expect(hasOverlap).toBe(true);
   });
@@ -415,7 +415,7 @@ describe('PI-10 · source and traceId', () => {
 describe('PI-11 · Backward compatibility with WorkflowResult', () => {
   it('PI-11-01: selectedDocumentIds on success contains WORKFLOW_DOCUMENT_IDS', async () => {
     const result  = await runPlannerWorkflow(GOAL, YEAR, FIXED_TODAY);
-    const wfIds   = [...WORKFLOW_DOCUMENT_IDS];
+    const wfIds: number[] = [...WORKFLOW_DOCUMENT_IDS];
     const overlap = result.selectedDocumentIds.filter(id => wfIds.includes(id));
     expect(overlap.length).toBe(wfIds.length);
   });
