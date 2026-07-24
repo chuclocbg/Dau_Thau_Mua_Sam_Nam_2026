@@ -81,10 +81,10 @@ function makePkg(): ProcurementPackage {
     dateKhlcnt: '2026-01-10', dateKhlcntApprove: '2026-01-15',
     dateExpertEstablish: '2026-01-20', dateDocIssue: '2026-02-01',
     dateBidClose: '2026-02-10', dateEvaluate: '2026-02-15',
-    dateAppraise: '2026-02-20', dateResultApprove: '2026-02-25',
+    dateAppraise: '2026-02-20', dateResultProposal: '2026-02-22', dateResultApprove: '2026-02-25',
     dateContractSign: '2026-03-01', dateDelivery: '2026-03-15',
-    dateAcceptance: '2026-03-20', dateLiquidation: '2026-04-01',
-    contractType: 'lump_sum', packageType: 'goods_consumable',
+    dateAcceptance: '2026-03-20', dateLiquidation: '2026-04-01', dateAssetIncrease: '',
+    contractType: 'lump_sum', packageType: 'goods_consumable', contractDurationDays: 30,
     items: [{
       id: 'item-1', name: 'Vật tư văn phòng', unit: 'hộp', quantity: 2,
       unitPrice: 20_000_000, specs: 'Đạt tiêu chuẩn tối thiểu.',
