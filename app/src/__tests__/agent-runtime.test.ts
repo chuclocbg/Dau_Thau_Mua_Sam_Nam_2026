@@ -27,7 +27,7 @@ import type { ToolDefinition }           from '../providers/ToolRegistry';
 
 const BASE_RESPONSE: ProviderManagerResponse = {
   content:      'Hello from AI!',
-  providerId:   'mock-openai',
+  providerId:   'openai',
   providerType: 'openai',
   model:        'gpt-4o',
   usage:        { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
@@ -125,7 +125,7 @@ describe('AR1: run() basic success', () => {
   it('AR1-03: providerUsed is set from the provider response', async () => {
     const runtime = new AgentRuntime({ providerManager: makeMockManager() });
     const result  = await runtime.run('Hello');
-    expect(result.providerUsed).toBe('mock-openai');
+    expect(result.providerUsed).toBe('openai');
   });
 
   it('AR1-04: error field is absent on success', async () => {
