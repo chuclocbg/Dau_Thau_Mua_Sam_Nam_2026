@@ -82,7 +82,7 @@ describe('getSubgraph', () => {
     await graph.addEdge('a', 'b', KNOWLEDGE_RELATION_TYPES.REFERENCES)
     await graph.addEdge('b', 'c', KNOWLEDGE_RELATION_TYPES.REFERENCES)
     const sub = await graph.getSubgraph('a', 1)
-    expect(sub.nodes.sort()).toEqual(['a', 'b'])
+    expect([...sub.nodes].sort()).toEqual(['a', 'b'])
     expect(sub.edges).toHaveLength(1)
   })
 
@@ -90,7 +90,7 @@ describe('getSubgraph', () => {
     await graph.addEdge('a', 'b', KNOWLEDGE_RELATION_TYPES.REFERENCES)
     await graph.addEdge('b', 'c', KNOWLEDGE_RELATION_TYPES.REFERENCES)
     const sub = await graph.getSubgraph('a', 2)
-    expect(sub.nodes.sort()).toEqual(['a', 'b', 'c'])
+    expect([...sub.nodes].sort()).toEqual(['a', 'b', 'c'])
     expect(sub.edges).toHaveLength(2)
   })
 
@@ -105,7 +105,7 @@ describe('getSubgraph', () => {
     await graph.addEdge('a', 'b', KNOWLEDGE_RELATION_TYPES.REFERENCES)
     await graph.addEdge('b', 'a', KNOWLEDGE_RELATION_TYPES.REFERENCES)
     const sub = await graph.getSubgraph('a', 5)
-    expect(sub.nodes.sort()).toEqual(['a', 'b'])
+    expect([...sub.nodes].sort()).toEqual(['a', 'b'])
   })
 
   it('an isolated node has an empty subgraph beyond itself', async () => {
