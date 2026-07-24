@@ -124,7 +124,7 @@ describe('getRule / listActiveRules', () => {
 
   it('getRule returns the rule when found', async () => {
     const rule = await rules.registerRule({ eventType: 'X', templateCode: 'APPROVAL_NOTICE', channels: ['EMAIL'] })
-    expect((await rules.getRule(rule.id)).id).toBe(rule.id)
+    expect((await rules.getRule(rule.id))!.id).toBe(rule.id)
   })
 
   it('listActiveRules excludes inactive rules', async () => {
