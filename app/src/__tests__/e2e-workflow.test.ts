@@ -40,7 +40,6 @@ import type { SpecInput, SpecOutput }   from '../agents/SpecificationAgent';
 import type {
   DossierReviewInput,
   DossierReviewOutput,
-  CrossCheckIssue,
 } from '../agents/LegalReviewerAgent';
 import type { RiskInput, RiskOutput }   from '../agents/RiskAgent';
 import type { ChatInput, ChatOutput }   from '../agents/ChatAgent';
@@ -155,11 +154,13 @@ function makeCleanPkg(overrides: Partial<ProcurementPackage> = {}): ProcurementP
 
 function makeCleanDossier(findingOverrides: Partial<LegalFinding>[] = []): DossierReviewOutput {
   const findings: LegalFinding[] = findingOverrides.map((o, i) => ({
-    severity:    'LOW' as const,
-    category:    'missing-data',
-    field:       'test-field',
-    description: `Test finding ${i + 1}`,
-    legalBasis:  'Điều 44 Luật Đấu thầu 22/2023/QH15',
+    severity:       'LOW' as const,
+    code:           'LR-TEST',
+    category:       'missing-data',
+    field:          'test-field',
+    message:        `Test finding ${i + 1}`,
+    legalBasis:     'Điều 44 Luật Đấu thầu 22/2023/QH15',
+    recommendation: 'N/A',
     ...o,
   }));
   return {
@@ -528,7 +529,7 @@ describe('Group E6 — RiskAgent risk escalation', () => {
       dossierReview: makeCleanDossier([{
         severity:    'CRITICAL',
         category:    'brand-locking',
-        description: 'Yêu cầu kỹ thuật khóa thương hiệu — vi phạm Điều 44 khoản 7',
+        message:     'Yêu cầu kỹ thuật khóa thương hiệu — vi phạm Điều 44 khoản 7',
         legalBasis:  'Điều 44 khoản 7 Luật Đấu thầu 22/2023/QH15',
       }]),
     };
@@ -569,9 +570,9 @@ describe('Group E6 — RiskAgent risk escalation', () => {
     const input: RiskInput = {
       pkg: makeCleanPkg(),
       dossierReview: makeCleanDossier([
-        { severity: 'LOW',      category: 'missing-data',  description: 'LOW finding'      },
-        { severity: 'CRITICAL', category: 'brand-locking', description: 'CRITICAL finding' },
-        { severity: 'HIGH',     category: 'method-mismatch', description: 'HIGH finding'   },
+        { severity: 'LOW',      category: 'missing-data',  message: 'LOW finding'      },
+        { severity: 'CRITICAL', category: 'brand-locking', message: 'CRITICAL finding' },
+        { severity: 'HIGH',     category: 'method-mismatch', message: 'HIGH finding'   },
       ]),
     };
     const msg: AgentMessage = {
