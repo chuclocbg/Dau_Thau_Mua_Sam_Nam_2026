@@ -20,7 +20,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   generatePackageNumber, createPackage, updatePackage,
-  clonePackage, archivePackage, calculateTotals,
+  clonePackage, archivePackage,
 } from '../procurement/package/packageService';
 import { createMemoryPackageRepositories } from '../procurement/package/memoryPackageRepositories';
 import { PackageError } from '../procurement/package/packageTypes';
