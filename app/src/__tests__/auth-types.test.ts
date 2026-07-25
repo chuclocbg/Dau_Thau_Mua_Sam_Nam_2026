@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { User, Role, Permission, Session, DelegationGrant, ApprovalHierarchy, Policy, AuthContext, AccessDecision } from '../auth/types/authTypes.ts'
 import { AuthError, PERMISSION_SCOPES, POLICY_EFFECTS, STANDARD_RESOURCES, STANDARD_ACTIONS, AUTH_ERROR_CODES } from '../auth/types/authTypes.ts'
-import type { IAccessToken, IRefreshToken, TokenPair } from '../auth/types/tokenTypes.ts'
+import type { IAccessToken, TokenPair } from '../auth/types/tokenTypes.ts'
 import { TOKEN_TYPES } from '../auth/types/tokenTypes.ts'
 import { AUTH_PROVIDER_TYPES } from '../auth/types/providerTypes.ts'
 import { AUTH_AUDIT_EVENT_TYPES, AUDIT_OUTCOMES } from '../auth/types/auditTypes.ts'
@@ -252,7 +252,7 @@ describe('Audit types', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
     }
     // TypeScript will complain at compile time if updatedAt exists on the type
-    expect((e as Record<string, unknown>)['updatedAt']).toBeUndefined()
+    expect((e as unknown as Record<string, unknown>)['updatedAt']).toBeUndefined()
   })
 
   it('STANDARD_RESOURCES and STANDARD_ACTIONS are present', () => {
