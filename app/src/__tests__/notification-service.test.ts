@@ -59,7 +59,7 @@ describe('createNotification', () => {
       ],
       createdBy: 'tester',
     })
-    expect(n.channels.sort()).toEqual(['EMAIL', 'IN_APP'])
+    expect([...n.channels].sort()).toEqual(['EMAIL', 'IN_APP'])
   })
 
   it('rejects when there are no recipients', async () => {
