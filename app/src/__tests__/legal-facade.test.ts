@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LegalFacade, buildLegalFacade, legalFromAudit } from '../agents/LegalFacade';
+import { LegalFacade, legalFromAudit } from '../agents/LegalFacade';
 import { AuditTrail, buildAuditTrail }                   from '../agents/AuditTrail';
 import type { AuditRecord, AuditHistory }                from '../agents/AuditTrail';
 import { RecommendationEngine }                          from '../agents/RecommendationEngine';
@@ -119,24 +119,6 @@ function synHistory(opts: { records?: AuditRecord[] } = {}): AuditHistory {
 }
 
 // Factory functions — fresh facade per call, stateless engines shared below.
-const fwdTrail   = buildAuditTrail(FWD.last, FWD.cur);
-const sameTrail  = buildAuditTrail(SAME.last, SAME.cur);
-const mixedTrail = makeTrail({
-  status: 'READY', impactScope: 'BROAD', impactLevel: 'HIGH',
-  entries: [
-    { filename: 'KE_HOACH_LCNT',           priority: 2, required: true  },
-    { filename: 'HO_SO_YEU_CAU',           priority: 2, required: true  },
-    { filename: 'HO_SO_MOI_THAU',          priority: 2, required: true  },
-    { filename: 'DU_TOAN_MUA_SAM',         priority: 2, required: true  },
-    { filename: 'TO_TRINH_MUA_SAM',        priority: 4, required: false },
-    { filename: 'QUYET_DINH_PHE_DUYET',    priority: 4, required: false },
-    { filename: 'BIEN_BAN_THAM_DINH',      priority: 4, required: false },
-    { filename: 'QUYET_DINH_PHAN_CONG',    priority: 4, required: false },
-    { filename: 'BAO_CAO_DANH_GIA_HSDT',   priority: 4, required: false },
-    { filename: 'CHUNG_THU_THAM_DINH_GIA', priority: 4, required: false },
-  ],
-});
-
 // Fresh per test — avoids cross-test state leak.
 function fwdFacade()   { return new LegalFacade(buildAuditTrail(FWD.last, FWD.cur));   }
 function sameFacade()  { return new LegalFacade(buildAuditTrail(SAME.last, SAME.cur)); }
