@@ -21,18 +21,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   ServiceLocator,
-  type ServiceEntry,
-  type ServiceResult,
-  type ServiceError,
-  type ServiceErrorCode,
 } from '../providers/ServiceLocator';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function extractValue<T>(r: ServiceResult<T>): T {
-  if (!r.ok) throw new Error(`Expected ok result; got error: ${r.error.code}`);
-  return r.value;
-}
 
 // ─── SL1: Constructor / initial state ────────────────────────────────────────
 
