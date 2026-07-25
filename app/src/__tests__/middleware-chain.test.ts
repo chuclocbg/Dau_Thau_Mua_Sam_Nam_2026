@@ -22,18 +22,11 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   MiddlewareChain,
   type MiddlewareResult,
-  type MiddlewareError,
-  type MiddlewareErrorCode,
   type MiddlewareFn,
   type MiddlewareContext,
 } from '../providers/MiddlewareChain';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Middleware that calls next() immediately and does nothing else. */
-function passThrough(): MiddlewareFn {
-  return vi.fn(async (_ctx, next) => { await next(); });
-}
 
 /** Middleware that does NOT call next() — short-circuits the chain. */
 function shortCircuit(): MiddlewareFn {
