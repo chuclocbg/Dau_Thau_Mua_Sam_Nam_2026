@@ -17,8 +17,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ProviderManager, type ProviderManagerConfig } from '../providers/ProviderManager';
-import { ProviderRegistry, type ProviderEntry }        from '../providers/ProviderRegistry';
+import { ProviderManager }  from '../providers/ProviderManager';
+import { ProviderRegistry } from '../providers/ProviderRegistry';
 import { OpenAIProvider }  from '../providers/OpenAIProvider';
 import { ClaudeProvider }  from '../providers/ClaudeProvider';
 import { GeminiProvider }  from '../providers/GeminiProvider';
@@ -257,7 +257,6 @@ describe('PE: chat() error paths', () => {
   });
 
   it('PE-02: explicit providerId not registered → NO_PROVIDER', async () => {
-    const m = fullMgr('openai');
     // Ask for 'gemini' by an explicit providerId NOT in a separate registry
     const reg = new ProviderRegistry();
     reg.register({ id: 'openai', type: 'openai', name: 'OpenAI', provider: oai() });
