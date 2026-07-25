@@ -95,7 +95,7 @@ describe('graph integration — budget code hierarchy (new relation type ROLLS_U
     await provider.linkParentBudgetCode(child1.id, parent.id)
     await provider.linkParentBudgetCode(child2.id, parent.id)
     const children = await provider.getChildBudgetCodes(parent.id)
-    expect(children.sort()).toEqual([child1.id, child2.id].sort())
+    expect([...children].sort()).toEqual([child1.id, child2.id].sort())
   })
 
   it('a top-level code with no parent returns empty', async () => {
