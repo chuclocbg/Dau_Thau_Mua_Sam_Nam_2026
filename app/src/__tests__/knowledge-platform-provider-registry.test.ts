@@ -40,7 +40,7 @@ describe('listDomains / listProviders', () => {
   it('lists every registered domain', () => {
     registry.register(new FakeProvider('legal', 1))
     registry.register(new FakeProvider('risk', 4))
-    expect(registry.listDomains().sort()).toEqual(['legal', 'risk'])
+    expect([...registry.listDomains()].sort()).toEqual(['legal', 'risk'])
   })
 
   it('lists every registered provider object', () => {
