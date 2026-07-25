@@ -2,11 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   HttpInterceptor,
   type HttpRequest,
-  type HttpResponse,
   type HttpInterceptorEntry,
   type HttpInterceptorResult,
   type HttpHandler,
-  type HttpInterceptorErrorCode,
 } from '../providers/HttpInterceptor';
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
@@ -137,7 +135,7 @@ describe('HI3: Request interceptors', () => {
         return req;
       },
     });
-    await hi.execute(sampleRequest, async req => { order.push('handler'); return okResult('ok'); });
+    await hi.execute(sampleRequest, async _req => { order.push('handler'); return okResult('ok'); });
     expect(order).toEqual(['interceptor', 'handler']);
   });
 
@@ -147,10 +145,11 @@ describe('HI3: Request interceptors', () => {
     hi.addInterceptor({ request: async req => { received = req; return req; } });
     const input: HttpRequest = { url: '/u', method: 'POST', headers: { 'h': '1' }, body: { x: 1 }, meta: { k: 'v' } };
     await hi.execute(input, makeHandler(okResult('ok')));
-    expect(received?.url).toBe('/u');
-    expect(received?.method).toBe('POST');
-    expect(received?.headers['h']).toBe('1');
-    expect(received?.meta['k']).toBe('v');
+    const got = received as HttpRequest | null;
+    expect(got?.url).toBe('/u');
+    expect(got?.method).toBe('POST');
+    expect(got?.headers['h']).toBe('1');
+    expect(got?.meta['k']).toBe('v');
   });
 
   it('HI3-05: handler receives the modified request produced by the interceptor', async () => {
@@ -193,7 +192,7 @@ describe('HI4: Response interceptors', () => {
     hi.addInterceptor({
       response: async res => { await Promise.resolve(); order.push('response-interceptor'); return res; },
     });
-    await hi.execute(sampleRequest, async req => { order.push('handler'); return okResult('ok'); });
+    await hi.execute(sampleRequest, async _req => { order.push('handler'); return okResult('ok'); });
     expect(order).toEqual(['handler', 'response-interceptor']);
   });
 
@@ -272,7 +271,7 @@ describe('HI5: Execution order', () => {
       request:  async req => { order.push('req2'); return req; },
       response: async res => { order.push('res2'); return res; },
     });
-    await hi.execute(sampleRequest, async req => { order.push('handler'); return okResult('ok'); });
+    await hi.execute(sampleRequest, async _req => { order.push('handler'); return okResult('ok'); });
     expect(order).toEqual(['req1', 'req2', 'handler', 'res1', 'res2']);
   });
 });
