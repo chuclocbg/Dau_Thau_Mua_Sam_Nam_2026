@@ -356,7 +356,7 @@ describe('RM9: defensive copies', () => {
     const result = await mgr.execute(() => { throw new Error('fail'); });
     if (result.ok) throw new Error('expected error');
     // Tamper with the returned attempt object
-    (result.error.attempts![0] as Record<string, unknown>)['attempt'] = 999;
+    (result.error.attempts![0] as unknown as Record<string, unknown>)['attempt'] = 999;
     // retryCount is based on internal state, not the returned attempts array
     expect(mgr.retryCount()).toBe(1);
   });
