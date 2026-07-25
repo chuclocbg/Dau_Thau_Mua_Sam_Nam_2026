@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { formatConversationResponse } from '../reasoning/application/outputFormatter.ts'
 import { buildExplanation, determineHumanReview } from '../reasoning/application/answerComposer.ts'
 import type { ReasoningAnswerResult } from '../reasoning/domain/reasoningAnswerTypes.ts'
-import type { DetectedConflict, FormattedCitation } from '../reasoning/domain/reasoningTypes.ts'
+import type { DetectedConflict } from '../reasoning/domain/reasoningTypes.ts'
 
 // Parity tests — the load-bearing safety net for this milestone's "reuse existing code, never
 // duplicate algorithms" instruction. buildExplanation() and determineHumanReview() (Batch A,
@@ -10,15 +10,6 @@ import type { DetectedConflict, FormattedCitation } from '../reasoning/domain/re
 // (ReasoningAnswerResult carries neither). These tests prove the formatter's markdown/warnings
 // are byte-for-byte derived from calling those same functions directly with the same inputs —
 // not an independently reimplemented approximation.
-
-function citation(overrides: Partial<FormattedCitation> = {}): FormattedCitation {
-  return {
-    citationId: 'citation-1', itemId: 'item-1', documentSymbol: 'X/2025',
-    full: 'Luật X/2025', short: 'X/2025', inline: '(Luật X/2025)',
-    role: 'PRIMARY_BASIS', isNormative: true, isPrimary: true,
-    ...overrides,
-  }
-}
 
 function answer(overrides: Partial<ReasoningAnswerResult> = {}): ReasoningAnswerResult {
   return {
