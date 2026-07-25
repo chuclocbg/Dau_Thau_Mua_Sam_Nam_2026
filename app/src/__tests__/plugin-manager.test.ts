@@ -22,21 +22,7 @@ import { describe, it, expect } from 'vitest';
 import {
   PluginManager,
   type PluginInfo,
-  type PluginResult,
-  type PluginError,
-  type PluginErrorCode,
 } from '../providers/PluginManager';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function makePlugin(name: string, extras: Partial<PluginInfo> = {}): PluginInfo {
-  return { name, ...extras };
-}
-
-function extractValue<T>(r: PluginResult<T>): T {
-  if (!r.ok) throw new Error(`Expected ok result; got error: ${r.error.code}`);
-  return r.value;
-}
 
 // ─── PM1: Constructor / initial state ────────────────────────────────────────
 
@@ -439,7 +425,7 @@ describe('PM11: Defensive copies (register / get)', () => {
     pm.register({ name: 'p', version: '1.0' });
     const items = pm.list();
     // Mutate the clone returned by list()
-    (items[0] as Record<string, unknown>)['version'] = '9.9';
+    (items[0] as unknown as Record<string, unknown>)['version'] = '9.9';
     // get() must still return the original stored version
     const r = pm.get('p');
     if (r.ok) expect(r.value.version).toBe('1.0');
