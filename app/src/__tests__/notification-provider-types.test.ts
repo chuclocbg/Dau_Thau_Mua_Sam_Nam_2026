@@ -28,7 +28,7 @@ describe('createProviderRegistry', () => {
     const registry = createProviderRegistry()
     registry.register(new MockNotificationProvider('EMAIL', 'smtp'))
     registry.register(new MockNotificationProvider('SMS', 'sms_gateway'))
-    expect(registry.listChannels().sort()).toEqual(['EMAIL', 'SMS'])
+    expect([...registry.listChannels()].sort()).toEqual(['EMAIL', 'SMS'])
   })
 
   it('overwrites a previously registered provider for the same channel', () => {
