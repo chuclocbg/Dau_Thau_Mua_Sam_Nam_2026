@@ -20,7 +20,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   PACKAGE_STATUSES, PARTICIPANT_ROLES,
-  isPackageStatus, isParticipantRole, PackageError,
+  isPackageStatus, PackageError,
 } from '../procurement/package/packageTypes';
 import type {
   ProcurementPackage, PackageItem, PackageBudget, PackageAttachment, PackageHistory,
