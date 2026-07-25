@@ -23,7 +23,7 @@ const doc24 = documentTemplates.find(d => d.id === 24)!;
 const extractDocXml = async (docConfig: typeof doc24, pkg: typeof pkgS1Wins): Promise<string> => {
   const docxDoc = docConfig.getDocx(pkg, 'COMPETITIVE_SHOPPING');
   const buffer = await Packer.toBuffer(docxDoc);
-  const zip = await JSZip.loadAsync(buffer as ArrayBuffer);
+  const zip = await JSZip.loadAsync(buffer);
   const file = zip.file('word/document.xml');
   if (!file) throw new Error('word/document.xml not found in DOCX');
   return file.async('string');
