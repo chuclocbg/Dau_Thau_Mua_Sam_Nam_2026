@@ -106,9 +106,10 @@ function makePkg(overrides: Partial<ProcurementPackage> = {}): ProcurementPackag
     dateKhlcnt: '2026-01-10', dateKhlcntApprove: '2026-01-15',
     dateExpertEstablish: '2026-01-20', dateDocIssue: '2026-02-01',
     dateBidClose: '2026-02-10', dateEvaluate: '2026-02-15',
-    dateAppraise: '2026-02-20', dateResultApprove: '2026-02-25',
+    dateAppraise: '2026-02-20', dateResultProposal: '2026-02-22', dateResultApprove: '2026-02-25',
     dateContractSign: '2026-03-01', dateDelivery: '2026-03-15',
-    dateAcceptance: '2026-03-20', dateLiquidation: '2026-04-01',
+    dateAcceptance: '2026-03-20', dateLiquidation: '2026-04-01', dateAssetIncrease: '2026-04-03',
+    contractDurationDays: 14,
     contractType: 'lump_sum',
     packageType: 'goods_consumable',
     items: [{
