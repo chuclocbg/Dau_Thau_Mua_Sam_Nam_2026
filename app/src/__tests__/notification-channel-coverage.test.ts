@@ -72,7 +72,7 @@ describe('NotificationService edge cases', () => {
     })
     const recipients = await repos.recipients.findByNotificationId(n.id)
     expect(recipients).toHaveLength(3)
-    expect(n.channels.sort()).toEqual(['EMAIL', 'SMS', 'WEBHOOK'])
+    expect([...n.channels].sort()).toEqual(['EMAIL', 'SMS', 'WEBHOOK'])
   })
 })
 
