@@ -44,7 +44,6 @@ import type { AISuggestion }            from '../ai/packageGenerator';
 import type { PlannerOutput, ProcurementCalendar } from '../agents/PlannerAgent';
 import type { DossierReviewInput, DossierReviewOutput } from '../agents/LegalReviewerAgent';
 import type { RiskInput, RiskOutput }   from '../agents/RiskAgent';
-import type { LegalFinding }            from '../ai/legalReviewer';
 import type { ProcurementPackage }      from '../demoData';
 
 // ─── Registry factories ───────────────────────────────────────────────────────
@@ -166,25 +165,6 @@ function makeCleanPkg(overrides: Partial<ProcurementPackage> = {}): ProcurementP
       supplier3Price:  98_000_000,
     }],
     ...overrides,
-  };
-}
-
-function makeDossier(findingOverrides: Partial<LegalFinding>[] = []): DossierReviewOutput {
-  const findings: LegalFinding[] = findingOverrides.map((o, i) => ({
-    severity:    'LOW' as const,
-    category:    'missing-data',
-    field:       `field-${i}`,
-    description: `Finding ${i + 1}`,
-    legalBasis:  'Điều 44 Luật Đấu thầu 22/2023/QH15',
-    ...o,
-  }));
-  return {
-    findings,
-    crossCheckIssues: [],
-    complianceScore:  findings.some(f => f.severity === 'CRITICAL') ? 0 : 100,
-    auditReadiness:   findings.some(f => f.severity === 'CRITICAL') ? 'not-ready' : 'ready',
-    recommendations:  [],
-    legalBasis:       ['Điều 38-41 Luật Đấu thầu 22/2023/QH15 — lập và phê duyệt KHLCNT'],
   };
 }
 
