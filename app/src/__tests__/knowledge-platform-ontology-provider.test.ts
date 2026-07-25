@@ -74,7 +74,7 @@ describe('broader/narrower concept hierarchy — a brand-new relation type (BROA
     await provider.linkBroaderConcept(openTender.id, procurement.id)
     await provider.linkBroaderConcept(limitedTender.id, procurement.id)
     const narrower = await provider.getNarrowerConcepts(procurement.id)
-    expect(narrower.sort()).toEqual([limitedTender.id, openTender.id].sort())
+    expect([...narrower].sort()).toEqual([limitedTender.id, openTender.id].sort())
   })
 
   it('a concept with no hierarchy links returns empty on both sides', async () => {
