@@ -5,8 +5,7 @@ import {
 } from '../payment/paymentLegalRule';
 import type { PaymentLegalRule, PaymentRuleContext } from '../payment/paymentLegalRule';
 import {
-  PAYMENT_LEGAL_RULES, ADVANCE_RATE_RULES, RETENTION_RATE_RULES,
-  TREASURY_THRESHOLD_RULES, PAYMENT_DEADLINE_RULES,
+  PAYMENT_LEGAL_RULES, ADVANCE_RATE_RULES,
 } from '../payment/paymentRuleRegistry';
 import { createLegalBasis } from '../shared/financial/financialFactory';
 
