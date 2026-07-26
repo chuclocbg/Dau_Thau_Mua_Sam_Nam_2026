@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ResultFormatter, buildFormatter, formatFromExecution } from '../agents/ResultFormatter';
+import { ResultFormatter } from '../agents/ResultFormatter';
 import { QueryExecutor, buildExecutor }                         from '../agents/QueryExecutor';
 import { QueryPlanner }                                         from '../agents/QueryPlanner';
 import { SearchEngine }                                         from '../agents/SearchEngine';
