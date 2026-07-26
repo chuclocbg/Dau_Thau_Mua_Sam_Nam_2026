@@ -22,8 +22,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   HookManager,
   type HookResult,
-  type HookError,
-  type HookErrorCode,
   type HookFn,
 } from '../providers/HookManager';
 
