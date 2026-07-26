@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { QueryExecutor, buildExecutor }             from '../agents/QueryExecutor';
+import { QueryExecutor }                            from '../agents/QueryExecutor';
 import { QueryPlanner, buildPlanner }               from '../agents/QueryPlanner';
-import { SearchEngine, buildEngine }                from '../agents/SearchEngine';
+import { SearchEngine }                             from '../agents/SearchEngine';
 import type { QueryDescriptor, QueryResult }        from '../agents/QueryPlanner';
 import type { RegistryEntry }                       from '../agents/DocumentRegistry';
 import type { ImpactScope, ImpactLevel }            from '../agents/ImpactAnalyzer';
