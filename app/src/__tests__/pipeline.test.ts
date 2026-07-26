@@ -22,17 +22,9 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   Pipeline,
   type PipelineResult,
-  type PipelineError,
-  type PipelineErrorCode,
 } from '../providers/Pipeline';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function makeStage(
-  transform: (v: unknown) => unknown = (v) => v,
-): (v: unknown) => unknown {
-  return vi.fn(transform);
-}
 
 function makeAsyncStage(
   transform: (v: unknown) => unknown = (v) => v,
