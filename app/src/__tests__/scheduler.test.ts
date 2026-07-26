@@ -22,8 +22,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   Scheduler,
   type SchedulerResult,
-  type SchedulerError,
-  type SchedulerErrorCode,
 } from '../providers/Scheduler';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
