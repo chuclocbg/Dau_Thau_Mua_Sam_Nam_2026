@@ -106,10 +106,6 @@ const SYMBOL_RE = /(\d+)\/(\d{4})\/([A-ZĐÁÂÊÔƠƯ0-9][\w\-ĐÁÂÊÔƠƯđ�
 
 // "Điều 43. Title text" or "Điều 43 Title text"
 const ARTICLE_RE  = /^Điều\s+(\d+)\.?\s*(.*)$/m;
-const ARTICLE_SPLIT_RE = /(?=^Điều\s+\d+)/m;
-
-// "Chương I" or "CHƯƠNG II" + title on next line or same line
-const CHAPTER_RE = /^(?:Chương|CHƯƠNG)\s+([IVX\d]+)\s*(.*?)$/m;
 
 // "Phụ lục" or "PHỤ LỤC"
 const APPENDIX_RE = /(?:Phụ\s+lục|PHỤ\s+LỤC)\s*([IVX\d]*)\s*(.*?)$/m;
