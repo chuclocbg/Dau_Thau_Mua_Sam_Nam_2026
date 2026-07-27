@@ -6,7 +6,7 @@
  * without modifying any frozen files.
  */
 
-import type { ProcurementPackage, PackageValidationResult } from './packageTypes';
+import type { ProcurementPackage } from './packageTypes';
 import type { PackageRepositories } from './packageRepository';
 import type { MasterDataRepositories } from '../../masterdata/masterdataRepository';
 import type { ProcurementDecision, ProcurementCase } from '../domain/procurementTypes';
