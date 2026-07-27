@@ -26,6 +26,7 @@ export function collectEvidence(
   appliedArticles: readonly AppliedArticle[], ruleResults: readonly LegalRuleResult[],
 ): EvidenceCollectionResult {
   const primaryArticles = appliedArticles.filter(a => a.role === 'PRIMARY_BASIS')
+  const backingArticleIds = new Set(appliedArticles.map(a => a.itemId))
 
   const missingEvidence: MissingEvidence[] = []
   const warnings: ReasoningWarning[] = []
