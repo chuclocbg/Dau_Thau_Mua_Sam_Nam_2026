@@ -49,7 +49,6 @@ import {
   createConversationContext,
   createActiveCase,
   type ActiveCase,
-  type ApprovalStatus,
   type GovernanceSession,
   type GovernanceWorkspace,
   type SessionStatus,
