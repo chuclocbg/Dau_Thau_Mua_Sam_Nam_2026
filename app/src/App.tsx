@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
-import { 
-  FileText, Download, Play, Plus, Trash2, AlertTriangle, 
-  CheckCircle, Layers, Calendar, DollarSign, FileCheck, Info
+import {
+  FileText, Download, Plus, Trash2, AlertTriangle,
+  Layers, Calendar, FileCheck, Info
 } from 'lucide-react';
 import { demoPackages, ProcurementPackage, ProcurementItem } from './demoData';
 import {
