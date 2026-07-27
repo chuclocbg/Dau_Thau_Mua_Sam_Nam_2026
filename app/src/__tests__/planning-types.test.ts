@@ -26,7 +26,7 @@ import {
 } from '../procurement/planning/planningTypes';
 import type {
   ProcurementRequest, ProcurementPlan, ProcurementNeed,
-  FundingAllocation, PackageProposal, ProcurementDemand, AnnualProcurementPlan,
+  FundingAllocation, PackageProposal,
 } from '../procurement/planning/planningTypes';
 
 // ─── PL-01: REQUEST_STATUSES ──────────────────────────────────────────────────
