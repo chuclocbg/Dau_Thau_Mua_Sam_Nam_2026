@@ -7,8 +7,8 @@
 import { describe, it, expect } from 'vitest';
 import { renderToString }       from 'react-dom/server';
 import React                    from 'react';
-import StepTimeline, { type WorkflowStep, type StepTimelineProps } from '../components/StepTimeline';
-import WorkflowPanel, { type WorkflowPanelProps }                  from '../components/WorkflowPanel';
+import StepTimeline, { type WorkflowStep } from '../components/StepTimeline';
+import WorkflowPanel                       from '../components/WorkflowPanel';
 import type { AgentSession, UserQuestion }                          from '../agents/AutonomousAgent';
 import type { WorkflowState }                                       from '../agents/AutonomousAgent';
 
