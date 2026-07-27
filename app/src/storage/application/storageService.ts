@@ -1,5 +1,5 @@
 import type { AuthContext } from '../../auth/index.ts'
-import type { IStorageProvider, StorageProviders } from '../types/providerTypes.ts'
+import type { StorageProviders } from '../types/providerTypes.ts'
 import type {
   ObjectMetadata, AttachmentReference, StoredObject, StorageVersion,
   SignedUrl, VirusScanResult, ListOptions, ObjectListing,
