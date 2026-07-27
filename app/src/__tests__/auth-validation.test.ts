@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { AuthError } from '../auth/types/authTypes.ts'
+import type { PasswordCredentials, TokenCredentials } from '../auth/types/authTypes.ts'
 import {
   validateCredentials, validateUser, validateRole, validatePermission,
   validateDelegation, validatePolicy, validateApprovalHierarchy,
@@ -16,7 +17,7 @@ const legalBasis = [{
 
 describe('validateCredentials', () => {
   it('passes for valid password credentials', () => {
-    expect(() => validateCredentials({ credentialType: 'password', username: 'alice', password: 'secret' })).not.toThrow()
+    expect(() => validateCredentials({ credentialType: 'password', username: 'alice', password: 'secret' } as PasswordCredentials)).not.toThrow()
   })
 
   it('throws when credentialType is empty', () => {
@@ -36,7 +37,7 @@ describe('validateCredentials', () => {
   })
 
   it('passes for valid token credentials', () => {
-    expect(() => validateCredentials({ credentialType: 'token', token: 'abc123' })).not.toThrow()
+    expect(() => validateCredentials({ credentialType: 'token', token: 'abc123' } as TokenCredentials)).not.toThrow()
   })
 })
 
