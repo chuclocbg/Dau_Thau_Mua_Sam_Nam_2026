@@ -1,5 +1,5 @@
 import type { RetentionPolicy, UploadSession, AttachmentReference } from '../types/storageTypes.ts'
-import { StorageError, CHECKSUM_ALGORITHMS, UPLOAD_STATUSES, MAX_FILE_SIZE_BYTES, MIN_FILE_SIZE_BYTES } from '../types/storageTypes.ts'
+import { StorageError, CHECKSUM_ALGORITHMS, MAX_FILE_SIZE_BYTES, MIN_FILE_SIZE_BYTES } from '../types/storageTypes.ts'
 import type { InitiateUploadParams } from '../types/providerTypes.ts'
 import { isAllowedMimeType, isValidDocumentType, sanitizeFilename } from '../domain/attachment.ts'
 import { isValidChecksumFormat } from '../domain/checksum.ts'
