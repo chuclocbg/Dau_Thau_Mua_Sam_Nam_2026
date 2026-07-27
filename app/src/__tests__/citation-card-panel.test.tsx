@@ -15,7 +15,6 @@
 
 import { describe, it, expect }   from 'vitest';
 import { renderToString }         from 'react-dom/server';
-import React                      from 'react';
 
 import CitationCardPanel, { groupCitations } from '../components/CitationCardPanel';
 import AgentOutputPanel                      from '../components/AgentOutputPanel';
@@ -27,7 +26,6 @@ const LUAT_1   = 'Điều 38-41 Luật Đấu thầu 22/2023/QH15 — lập và 
 const LUAT_2   = 'Khoản 1 Điều 10 Luật Đấu thầu 22/2023/QH15 — nguyên tắc cạnh tranh';
 const LUAT_3   = 'Điều 62 Luật Đấu thầu 22/2023/QH15 — loại hợp đồng';
 const ND_1     = 'Điều 81 Nghị định 214/2025/NĐ-CP — khoảng cách thời gian tối thiểu';
-const ND_2     = 'Nghị định 214/2025/NĐ-CP Điều 24 — ngưỡng và phương thức lựa chọn';
 const TT_1     = 'Thông tư 79/2025/TT-BTC Điều 5 — chứng từ thanh toán';
 
 const SNAPSHOT_CITATIONS = [LUAT_1, ND_1, LUAT_2];
