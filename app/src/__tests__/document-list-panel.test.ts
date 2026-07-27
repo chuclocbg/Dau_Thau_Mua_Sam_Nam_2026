@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DocumentListPanel, buildPanel, renderPanel } from '../agents/DocumentListPanel';
-import { UiIntegrationLayer, buildUiLayer }           from '../agents/UiIntegrationLayer';
+import { DocumentListPanel, buildPanel }              from '../agents/DocumentListPanel';
+import { UiIntegrationLayer }                         from '../agents/UiIntegrationLayer';
 import { PipelineOrchestrator }                        from '../agents/PipelineOrchestrator';
 import { ManifestSerializer }                          from '../agents/ManifestSerializer';
 import { DocumentManifest }                            from '../agents/DocumentManifest';
