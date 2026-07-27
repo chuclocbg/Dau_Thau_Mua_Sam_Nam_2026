@@ -1,7 +1,7 @@
 import type {
   ObjectMetadata, StoredObject, StorageVersion, SignedUrl,
   ListOptions, ObjectListing, VirusScanResult, StorageProviderType,
-  UploadSession, ChecksumAlgorithm,
+  ChecksumAlgorithm,
 } from './storageTypes.ts'
 
 // ── IStorageProvider — low-level object store ─────────────────────────────────
