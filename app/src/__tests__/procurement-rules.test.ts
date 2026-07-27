@@ -26,7 +26,6 @@ import {
   THRESHOLD_RULES,
   METHOD_RULES,
   EXCEPTION_RULES,
-  CLASSIFICATION_RULES,
 } from '../procurement/rules/procurementRules';
 import type { ProcurementCase, ProcurementRuleSpec } from '../procurement/domain/procurementTypes';
 
@@ -42,7 +41,6 @@ const SMALL_CASE: ProcurementCase = { ...BASE_CASE, estimatedValue: 30_000_000 }
 const LARGE_CASE: ProcurementCase = { ...BASE_CASE, estimatedValue: 500_000_000 };
 const URGENT_CASE: ProcurementCase = { ...BASE_CASE, estimatedValue: 2_000_000_000, isUrgent: true };
 const CONSTRUCTION_SMALL: ProcurementCase = { ...BASE_CASE, packageType: 'CONSTRUCTION', estimatedValue: 80_000_000 };
-const CONSTRUCTION_MED:   ProcurementCase = { ...BASE_CASE, packageType: 'CONSTRUCTION', estimatedValue: 300_000_000 };
 const CONSULTING_SMALL:   ProcurementCase = { ...BASE_CASE, packageType: 'CONSULTING', estimatedValue: 30_000_000 };
 
 // ─── PR-01: testCondition — LT / LTE ─────────────────────────────────────────
