@@ -4,7 +4,7 @@
 
 import type { FundSource, BudgetYear } from '../../masterdata/masterdataTypes';
 import type { LegalReference as SchemaLegalReference } from '../../legal/legalSchema';
-import type { Money, CurrencyCode } from './money';
+import type { Money } from './money';
 import { createMoney } from './money';
 import type { FundingSource } from './fundingSource';
 import type { LegalBasis } from './financialFactory';
