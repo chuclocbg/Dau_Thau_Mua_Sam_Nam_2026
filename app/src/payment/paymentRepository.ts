@@ -1,7 +1,7 @@
 import type { IBaseRepository } from '../shared/repository/IBaseRepository';
 import type {
-  PaymentRequest, Payment, PaymentInstallment, PaymentBatch,
-  PaymentHistoryEntry, PaymentDocument, TreasurySubmission, PaymentAudit,
+  PaymentRequest, Payment, PaymentInstallment,
+  PaymentHistoryEntry, PaymentDocument, TreasurySubmission,
   PaymentStatus, PaymentType,
 } from './paymentTypes';
 
