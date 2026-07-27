@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { AuthError } from '../auth/types/authTypes.ts'
+import { describe, it, expect } from 'vitest'
 import { buildMemoryAuthRepositories } from '../auth/infrastructure/memoryAuthRepositories.ts'
 import {
   createDelegation, revokeDelegation, getActiveDelegations, validateDelegationChain,
