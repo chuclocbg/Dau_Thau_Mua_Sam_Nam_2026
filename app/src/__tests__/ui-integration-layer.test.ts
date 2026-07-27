@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { UiIntegrationLayer, buildUiLayer, viewFromSerialized } from '../agents/UiIntegrationLayer';
-import { PipelineOrchestrator, buildOrchestrator }              from '../agents/PipelineOrchestrator';
+import { UiIntegrationLayer, buildUiLayer }        from '../agents/UiIntegrationLayer';
+import { PipelineOrchestrator }                    from '../agents/PipelineOrchestrator';
 import { ManifestSerializer }                                   from '../agents/ManifestSerializer';
 import { DocumentManifest }                                     from '../agents/DocumentManifest';
 import { ResultFormatter }                                      from '../agents/ResultFormatter';
