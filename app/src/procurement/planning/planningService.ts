@@ -1,6 +1,6 @@
 import type {
   ProcurementRequest, ProcurementPlan, FundingAllocation,
-  PackageProposal, CreateRequestParams, SplitRequestPart,
+  CreateRequestParams, SplitRequestPart,
   PlanningValidationResult, FundingSummary,
 } from './planningTypes';
 import { PlanningError } from './planningTypes';
