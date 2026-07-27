@@ -1,5 +1,5 @@
 import type { Money } from './money';
-import { FinancialError, multiplyMoney, compareMoney } from './money';
+import { FinancialError, multiplyMoney } from './money';
 
 export type GuaranteeType   = 'ADVANCE' | 'PERFORMANCE' | 'WARRANTY';
 export type GuaranteeStatus = 'ACTIVE' | 'EXPIRED' | 'RELEASED' | 'FORFEITED';
