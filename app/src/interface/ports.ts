@@ -27,7 +27,6 @@ import type { WorkflowInstance }  from '../legal/workflowOrchestrator';
 import type { LegalDocument }     from '../legal/legalRegistry';
 import type { GovernanceConfig }  from '../legal/governanceConfig';
 import type { RuleResult }        from '../legal/governanceRuleEngine';
-import type { ImpactReport }      from '../legal/governanceImpactEngine';
 import type {
   ProcurementService,
   ProcurementStatus,
@@ -38,7 +37,6 @@ import type { AuditService }            from '../application/auditService';
 import type {
   DashboardService,
   DashboardSummary,
-  LegalSummary,
 } from '../application/dashboardService';
 import type { ConfigurationService }    from '../application/configurationService';
 
