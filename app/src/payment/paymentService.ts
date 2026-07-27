@@ -10,10 +10,9 @@
  * All validation is legal-rule-driven — no hardcoded limits.
  */
 
-import type { LegalBasis } from '../shared/financial/financialFactory';
 import { PROCUREMENT_LEGAL_BASIS } from '../shared/financial/financialFactory';
 import type {
-  PaymentRequest, Payment, PaymentDocument, PaymentSummary,
+  PaymentRequest, Payment, PaymentDocument,
   CreatePaymentRequestParams, AddAttachmentParams,
   PaymentStatus, PaymentType,
 } from './paymentTypes';
@@ -24,7 +23,7 @@ import type {
 } from './paymentRepository';
 import {
   buildPaymentRequest, buildPayment, buildDocument,
-  buildPaymentRequestCode, buildPaymentNumber, buildPaymentSummary,
+  buildPaymentRequestCode, buildPaymentNumber,
 } from './paymentFactory';
 import { validateCreatePaymentRequestParams, validateStatusTransition } from './paymentValidation';
 import { recordPaymentAction } from './paymentHistoryService';
