@@ -114,15 +114,6 @@ function claudeSseResp(content: string): Response {
   return new Response(body, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
 }
 
-function geminiSseResp(content: string): Response {
-  const enc = new TextEncoder();
-  const lines = [
-    `data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: content }], role: 'model' }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 1, totalTokenCount: 6 }, modelVersion: 'gemini-2.5-pro' })}\n`,
-  ];
-  const body = new ReadableStream<Uint8Array>({ start(ctrl) { for (const l of lines) ctrl.enqueue(enc.encode(l)); ctrl.close(); } });
-  return new Response(body, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
-}
-
 // ─── Manager factory ──────────────────────────────────────────────────────────
 
 interface RegSetup {
@@ -166,7 +157,6 @@ type MetaChunk = Extract<StreamChunk, { event: 'meta' }>;
 
 const NO_DELAY = { retryDelayMs: 0 } as const;
 const U1 = { role: 'user' as const, content: 'Câu hỏi 1' };
-const U2 = { role: 'user' as const, content: 'Câu hỏi 2' };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FB1: RetryPolicy standalone
