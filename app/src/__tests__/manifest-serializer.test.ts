@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ManifestSerializer, buildSerializer, serializeManifest } from '../agents/ManifestSerializer';
+import { ManifestSerializer, buildSerializer }                    from '../agents/ManifestSerializer';
 import type { ManifestJson }                                       from '../agents/ManifestSerializer';
-import { DocumentManifest, buildManifest }                        from '../agents/DocumentManifest';
+import { DocumentManifest }                                       from '../agents/DocumentManifest';
 import { ResultFormatter }                                        from '../agents/ResultFormatter';
 import { QueryExecutor }                                          from '../agents/QueryExecutor';
 import { QueryPlanner }                                           from '../agents/QueryPlanner';
