@@ -1,6 +1,6 @@
 import type { AuthContext } from '../../auth/index.ts'
 import type { StorageProviders, InitiateUploadParams, AppendChunkParams, CompleteUploadParams } from '../types/providerTypes.ts'
-import type { UploadSession, StoredObject } from '../types/storageTypes.ts'
+import type { UploadSession } from '../types/storageTypes.ts'
 import { StorageError, MAX_CHUNK_SIZE_BYTES } from '../types/storageTypes.ts'
 import type { StorageRepositories } from '../infrastructure/storageRepositories.ts'
 import type { StorageAuditEvent } from '../types/auditTypes.ts'
