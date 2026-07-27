@@ -1,5 +1,5 @@
 import type { Money } from './money';
-import { FinancialError, isPositiveMoney, compareMoney } from './money';
+import { FinancialError, isPositiveMoney } from './money';
 import { SUPPORTED_CURRENCIES } from './currency';
 import { validateRetentionRate } from './retentionMoney';
 import { validateGuaranteeRate } from './guarantee';
