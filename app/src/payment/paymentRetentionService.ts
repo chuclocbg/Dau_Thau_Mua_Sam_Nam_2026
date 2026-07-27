@@ -6,7 +6,7 @@
  */
 
 import type { Money } from '../shared/financial/money';
-import { multiplyMoney, compareMoney } from '../shared/financial/money';
+import { multiplyMoney } from '../shared/financial/money';
 import type { LegalBasis } from '../shared/financial/financialFactory';
 import type { PaymentRequest, CreatePaymentRequestParams } from './paymentTypes';
 import { PaymentError } from './paymentTypes';
