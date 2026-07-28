@@ -31,7 +31,6 @@
  * Pure functional. No hooks. No state. No side effects.
  */
 
-import React from 'react';
 import type { AuditRecord } from '../agents/AuditTrail';
 import {
   LegalStatusBadge,
