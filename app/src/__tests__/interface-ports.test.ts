@@ -23,7 +23,7 @@ import { mapStatusToHttp, mapResultToResponse } from '../interface/responseMappe
 import { createResult }         from '../application/governanceContext';
 import type { HttpRequest }     from '../interface/ports';
 import type {
-  GovernanceMcpPort, GovernanceCliPort, GovernanceChatPort,
+  GovernanceMcpPort, GovernanceChatPort,
   McpTool, CliCommand, ChatMessage,
 } from '../interface/ports';
 
