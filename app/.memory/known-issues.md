@@ -98,6 +98,31 @@ Issues tracked here are accepted and deferred. Each has a named fix phase.
 - Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
 - Workaround: None; deep-analysis packages should be manually legal-reviewed until wired.
 
+**KI-010 — options (legal rules) param silently dropped in submitToTreasury() (found during Runtime Iteration 3, 2026-07-28)**
+- File: `src/payment/paymentTreasuryService.ts:28`
+- Issue: `options?: { rules?: readonly PaymentLegalRule[]; packageType?: string }` is accepted by
+  `submitToTreasury()` but never read anywhere in the function body (lines 29-54) — the submission
+  is built and persisted with no reference to `options.rules` or `options.packageType`.
+- Impact: The function's own signature implies legal-rule-aware validation is available before a
+  treasury submission, but no such validation actually runs — any caller passing `options.rules`
+  gets silently ignored, so a submission that should be blocked by a legal rule is not.
+- Fix: Apply `options.rules` (if provided) to validate the submission before `treasuryRepo.create()`,
+  once the intended validation behavior is confirmed against `PaymentLegalRule`'s contract.
+- Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
+- Workaround: Callers must validate against legal rules themselves before calling this function.
+
+**KI-011 — actor param silently dropped in resolveApproval() (found during Runtime Iteration 3, 2026-07-28)**
+- File: `src/workspace/workspaceSession.ts:185`
+- Issue: `resolveApproval(approvalId, status, actor, reason?)` accepts `actor: string` but never
+  writes it into the approval record — the update at line 191 sets `status`, `decidedAt`, `reason`
+  but not `actor`.
+- Impact: The same class of gap as KI-007 — an approval's record has no trace of who resolved it,
+  a traceability gap for a workspace-approval entity an audit review would expect to be attributable.
+- Fix: Add `actor` (e.g. as a `resolvedBy` field) to the object passed to `this.approvals.set()`,
+  once it is confirmed `WorkspaceApproval`'s type has a field to receive it.
+- Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
+- Workaround: None; the identity is not recoverable after the fact from this call path.
+
 ---
 
 ## RESOLVED
