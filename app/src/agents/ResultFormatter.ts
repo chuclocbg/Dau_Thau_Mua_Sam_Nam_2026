@@ -45,7 +45,7 @@
  */
 
 import { buildExecutor }                                from './QueryExecutor';
-import type { QueryExecutor, ExecutionResult }          from './QueryExecutor';
+import type { QueryExecutor }                           from './QueryExecutor';
 import type { QueryDescriptor }                         from './QueryPlanner';
 import type { RegistryEntry }                           from './DocumentRegistry';
 
