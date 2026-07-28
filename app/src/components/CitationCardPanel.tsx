@@ -10,8 +10,6 @@
  * Pure functional. No hooks. No browser globals. SSR-compatible.
  */
 
-import React from 'react';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface CitationCardPanelProps {
