@@ -288,9 +288,10 @@ describe('WS5: onClose / close event', () => {
     client.onClose(async e => { ev = e; });
     await client.connect(TEST_URL);
     await getTransport().simulateClose(1001, 'Going away', false);
-    expect(ev?.code).toBe(1001);
-    expect(ev?.reason).toBe('Going away');
-    expect(ev?.wasClean).toBe(false);
+    const got = ev as WebSocketCloseEvent | null;
+    expect(got?.code).toBe(1001);
+    expect(got?.reason).toBe('Going away');
+    expect(got?.wasClean).toBe(false);
   });
 
   it('WS5-04: multiple onClose handlers all fire', async () => {

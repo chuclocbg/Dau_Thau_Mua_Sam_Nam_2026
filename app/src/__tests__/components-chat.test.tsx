@@ -16,6 +16,7 @@ import AutonomousPanel from '../components/AutonomousPanel';
 
 import type { ChatMessage as ChatMessageRecord }        from '../agents/ChatAgent';
 import type { AgentSession, UserQuestion }              from '../agents/AutonomousAgent';
+import type { LegalFinding }                            from '../ai/legalReviewer';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ describe('ChatMessage', () => {
 
   it('CM-10: renders relatedFindings count from array', () => {
     // LegalFinding is an opaque type here — cast to satisfy the interface
-    const findings = [{ type: 'CRITICAL' }, { type: 'HIGH' }] as Parameters<typeof makeMsg>[0]['relatedFindings'];
+    const findings = [{ type: 'CRITICAL' }, { type: 'HIGH' }] as unknown as LegalFinding[];
     const html = render(<ChatMessage message={makeMsg({ relatedFindings: findings })} />);
     expect(html).toContain('2 findings');
   });
