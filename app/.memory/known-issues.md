@@ -62,6 +62,42 @@ Issues tracked here are accepted and deferred. Each has a named fix phase.
 - Fix: Apply recommendations from `docs/prisma-index-review.md`.
 - Target phase: Before first production migration.
 
+**KI-007 — createdBy silently dropped in createSession() (found during Runtime Iteration 3 Slice 167 investigation, 2026-07-28)**
+- File: `src/acceptance/acceptanceSession.ts:10`
+- Issue: `createdBy: string` is a required parameter of `createSession()` but is never written
+  into the `repos.sessions.create({...})` call (lines 26-35) — it is accepted and discarded.
+- Impact: The acceptance session record has no record of who created it — an audit-trail gap
+  for an acceptance-workflow entity that a State Audit review would expect to be traceable.
+- Fix: Add `createdBy` to the object passed to `repos.sessions.create()`, once it is confirmed
+  `AcceptanceSession`'s schema/type actually has a field to receive it.
+- Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
+- Workaround: None; the identity is not recoverable after the fact from this call path.
+
+**KI-008 — acceptanceRate computed but dropped from buildAcceptanceSummary() (found during Runtime Iteration 3 Slice 167 investigation, 2026-07-28)**
+- File: `src/acceptance/acceptanceIntegration.ts:56`
+- Issue: `calculateAcceptanceRate(requestId, repos)` is awaited as part of the `Promise.all` in
+  `buildAcceptanceSummary()`, but the resulting `acceptanceRate` value is never included in the
+  returned `AcceptanceSummary` object (lines 67-81).
+- Impact: A real, already-computed completeness metric never reaches callers/UI — any acceptance
+  dashboard or report relying on this summary is missing its rate figure.
+- Fix: Add `acceptanceRate` to the returned object, once `AcceptanceSummary`'s type is confirmed
+  to declare it.
+- Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
+- Workaround: Callers must call `calculateAcceptanceRate()` separately if they need this value.
+
+**KI-009 — reviewPackage (legal review) never invoked in PlannerAgent deep-analysis path (found during Runtime Iteration 3 Slice 167 investigation, 2026-07-28)**
+- File: `src/agents/PlannerAgent.ts:29`
+- Issue: `reviewPackage` (from `../ai/legalReviewer`) is imported, and the file's own comment at
+  line 129 states deep-analysis mode should run "P5 reviewPackage / runWorkflow" — but only
+  `runWorkflow` (line 345) is actually called anywhere in the class body.
+- Impact: The deep-analysis path's intended legal-review step is designed but unwired; packages
+  built via deep analysis do not get an automated legal review pass despite the code's own
+  stated intent.
+- Fix: Wire a `reviewPackage(...)` call into the deep-analysis flow alongside `runWorkflow(...)`,
+  once the intended call signature/placement is confirmed against `ai/legalReviewer`'s contract.
+- Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
+- Workaround: None; deep-analysis packages should be manually legal-reviewed until wired.
+
 ---
 
 ## RESOLVED
