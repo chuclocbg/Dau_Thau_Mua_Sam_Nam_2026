@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { PromptTemplateManager } from '../providers/PromptTemplateManager';
-import type { PromptTemplate, PromptVariable } from '../providers/PromptTemplateManager';
+import type { PromptTemplate } from '../providers/PromptTemplateManager';
 
 // ─── Fixture templates ────────────────────────────────────────────────────────
 
