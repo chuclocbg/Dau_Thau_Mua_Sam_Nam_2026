@@ -18,7 +18,6 @@ import type { GovernanceContext, GovernanceResult } from './governanceContext';
 import {
   createResult, createAuditEntry,
   generateGovernanceContext as buildContext,
-  type AuditEntry,
 } from './governanceContext';
 import type { Actor } from '../legal/workflowOrchestrator';
 
