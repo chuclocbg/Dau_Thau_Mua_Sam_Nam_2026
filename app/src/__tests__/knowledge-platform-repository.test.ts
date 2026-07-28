@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { DefaultKnowledgePlatform } from '../knowledge/platform/knowledgePlatform.ts'
 import type { IKnowledgePlatform } from '../knowledge/platform/knowledgePlatform.ts'
 import type { KnowledgeItem } from '../knowledge/platform/knowledgeTypes.ts'
