@@ -16,7 +16,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderToString }       from 'react-dom/server';
-import React                    from 'react';
 
 import RiskPanel, { type RiskPanelProps } from '../components/RiskPanel';
 import AgentOutputPanel                   from '../components/AgentOutputPanel';
