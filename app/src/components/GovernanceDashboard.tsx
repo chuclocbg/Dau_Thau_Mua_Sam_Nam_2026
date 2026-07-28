@@ -54,7 +54,6 @@
  * SSR-compatible. Pure functional. No hooks. No state. No side effects.
  */
 
-import React from 'react';
 import type { AuditHistory, AuditRecord } from '../agents/AuditTrail';
 import type { RegulationSnapshot }        from '../ai/effectiveDateEngine';
 import {
