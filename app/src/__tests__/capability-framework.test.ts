@@ -17,7 +17,7 @@
  *   CF-13  (3)  buildCapabilityFramework factory
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { generateGovernanceContext } from '../application/governanceContext';
 import {
   createCapabilityMetadata,
