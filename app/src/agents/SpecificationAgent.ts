@@ -135,7 +135,7 @@ export function reviewSpec(specs: string, itemName = ''): string[] {
  * Generic catch-all alternative always included first.
  * Category-specific alternatives are added per brand.
  */
-export function suggestAlternatives(specs: string, brandWarnings: string[]): string[] {
+export function suggestAlternatives(brandWarnings: string[]): string[] {
   if (brandWarnings.length === 0) return [];
 
   const alternatives: string[] = [
@@ -215,7 +215,7 @@ export function generateSpecWithReasoning(input: SpecInput): SpecOutput {
   const base          = generateItemSpec(input.itemName, input.existingSpecs ?? '');
   const brandWarnings = reviewSpec(base.specs, input.itemName);
   const reasoning     = buildReasoning(base.specs, input);
-  const alternatives  = suggestAlternatives(base.specs, brandWarnings);
+  const alternatives  = suggestAlternatives(brandWarnings);
 
   const hasCritical  = input.legalFindings?.some(f => f.severity === 'CRITICAL') ?? false;
   const complianceStatus: SpecOutput['complianceStatus'] =

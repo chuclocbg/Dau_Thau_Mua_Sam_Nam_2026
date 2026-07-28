@@ -128,15 +128,11 @@ describe('SA2 — reviewSpec() brand detection', () => {
 
 describe('SA3 — suggestAlternatives() no brands', () => {
   it('SA3-01: empty brandWarnings returns []', () => {
-    expect(suggestAlternatives('', [])).toEqual([]);
-  });
-
-  it('SA3-02: empty brandWarnings with non-empty specs still returns []', () => {
-    expect(suggestAlternatives('CPU ≥3 GHz, RAM ≥8 GB', [])).toEqual([]);
+    expect(suggestAlternatives([])).toEqual([]);
   });
 
   it('SA3-03: result.length === 0 when no brand warnings', () => {
-    expect(suggestAlternatives('specs here', []).length).toBe(0);
+    expect(suggestAlternatives([]).length).toBe(0);
   });
 });
 
@@ -144,34 +140,34 @@ describe('SA3 — suggestAlternatives() no brands', () => {
 
 describe('SA4 — suggestAlternatives() category alternatives', () => {
   it('SA4-01: Dell brand → at least 2 entries; first is generic catch-all', () => {
-    const result = suggestAlternatives('', ['Dell']);
+    const result = suggestAlternatives(['Dell']);
     expect(result.length).toBeGreaterThanOrEqual(2);
     expect(result[0]).toContain('tương đương');
   });
 
   it('SA4-02: Panasonic brand → category alternative mentions inverter or COP', () => {
-    const result = suggestAlternatives('', ['Panasonic']);
+    const result = suggestAlternatives(['Panasonic']);
     expect(result.length).toBeGreaterThanOrEqual(2);
     expect(result[1]).toMatch(/inverter|COP|R-32|nhãn năng lượng/i);
   });
 
   it('SA4-03: Merck brand → alternative mentions Certificate of Analysis', () => {
-    const result = suggestAlternatives('', ['Merck']);
+    const result = suggestAlternatives(['Merck']);
     expect(result.some(a => a.includes('Certificate of Analysis'))).toBe(true);
   });
 
   it('SA4-04: Canon brand → alternative mentions dpi or trang/phút', () => {
-    const result = suggestAlternatives('', ['Canon']);
+    const result = suggestAlternatives(['Canon']);
     expect(result.some(a => /dpi|trang\/phút/i.test(a))).toBe(true);
   });
 
   it('SA4-05: Cisco brand → alternative mentions VLAN or Gbps', () => {
-    const result = suggestAlternatives('', ['Cisco']);
+    const result = suggestAlternatives(['Cisco']);
     expect(result.some(a => /VLAN|Gbps/i.test(a))).toBe(true);
   });
 
   it('SA4-06: unknown brand → exactly 2 entries (generic + per-brand fallback)', () => {
-    const result = suggestAlternatives('', ['Brandex999']);
+    const result = suggestAlternatives(['Brandex999']);
     expect(result.length).toBe(2);
     expect(result[0]).toContain('tương đương');
     expect(result[1]).toContain('thương hiệu');
