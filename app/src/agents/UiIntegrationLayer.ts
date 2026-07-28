@@ -44,7 +44,7 @@
 
 import { buildOrchestrator }                                    from './PipelineOrchestrator';
 import type { PipelineOrchestrator }                            from './PipelineOrchestrator';
-import type { ManifestJson, SerializedManifest }                from './ManifestSerializer';
+import type { ManifestJson }                                    from './ManifestSerializer';
 import type { QueryDescriptor }                                 from './QueryPlanner';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
