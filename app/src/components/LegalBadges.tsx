@@ -33,7 +33,6 @@
  * No browser globals. No LLM calls. No IndexedDB. SSR-compatible.
  */
 
-import React from 'react';
 import type { RecommendationCode } from '../agents/RecommendationEngine';
 
 // ─── LegalStatusBadge ─────────────────────────────────────────────────────────
