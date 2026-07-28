@@ -226,7 +226,6 @@ describe('E2: chat() success and response mapping', () => {
   });
 
   it('E2-06: Gemini usage maps promptTokens / candidateTokens / totalTokens', async () => {
-    const p = gemini({ fetchFn: mockFetch(200, geminiOk('x', 'STOP', 'v', )) });
     // Use a more precise body
     const body = {
       candidates: [{ content: { parts: [{ text: 'y' }], role: 'model' }, finishReason: 'STOP', index: 0 }],
