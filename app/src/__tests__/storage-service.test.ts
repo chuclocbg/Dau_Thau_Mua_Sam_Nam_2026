@@ -148,7 +148,7 @@ describe('download', () => {
 describe('delete', () => {
   it('deactivates the attachment reference', async () => {
     const data = bytes('to delete')
-    const ref = await service.upload({
+    await service.upload({
       objectKey: 'contract/c-1/contract/2024-01-01/doc.pdf',
       data,
       metadata: metaParams({ sizeBytes: BigInt(data.length) }),
