@@ -20,7 +20,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryArticleRepository } from '../legal/memoryRepositories';
 import { PrismaArticleRepository } from '../legal/prismaRepositories';
-import { PrismaNotReadyError } from '../legal/legalRepositories';
 import type { IArticleRepository } from '../legal/legalRepositories';
 import type { Article, Clause, Point, Appendix } from '../legal/legalSchema';
 import { VietnamLegalStructureParser } from '../agents/VietnamLegalStructureParser';
