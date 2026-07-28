@@ -10,7 +10,6 @@
  * Pure functional — no hooks, no browser globals, SSR-compatible.
  */
 
-import React from 'react';
 import type {
   PlannerAgent,
   SpecificationAgent,
