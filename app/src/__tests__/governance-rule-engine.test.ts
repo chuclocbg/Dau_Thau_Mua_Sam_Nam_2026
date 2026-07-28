@@ -36,12 +36,6 @@ const THRESH_100M = createConfig({
   status: 'ACTIVE', priority: 1, confidence: 1.0, tags: ['threshold'],
   metadata: { maxAmount: '100000000' },
 });
-const THRESH_200M = createConfig({
-  id: 'thresh-200m', type: 'PROCUREMENT_THRESHOLD', version: '2.0.0',
-  effectiveDate: '2024-01-01', source: 'nd-214-2025',
-  status: 'ACTIVE', priority: 2, confidence: 1.0, tags: ['threshold'],
-  metadata: { maxAmount: '200000000' },
-});
 const THRESH_DRAFT = createConfig({
   id: 'thresh-draft', type: 'PROCUREMENT_THRESHOLD', version: '0.1.0',
   effectiveDate: '2024-01-01', source: 'nd-214-2025',
