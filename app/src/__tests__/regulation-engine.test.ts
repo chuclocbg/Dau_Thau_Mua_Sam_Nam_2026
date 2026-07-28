@@ -28,7 +28,6 @@ import {
   getMandatoryClausesForFund,
   getDocumentRequirements,
   getDependentStages,
-  getAllRiskThresholds,
   getRiskLevelForScore,
 } from '../ai/regulationExtractor';
 
