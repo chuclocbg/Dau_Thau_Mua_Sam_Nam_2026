@@ -36,7 +36,6 @@ import {
   serializeTrace,
   createExportSnapshot,
   MigrationRegistry,
-  MigratingSessionStore,
   createMigratingPersistenceLayer,
 } from '../persistence';
 
