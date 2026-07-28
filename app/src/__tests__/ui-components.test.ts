@@ -29,29 +29,30 @@ import { AgentPanel }    from '../components/AgentPanel';
 import { ToolPanel }     from '../components/ToolPanel';
 import { ChatPanel }     from '../components/ChatPanel';
 
-import type { ProviderInfo }       from '../components/ProviderPanel';
-import type { SessionDisplayInfo } from '../components/SessionPanel';
-import type { MemorySnapshotInfo } from '../components/MemoryPanel';
-import type { WorkflowInfo }       from '../components/WorkflowEnginePanel';
-import type { AgentInfo }          from '../components/AgentPanel';
-import type { ToolInfo }           from '../components/ToolPanel';
-import type { ChatMessage }        from '../components/ChatPanel';
+import type { ProviderInfo, ProviderPanelProps }             from '../components/ProviderPanel';
+import type { SessionDisplayInfo, SessionPanelProps }        from '../components/SessionPanel';
+import type { MemorySnapshotInfo, MemoryPanelProps }         from '../components/MemoryPanel';
+import type { WorkflowInfo, WorkflowEnginePanelProps }       from '../components/WorkflowEnginePanel';
+import type { AgentInfo, AgentPanelProps }                   from '../components/AgentPanel';
+import type { ToolInfo, ToolPanelProps }                     from '../components/ToolPanel';
+import type { ChatMessage, ChatPanelProps }                  from '../components/ChatPanel';
+import type { DashboardProps }                               from '../components/Dashboard';
 
 // ─── UX1 · Dashboard ──────────────────────────────────────────────────────────
 
 describe('UX1 · Dashboard', () => {
   it('UX1-01: renders default title when no title prop', () => {
-    const html = renderToString(React.createElement(Dashboard, {}));
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, {}));
     expect(html).toContain('AI Dashboard');
   });
 
   it('UX1-02: renders custom title', () => {
-    const html = renderToString(React.createElement(Dashboard, { title: 'Procurement AI' }));
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, { title: 'Procurement AI' }));
     expect(html).toContain('Procurement AI');
   });
 
   it('UX1-03: renders all seven panel sections', () => {
-    const html = renderToString(React.createElement(Dashboard, {}));
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, {}));
     expect(html).toContain('provider-panel');
     expect(html).toContain('session-panel');
     expect(html).toContain('memory-panel');
@@ -63,13 +64,13 @@ describe('UX1 · Dashboard', () => {
 
   it('UX1-04: passes providers data down to provider section', () => {
     const providers: ProviderInfo[] = [{ id: 'gpt4', name: 'GPT-4', status: 'available' }];
-    const html = renderToString(React.createElement(Dashboard, { providers }));
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, { providers }));
     expect(html).toContain('GPT-4');
     expect(html).toContain('available');
   });
 
   it('UX1-05: renders without throwing when all props are omitted', () => {
-    expect(() => renderToString(React.createElement(Dashboard, {}))).not.toThrow();
+    expect(() => renderToString(React.createElement<DashboardProps>(Dashboard, {}))).not.toThrow();
   });
 });
 
@@ -77,26 +78,26 @@ describe('UX1 · Dashboard', () => {
 
 describe('UX2 · ProviderPanel', () => {
   it('UX2-01: renders default title and empty-state with no providers', () => {
-    const html = renderToString(React.createElement(ProviderPanel, {}));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, {}));
     expect(html).toContain('Providers');
     expect(html).toContain('No providers registered');
   });
 
   it('UX2-02: renders a single provider name', () => {
     const providers: ProviderInfo[] = [{ id: 'c1', name: 'Claude', status: 'available' }];
-    const html = renderToString(React.createElement(ProviderPanel, { providers }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers }));
     expect(html).toContain('Claude');
   });
 
   it('UX2-03: renders CSS class derived from provider status', () => {
     const providers: ProviderInfo[] = [{ id: 'g1', name: 'Gemini', status: 'error' }];
-    const html = renderToString(React.createElement(ProviderPanel, { providers }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers }));
     expect(html).toContain('status-error');
   });
 
   it('UX2-04: renders provider model when supplied', () => {
     const providers: ProviderInfo[] = [{ id: 'o1', name: 'OpenAI', status: 'available', model: 'gpt-4o' }];
-    const html = renderToString(React.createElement(ProviderPanel, { providers }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers }));
     expect(html).toContain('gpt-4o');
   });
 
@@ -106,7 +107,7 @@ describe('UX2 · ProviderPanel', () => {
       { id: 'b', name: 'Beta',  status: 'unavailable' },
       { id: 'c', name: 'Gamma', status: 'available' },
     ];
-    const html = renderToString(React.createElement(ProviderPanel, { providers }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers }));
     expect(html).toContain('Alpha');
     expect(html).toContain('Beta');
     expect(html).toContain('Gamma');
@@ -117,27 +118,27 @@ describe('UX2 · ProviderPanel', () => {
 
 describe('UX3 · SessionPanel', () => {
   it('UX3-01: renders default title and empty-state with no sessions', () => {
-    const html = renderToString(React.createElement(SessionPanel, {}));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, {}));
     expect(html).toContain('Sessions');
     expect(html).toContain('No active sessions');
   });
 
   it('UX3-02: renders an IDLE session', () => {
     const sessions: SessionDisplayInfo[] = [{ id: 's1', state: 'IDLE', label: 'Boot session' }];
-    const html = renderToString(React.createElement(SessionPanel, { sessions }));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, { sessions }));
     expect(html).toContain('Boot session');
     expect(html).toContain('IDLE');
   });
 
   it('UX3-03: renders a RUNNING session with appropriate CSS class', () => {
     const sessions: SessionDisplayInfo[] = [{ id: 's2', state: 'RUNNING', label: 'Active' }];
-    const html = renderToString(React.createElement(SessionPanel, { sessions }));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, { sessions }));
     expect(html).toContain('state-running');
   });
 
   it('UX3-04: renders an ERROR session', () => {
     const sessions: SessionDisplayInfo[] = [{ id: 's3', state: 'ERROR', label: 'Failed run' }];
-    const html = renderToString(React.createElement(SessionPanel, { sessions }));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, { sessions }));
     expect(html).toContain('ERROR');
     expect(html).toContain('Failed run');
   });
@@ -147,7 +148,7 @@ describe('UX3 · SessionPanel', () => {
       { id: 'sa', state: 'IDLE',      label: 'First'  },
       { id: 'sb', state: 'COMPLETED', label: 'Second' },
     ];
-    const html = renderToString(React.createElement(SessionPanel, { sessions }));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, { sessions }));
     expect(html).toContain('First');
     expect(html).toContain('Second');
     expect(html).toContain('COMPLETED');
@@ -158,32 +159,32 @@ describe('UX3 · SessionPanel', () => {
 
 describe('UX4 · MemoryPanel', () => {
   it('UX4-01: renders default title and empty-state with no snapshots', () => {
-    const html = renderToString(React.createElement(MemoryPanel, {}));
+    const html = renderToString(React.createElement<MemoryPanelProps>(MemoryPanel, {}));
     expect(html).toContain('Memory');
     expect(html).toContain('No memory snapshots');
   });
 
   it('UX4-02: renders a single snapshot with its label', () => {
     const snapshots: MemorySnapshotInfo[] = [{ id: 'm1', label: 'Session A', turnCount: 3 }];
-    const html = renderToString(React.createElement(MemoryPanel, { snapshots }));
+    const html = renderToString(React.createElement<MemoryPanelProps>(MemoryPanel, { snapshots }));
     expect(html).toContain('Session A');
   });
 
   it('UX4-03: renders turn count', () => {
     const snapshots: MemorySnapshotInfo[] = [{ id: 'm2', label: 'Run', turnCount: 7 }];
-    const html = renderToString(React.createElement(MemoryPanel, { snapshots }));
+    const html = renderToString(React.createElement<MemoryPanelProps>(MemoryPanel, { snapshots }));
     expect(html).toContain('7 turns');
   });
 
   it('UX4-04: renders total tokens when provided', () => {
     const snapshots: MemorySnapshotInfo[] = [{ id: 'm3', label: 'X', turnCount: 2, totalTokens: 512 }];
-    const html = renderToString(React.createElement(MemoryPanel, { snapshots }));
+    const html = renderToString(React.createElement<MemoryPanelProps>(MemoryPanel, { snapshots }));
     expect(html).toContain('512 tokens');
   });
 
   it('UX4-05: omits token span when totalTokens is absent', () => {
     const snapshots: MemorySnapshotInfo[] = [{ id: 'm4', label: 'Y', turnCount: 1 }];
-    const html = renderToString(React.createElement(MemoryPanel, { snapshots }));
+    const html = renderToString(React.createElement<MemoryPanelProps>(MemoryPanel, { snapshots }));
     expect(html).not.toContain('tokens');
   });
 });
@@ -192,26 +193,26 @@ describe('UX4 · MemoryPanel', () => {
 
 describe('UX5 · WorkflowEnginePanel', () => {
   it('UX5-01: renders default title and empty-state with no workflows', () => {
-    const html = renderToString(React.createElement(WorkflowEnginePanel, {}));
+    const html = renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, {}));
     expect(html).toContain('Workflows');
     expect(html).toContain('No workflows registered');
   });
 
   it('UX5-02: renders a single workflow name', () => {
     const workflows: WorkflowInfo[] = [{ id: 'wf1', name: 'Procurement Flow', status: 'pending' }];
-    const html = renderToString(React.createElement(WorkflowEnginePanel, { workflows }));
+    const html = renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, { workflows }));
     expect(html).toContain('Procurement Flow');
   });
 
   it('UX5-03: renders workflow status with CSS class', () => {
     const workflows: WorkflowInfo[] = [{ id: 'wf2', name: 'Run', status: 'completed' }];
-    const html = renderToString(React.createElement(WorkflowEnginePanel, { workflows }));
+    const html = renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, { workflows }));
     expect(html).toContain('status-completed');
   });
 
   it('UX5-04: renders step count when provided', () => {
     const workflows: WorkflowInfo[] = [{ id: 'wf3', name: 'Pipeline', status: 'running', stepCount: 5 }];
-    const html = renderToString(React.createElement(WorkflowEnginePanel, { workflows }));
+    const html = renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, { workflows }));
     expect(html).toContain('5 steps');
   });
 
@@ -220,7 +221,7 @@ describe('UX5 · WorkflowEnginePanel', () => {
       { id: 'w1', name: 'Alpha Flow', status: 'pending' },
       { id: 'w2', name: 'Beta Flow',  status: 'completed' },
     ];
-    const html = renderToString(React.createElement(WorkflowEnginePanel, { workflows }));
+    const html = renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, { workflows }));
     expect(html).toContain('Alpha Flow');
     expect(html).toContain('Beta Flow');
   });
@@ -230,20 +231,20 @@ describe('UX5 · WorkflowEnginePanel', () => {
 
 describe('UX6 · AgentPanel', () => {
   it('UX6-01: renders default title and empty-state with no agents', () => {
-    const html = renderToString(React.createElement(AgentPanel, {}));
+    const html = renderToString(React.createElement<AgentPanelProps>(AgentPanel, {}));
     expect(html).toContain('Agents');
     expect(html).toContain('No agents registered');
   });
 
   it('UX6-02: renders a single agent name', () => {
     const agents: AgentInfo[] = [{ id: 'ag1', name: 'Planner Agent' }];
-    const html = renderToString(React.createElement(AgentPanel, { agents }));
+    const html = renderToString(React.createElement<AgentPanelProps>(AgentPanel, { agents }));
     expect(html).toContain('Planner Agent');
   });
 
   it('UX6-03: renders agent description when provided', () => {
     const agents: AgentInfo[] = [{ id: 'ag2', name: 'Legal Reviewer', description: 'Reviews legal text' }];
-    const html = renderToString(React.createElement(AgentPanel, { agents }));
+    const html = renderToString(React.createElement<AgentPanelProps>(AgentPanel, { agents }));
     expect(html).toContain('Reviews legal text');
   });
 
@@ -252,7 +253,7 @@ describe('UX6 · AgentPanel', () => {
       { id: 'x', name: 'Agent X' },
       { id: 'y', name: 'Agent Y', taskCount: 3 },
     ];
-    const html = renderToString(React.createElement(AgentPanel, { agents }));
+    const html = renderToString(React.createElement<AgentPanelProps>(AgentPanel, { agents }));
     expect(html).toContain('Agent X');
     expect(html).toContain('Agent Y');
     expect(html).toContain('3 tasks');
@@ -263,20 +264,20 @@ describe('UX6 · AgentPanel', () => {
 
 describe('UX7 · ToolPanel', () => {
   it('UX7-01: renders default title and empty-state with no tools', () => {
-    const html = renderToString(React.createElement(ToolPanel, {}));
+    const html = renderToString(React.createElement<ToolPanelProps>(ToolPanel, {}));
     expect(html).toContain('Tools');
     expect(html).toContain('No tools registered');
   });
 
   it('UX7-02: renders a single tool name', () => {
     const tools: ToolInfo[] = [{ name: 'search_web', description: 'Searches the web' }];
-    const html = renderToString(React.createElement(ToolPanel, { tools }));
+    const html = renderToString(React.createElement<ToolPanelProps>(ToolPanel, { tools }));
     expect(html).toContain('search_web');
   });
 
   it('UX7-03: renders tool description when provided', () => {
     const tools: ToolInfo[] = [{ name: 'read_file', description: 'Reads a local file' }];
-    const html = renderToString(React.createElement(ToolPanel, { tools }));
+    const html = renderToString(React.createElement<ToolPanelProps>(ToolPanel, { tools }));
     expect(html).toContain('Reads a local file');
   });
 
@@ -285,7 +286,7 @@ describe('UX7 · ToolPanel', () => {
       { name: 'tool_a', paramCount: 2 },
       { name: 'tool_b', paramCount: 0 },
     ];
-    const html = renderToString(React.createElement(ToolPanel, { tools }));
+    const html = renderToString(React.createElement<ToolPanelProps>(ToolPanel, { tools }));
     expect(html).toContain('tool_a');
     expect(html).toContain('2 params');
     expect(html).toContain('tool_b');
@@ -297,28 +298,28 @@ describe('UX7 · ToolPanel', () => {
 
 describe('UX8 · ChatPanel', () => {
   it('UX8-01: renders default title and empty-state with no messages', () => {
-    const html = renderToString(React.createElement(ChatPanel, {}));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, {}));
     expect(html).toContain('Chat');
     expect(html).toContain('No messages');
   });
 
   it('UX8-02: renders a user message', () => {
     const messages: ChatMessage[] = [{ id: 'u1', role: 'user', content: 'Hello!' }];
-    const html = renderToString(React.createElement(ChatPanel, { messages }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages }));
     expect(html).toContain('Hello!');
     expect(html).toContain('chat-message--user');
   });
 
   it('UX8-03: renders an assistant message', () => {
     const messages: ChatMessage[] = [{ id: 'a1', role: 'assistant', content: 'Hi there.' }];
-    const html = renderToString(React.createElement(ChatPanel, { messages }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages }));
     expect(html).toContain('Hi there.');
     expect(html).toContain('chat-message--assistant');
   });
 
   it('UX8-04: renders a system message', () => {
     const messages: ChatMessage[] = [{ id: 'sys1', role: 'system', content: 'You are helpful.' }];
-    const html = renderToString(React.createElement(ChatPanel, { messages }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages }));
     expect(html).toContain('You are helpful.');
     expect(html).toContain('chat-message--system');
   });
@@ -328,7 +329,7 @@ describe('UX8 · ChatPanel', () => {
       { id: 'm1', role: 'user',      content: 'Question' },
       { id: 'm2', role: 'assistant', content: 'Answer'   },
     ];
-    const html = renderToString(React.createElement(ChatPanel, { messages }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages }));
     expect(html).toContain('Question');
     expect(html).toContain('Answer');
     expect(html).toContain('chat-message--user');
@@ -343,7 +344,7 @@ describe('UX9 · Large scenarios', () => {
     const providers: ProviderInfo[] = Array.from({ length: 100 }, (_, i) => ({
       id: `p${i}`, name: `Provider ${i}`, status: i % 2 === 0 ? 'available' : 'unavailable',
     }));
-    const html = renderToString(React.createElement(ProviderPanel, { providers }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers }));
     expect(html).toContain('Provider 0');
     expect(html).toContain('Provider 99');
   });
@@ -352,7 +353,7 @@ describe('UX9 · Large scenarios', () => {
     const sessions: SessionDisplayInfo[] = Array.from({ length: 100 }, (_, i) => ({
       id: `s${i}`, state: 'IDLE' as const, label: `Session ${i}`,
     }));
-    const html = renderToString(React.createElement(SessionPanel, { sessions }));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, { sessions }));
     expect(html).toContain('Session 0');
     expect(html).toContain('Session 99');
   });
@@ -363,7 +364,7 @@ describe('UX9 · Large scenarios', () => {
       role: i % 2 === 0 ? 'user' : 'assistant',
       content: `Message ${i}`,
     }));
-    const html = renderToString(React.createElement(ChatPanel, { messages }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages }));
     expect(html).toContain('Message 0');
     expect(html).toContain('Message 199');
   });
@@ -372,14 +373,14 @@ describe('UX9 · Large scenarios', () => {
     const workflows: WorkflowInfo[] = Array.from({ length: 50 }, (_, i) => ({
       id: `wf${i}`, name: `Workflow ${i}`, status: 'pending', stepCount: i + 1,
     }));
-    const html = renderToString(React.createElement(WorkflowEnginePanel, { workflows }));
+    const html = renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, { workflows }));
     expect(html).toContain('Workflow 0');
     expect(html).toContain('Workflow 49');
     expect(html).toContain('50 steps');
   });
 
   it('UX9-05: Dashboard renders correctly when all panels are fully populated', () => {
-    const html = renderToString(React.createElement(Dashboard, {
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, {
       title: 'Full Dashboard',
       providers: [{ id: 'p1', name: 'OpenAI', status: 'available' }],
       sessions:  [{ id: 's1', state: 'RUNNING', label: 'Live' }],
@@ -404,22 +405,22 @@ describe('UX9 · Large scenarios', () => {
 
 describe('UX10 · Null props', () => {
   it('UX10-01: ProviderPanel accepts null providers and shows empty-state', () => {
-    const html = renderToString(React.createElement(ProviderPanel, { providers: null }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers: null }));
     expect(html).toContain('No providers registered');
   });
 
   it('UX10-02: ChatPanel accepts null messages and shows empty-state', () => {
-    const html = renderToString(React.createElement(ChatPanel, { messages: null }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages: null }));
     expect(html).toContain('No messages');
   });
 
   it('UX10-03: SessionPanel accepts null sessions and shows empty-state', () => {
-    const html = renderToString(React.createElement(SessionPanel, { sessions: null }));
+    const html = renderToString(React.createElement<SessionPanelProps>(SessionPanel, { sessions: null }));
     expect(html).toContain('No active sessions');
   });
 
   it('UX10-04: Dashboard accepts null for all list props', () => {
-    const html = renderToString(React.createElement(Dashboard, {
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, {
       title: null,
       providers: null,
       sessions:  null,
@@ -439,7 +440,7 @@ describe('UX10 · Null props', () => {
 
 describe('UX11 · SSR renderToString', () => {
   it('UX11-01: Dashboard produces a non-empty HTML string', () => {
-    const html = renderToString(React.createElement(Dashboard, { title: 'SSR Test' }));
+    const html = renderToString(React.createElement<DashboardProps>(Dashboard, { title: 'SSR Test' }));
     expect(typeof html).toBe('string');
     expect(html.length).toBeGreaterThan(0);
     expect(html).toContain('SSR Test');
@@ -447,26 +448,26 @@ describe('UX11 · SSR renderToString', () => {
 
   it('UX11-02: ProviderPanel output contains no script tags', () => {
     const providers: ProviderInfo[] = [{ id: 'x', name: 'Safe Provider', status: 'available' }];
-    const html = renderToString(React.createElement(ProviderPanel, { providers }));
+    const html = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers }));
     expect(html).not.toContain('<script');
   });
 
   it('UX11-03: ChatPanel escapes HTML special characters in message content', () => {
     const messages: ChatMessage[] = [{ id: 'x', role: 'user', content: '<b>bold</b> & "quoted"' }];
-    const html = renderToString(React.createElement(ChatPanel, { messages }));
+    const html = renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages }));
     expect(html).not.toContain('<b>');
     expect(html).toContain('&lt;b&gt;');
   });
 
   it('UX11-04: all panels render to non-empty strings independently', () => {
     const panels = [
-      React.createElement(ProviderPanel, {}),
-      React.createElement(SessionPanel,  {}),
-      React.createElement(MemoryPanel,   {}),
-      React.createElement(WorkflowEnginePanel, {}),
-      React.createElement(AgentPanel,    {}),
-      React.createElement(ToolPanel,     {}),
-      React.createElement(ChatPanel,     {}),
+      React.createElement<ProviderPanelProps>(ProviderPanel, {}),
+      React.createElement<SessionPanelProps>(SessionPanel,  {}),
+      React.createElement<MemoryPanelProps>(MemoryPanel,   {}),
+      React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, {}),
+      React.createElement<AgentPanelProps>(AgentPanel,    {}),
+      React.createElement<ToolPanelProps>(ToolPanel,     {}),
+      React.createElement<ChatPanelProps>(ChatPanel,     {}),
     ];
     for (const panel of panels) {
       const html = renderToString(panel);
@@ -477,8 +478,8 @@ describe('UX11 · SSR renderToString', () => {
 
   it('UX11-05: renderToString output is deterministic for the same props', () => {
     const props = { providers: [{ id: 'p1', name: 'OpenAI', status: 'available' }] };
-    const html1 = renderToString(React.createElement(ProviderPanel, props));
-    const html2 = renderToString(React.createElement(ProviderPanel, props));
+    const html1 = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, props));
+    const html2 = renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, props));
     expect(html1).toBe(html2);
   });
 });
@@ -489,20 +490,20 @@ describe('UX12 · Never-throw', () => {
   it('UX12-01: ProviderPanel never throws with malformed array items', () => {
     const badProviders = [null, undefined, 42, '', {}, { id: null, name: null }] as unknown as ProviderInfo[];
     expect(() =>
-      renderToString(React.createElement(ProviderPanel, { providers: badProviders }))
+      renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers: badProviders }))
     ).not.toThrow();
   });
 
   it('UX12-02: ChatPanel never throws with malformed message items', () => {
     const badMessages = [null, undefined, 0, false, { role: null, content: null }] as unknown as import('../components/ChatPanel').ChatMessage[];
     expect(() =>
-      renderToString(React.createElement(ChatPanel, { messages: badMessages }))
+      renderToString(React.createElement<ChatPanelProps>(ChatPanel, { messages: badMessages }))
     ).not.toThrow();
   });
 
   it('UX12-03: Dashboard never throws when all props are null', () => {
     expect(() =>
-      renderToString(React.createElement(Dashboard, {
+      renderToString(React.createElement<DashboardProps>(Dashboard, {
         title: null, providers: null, sessions: null,
         snapshots: null, workflows: null, agents: null,
         tools: null, messages: null,
@@ -512,12 +513,12 @@ describe('UX12 · Never-throw', () => {
 
   it('UX12-04: all panels never throw when array contains null items', () => {
     const nullItem = [null] as unknown[];
-    expect(() => renderToString(React.createElement(ProviderPanel, { providers: nullItem as ProviderInfo[] }))).not.toThrow();
-    expect(() => renderToString(React.createElement(SessionPanel,  { sessions:  nullItem as SessionDisplayInfo[] }))).not.toThrow();
-    expect(() => renderToString(React.createElement(MemoryPanel,   { snapshots: nullItem as MemorySnapshotInfo[] }))).not.toThrow();
-    expect(() => renderToString(React.createElement(WorkflowEnginePanel, { workflows: nullItem as WorkflowInfo[] }))).not.toThrow();
-    expect(() => renderToString(React.createElement(AgentPanel,    { agents:    nullItem as AgentInfo[] }))).not.toThrow();
-    expect(() => renderToString(React.createElement(ToolPanel,     { tools:     nullItem as ToolInfo[] }))).not.toThrow();
-    expect(() => renderToString(React.createElement(ChatPanel,     { messages:  nullItem as ChatMessage[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<ProviderPanelProps>(ProviderPanel, { providers: nullItem as ProviderInfo[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<SessionPanelProps>(SessionPanel,  { sessions:  nullItem as SessionDisplayInfo[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<MemoryPanelProps>(MemoryPanel,   { snapshots: nullItem as MemorySnapshotInfo[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<WorkflowEnginePanelProps>(WorkflowEnginePanel, { workflows: nullItem as WorkflowInfo[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<AgentPanelProps>(AgentPanel,    { agents:    nullItem as AgentInfo[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<ToolPanelProps>(ToolPanel,     { tools:     nullItem as ToolInfo[] }))).not.toThrow();
+    expect(() => renderToString(React.createElement<ChatPanelProps>(ChatPanel,     { messages:  nullItem as ChatMessage[] }))).not.toThrow();
   });
 });
