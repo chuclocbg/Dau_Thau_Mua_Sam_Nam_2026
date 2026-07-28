@@ -11,7 +11,6 @@ import React                    from 'react';
 import AgentCard, { type AgentCardProps }               from '../components/AgentCard';
 import AgentStatusDashboard, {
   type AgentStatusInfo,
-  type AgentStatusDashboardProps,
 } from '../components/AgentStatusDashboard';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
