@@ -2,7 +2,7 @@ import type { IBaseRepository } from '../shared/repository/IBaseRepository';
 import type {
   Contract, ContractAmendment, ContractMilestone, ContractGuarantee,
   ContractHistoryEntry, ContractAttachment,
-  ContractStatus, ContractType, GuaranteeType,
+  ContractStatus, GuaranteeType,
   ContractSearchQuery, ContractSearchResult,
 } from './contractTypes';
 

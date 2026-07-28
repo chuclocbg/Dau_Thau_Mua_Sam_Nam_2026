@@ -12,7 +12,7 @@ import type {
 import type {
   Contract, ContractAmendment, ContractMilestone, ContractGuarantee,
   ContractHistoryEntry, ContractAttachment,
-  ContractStatus, ContractType, GuaranteeType,
+  ContractStatus, GuaranteeType,
   ContractSearchQuery, ContractSearchResult,
 } from './contractTypes';
 import { getPrismaClient } from '../persistence/prismaClient.ts';
