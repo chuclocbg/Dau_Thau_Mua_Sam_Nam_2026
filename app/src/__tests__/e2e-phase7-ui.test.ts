@@ -36,7 +36,6 @@ import WorkflowPanel                              from '../components/WorkflowPa
 import ChatInterfacePanel                         from '../components/ChatInterfacePanel';
 import AutonomousWorkflowPanel                    from '../components/AutonomousWorkflowPanel';
 
-import { AgentRegistry, AutonomousAgent, ChatAgent } from '../agents';
 import type { AgentSession }                         from '../agents';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
