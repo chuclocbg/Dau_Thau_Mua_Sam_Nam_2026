@@ -1,7 +1,7 @@
 import type { Money } from '../shared/financial/money';
 import { createMoney } from '../shared/financial/money';
 import type { LegalBasis } from '../shared/financial/financialFactory';
-import { createLegalBasis, PROCUREMENT_LEGAL_BASIS } from '../shared/financial/financialFactory';
+import { PROCUREMENT_LEGAL_BASIS } from '../shared/financial/financialFactory';
 import type {
   PaymentRequest, Payment, PaymentInstallment, TreasurySubmission,
   PaymentHistoryEntry, PaymentDocument, PaymentEvent, PaymentSummary,
