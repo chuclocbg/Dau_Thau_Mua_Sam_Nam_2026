@@ -17,7 +17,7 @@
  *   PLV-13  calculateFundingSummary — groups by fundSourceCode
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   validateUniqueRequestCode, assertUniqueRequestCode,
   validateRequiredRequestFields, validateEstimatedCost,
