@@ -107,7 +107,7 @@ describe('WO-01 createWorkflow', () => {
   it('WO-01-01 registered definition is accessible via getCurrentState', () => {
     const { orchestrator } = makeOrchestrator();
     orchestrator.createWorkflow(SIMPLE_DEF);
-    const inst = orchestrator.startWorkflow('simple', 'i1', ACTOR);
+    orchestrator.startWorkflow('simple', 'i1', ACTOR);
     expect(orchestrator.getCurrentState('i1')?.id).toBe('DRAFT');
   });
 
