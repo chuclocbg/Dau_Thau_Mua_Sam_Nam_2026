@@ -15,7 +15,6 @@ import { ConversationBuilder }      from '../providers/ConversationBuilder';
 import { ConversationMemory }       from '../providers/ConversationMemory';
 import { PromptTemplateManager }    from '../providers/PromptTemplateManager';
 import type { MemoryMessage }       from '../providers/ConversationMemory';
-import type { PromptTemplate }      from '../providers/PromptTemplateManager';
 
 // ─── Shared fixtures ──────────────────────────────────────────────────────────
 
