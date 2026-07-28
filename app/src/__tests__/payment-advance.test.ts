@@ -7,7 +7,6 @@ import {
 } from '../payment/paymentRepository';
 import { createMoney } from '../shared/financial/money';
 import type { PaymentLegalRule } from '../payment/paymentLegalRule';
-import { PAYMENT_LEGAL_RULES } from '../payment/paymentRuleRegistry';
 
 const vnd = (n: number) => createMoney(BigInt(n), 'VND');
 const contract = vnd(100_000_000);
