@@ -21,7 +21,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   MemoryProcurementRequestRepository, MemoryProcurementPlanRepository,
   MemoryProcurementDemandRepository, MemoryFundingAllocationRepository,
-  MemoryPackageProposalRepository,
 } from '../procurement/planning/memoryPlanningRepositories';
 import type { ProcurementRequest, ProcurementPlan, FundingAllocation } from '../procurement/planning/planningTypes';
 
