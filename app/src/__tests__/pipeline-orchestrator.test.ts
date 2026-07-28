@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { PipelineOrchestrator, buildOrchestrator, runPipeline } from '../agents/PipelineOrchestrator';
-import { ManifestSerializer, buildSerializer }                   from '../agents/ManifestSerializer';
+import { ManifestSerializer }                                    from '../agents/ManifestSerializer';
 import { DocumentManifest }                                      from '../agents/DocumentManifest';
 import { ResultFormatter }                                       from '../agents/ResultFormatter';
 import { QueryExecutor }                                         from '../agents/QueryExecutor';
