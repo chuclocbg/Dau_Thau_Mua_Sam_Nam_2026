@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { resolveAuthorityForValue, getAuthorityChain, validateAuthorityPermission } from '../approval/approvalAuthority';
 import { ApprovalError } from '../approval/approvalTypes';
 import type { ApprovalAuthority } from '../masterdata/masterdataTypes';
