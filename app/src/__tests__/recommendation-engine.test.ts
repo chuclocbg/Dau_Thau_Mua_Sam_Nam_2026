@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RecommendationEngine, buildRecommendationEngine, recommendFromPanel } from '../agents/RecommendationEngine';
+import { RecommendationEngine, buildRecommendationEngine } from '../agents/RecommendationEngine';
 import type { RecommendationCode }                                              from '../agents/RecommendationEngine';
 import { DocumentListPanel, buildPanel }                                        from '../agents/DocumentListPanel';
 import { UiIntegrationLayer }                                                   from '../agents/UiIntegrationLayer';
