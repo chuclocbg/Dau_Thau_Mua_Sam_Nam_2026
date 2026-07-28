@@ -46,7 +46,7 @@
  */
 
 import { buildFormatter }                               from './ResultFormatter';
-import type { ResultFormatter, FormattedEntry, FormattedResult } from './ResultFormatter';
+import type { ResultFormatter, FormattedEntry } from './ResultFormatter';
 import type { QueryDescriptor }                         from './QueryPlanner';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
