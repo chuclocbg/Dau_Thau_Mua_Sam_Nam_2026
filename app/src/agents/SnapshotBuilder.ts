@@ -45,7 +45,7 @@
  */
 
 import { OfficialSourceConnector }                         from './OfficialSourceConnector';
-import type { ConnectorJob, ConnectorSource, ConnectResult } from './OfficialSourceConnector';
+import type { ConnectorJob, ConnectorSource }                from './OfficialSourceConnector';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
