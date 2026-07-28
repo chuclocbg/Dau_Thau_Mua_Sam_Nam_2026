@@ -25,7 +25,6 @@
  * No state changes. No IndexedDB. SSR-compatible.
  */
 
-import React from 'react';
 import LegalSummaryPanel, { type LegalSummaryPanelProps } from './LegalSummaryPanel';
 import CitationCardPanel from './CitationCardPanel';
 import TracePanel, { type TracePanelProps } from './TracePanel';
