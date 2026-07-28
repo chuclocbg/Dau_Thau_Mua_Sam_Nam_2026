@@ -381,10 +381,6 @@ describe('CM3: ProviderManager.stream() with memory', () => {
 
   it('CM3-02: first stream() sends no extra messages (empty memory)', async () => {
     let capturedMessages: Array<{ role: string; content: string }> = [];
-    const capturingSseFetch: () => Promise<Response> = async () => {
-      // No capture possible from SSE easily, just return valid SSE
-      return openaiSseFetch('ok')();
-    };
     // Use a non-capturing SSE (simpler) — test memory state instead
     const mem = new ConversationMemory();
     const m = makeManager({ fetchFn: openaiSseFetch('ok'), memory: mem });
