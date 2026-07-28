@@ -1,12 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   WebSocketClient,
-  type WebSocketClientOptions,
-  type WebSocketClientResult,
   type WebSocketTransport,
   type WebSocketFactory,
   type WebSocketCloseEvent,
-  type MessageHandler,
 } from '../providers/WebSocketClient';
 
 // ─── Mock transport ───────────────────────────────────────────────────────────
@@ -123,7 +120,7 @@ describe('WS2: connect()', () => {
   });
 
   it('WS2-02: connect() sets status to CONNECTING before handshake completes', async () => {
-    const { client, getTransport } = makeSetup();
+    const { client } = makeSetup();
     await client.connect(TEST_URL);
     // Transport created but onopen not yet fired → CONNECTING
     expect(client.getStatus()).toBe('CONNECTING');
