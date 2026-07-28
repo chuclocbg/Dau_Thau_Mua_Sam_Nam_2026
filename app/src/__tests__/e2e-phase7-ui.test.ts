@@ -32,6 +32,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 
 import AgentProviderPanel, { createAgentSystem } from '../components/AgentProviderPanel';
+import type { AgentProviderPanelProps }           from '../components/AgentProviderPanel';
 import WorkflowPanel                              from '../components/WorkflowPanel';
 import ChatInterfacePanel                         from '../components/ChatInterfacePanel';
 import AutonomousWorkflowPanel                    from '../components/AutonomousWorkflowPanel';
@@ -82,7 +83,7 @@ describe('P7E-01 · createAgentSystem — full bundle shape', () => {
 
 describe('P7E-02 · AgentProviderPanel — renders all 6 agents from bundle', () => {
   const { agents } = createAgentSystem();
-  const html = renderToString(React.createElement(AgentProviderPanel, { agents }));
+  const html = renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents }));
 
   it('P7E-02-01: renders data-state="ready" with 6 agents', () => {
     expect(html).toContain('data-state="ready"');
@@ -224,7 +225,7 @@ describe('P7E-06 · Multi-panel — AgentProviderPanel + WorkflowPanel', () => {
 
   it('P7E-06-01: AgentProviderPanel renders without throwing', () => {
     expect(() =>
-      renderToString(React.createElement(AgentProviderPanel, { agents: bundle.agents })),
+      renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents: bundle.agents })),
     ).not.toThrow();
   });
 
@@ -235,7 +236,7 @@ describe('P7E-06 · Multi-panel — AgentProviderPanel + WorkflowPanel', () => {
   });
 
   it('P7E-06-03: AgentProviderPanel renders data-state="ready" (6 agents)', () => {
-    const html = renderToString(React.createElement(AgentProviderPanel, { agents: bundle.agents }));
+    const html = renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents: bundle.agents }));
     expect(html).toContain('data-state="ready"');
   });
 
@@ -323,7 +324,7 @@ describe('P7E-09 · AgentSystemBundle — capability integrity', () => {
 
 describe('P7E-10 · Panel wiring — AgentProviderPanel receives live bundle.agents', () => {
   const { agents } = createAgentSystem();
-  const html = renderToString(React.createElement(AgentProviderPanel, { agents }));
+  const html = renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents }));
 
   it('P7E-10-01: renders exactly 6 agents (li count)', () => {
     const count = (html.match(/<li /g) ?? []).length;
@@ -355,8 +356,8 @@ describe('P7E-11 · SSR consistency — determinism and XSS safety', () => {
   it('P7E-11-02: AgentProviderPanel output is deterministic for same props', () => {
     const { agents } = createAgentSystem();
     const props = { agents };
-    const html1 = renderToString(React.createElement(AgentProviderPanel, props));
-    const html2 = renderToString(React.createElement(AgentProviderPanel, props));
+    const html1 = renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, props));
+    const html2 = renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, props));
     expect(html1).toBe(html2);
   });
 
@@ -378,7 +379,7 @@ describe('P7E-11 · SSR consistency — determinism and XSS safety', () => {
   it('P7E-11-05: no <script> tags in any Phase-7 panel output', () => {
     const { agents, chat, autonomous } = createAgentSystem();
     const panels = [
-      renderToString(React.createElement(AgentProviderPanel, { agents })),
+      renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents })),
       renderToString(React.createElement(WorkflowPanel, {})),
       renderToString(React.createElement(ChatInterfacePanel, { agent: chat })),
       renderToString(React.createElement(AutonomousWorkflowPanel, { agent: autonomous })),
@@ -408,7 +409,7 @@ describe('P7E-12 · App.tsx-style — all 3 Phase-7 panels from one bundle', () 
 
   it('P7E-12-03: AgentProviderPanel renders without throwing with bundle.agents', () => {
     expect(() =>
-      renderToString(React.createElement(AgentProviderPanel, { agents: bundle.agents })),
+      renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents: bundle.agents })),
     ).not.toThrow();
   });
 
@@ -428,7 +429,7 @@ describe('P7E-12 · App.tsx-style — all 3 Phase-7 panels from one bundle', () 
 
   it('P7E-12-06: AgentProviderPanel has data-panel="agent-provider"', () => {
     const html = renderToString(
-      React.createElement(AgentProviderPanel, { agents: bundle.agents }),
+      React.createElement<AgentProviderPanelProps>(AgentProviderPanel, { agents: bundle.agents }),
     );
     expect(html).toContain('data-panel="agent-provider"');
   });

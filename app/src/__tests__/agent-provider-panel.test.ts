@@ -23,7 +23,7 @@ import { renderToString } from 'react-dom/server';
 import AgentProviderPanel, {
   createAgentSystem,
 } from '../components/AgentProviderPanel';
-import type { AgentStatusInfo } from '../components/AgentProviderPanel';
+import type { AgentStatusInfo, AgentProviderPanelProps } from '../components/AgentProviderPanel';
 import { AgentRegistry } from '../agents';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ const THREE = [
 ];
 
 function render(props: React.ComponentProps<typeof AgentProviderPanel>): string {
-  return renderToString(React.createElement(AgentProviderPanel, props));
+  return renderToString(React.createElement<AgentProviderPanelProps>(AgentProviderPanel, props));
 }
 
 // ─── AP-01 · never-throw ──────────────────────────────────────────────────────
