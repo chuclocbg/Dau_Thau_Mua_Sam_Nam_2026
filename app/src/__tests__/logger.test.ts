@@ -8,7 +8,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   Logger,
-  type LogEntry,
   type LogLevel,
 } from '../providers/Logger';
 
