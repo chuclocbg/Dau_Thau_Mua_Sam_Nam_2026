@@ -18,7 +18,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createRequest, approveRequest, mergeRequests, splitRequest } from '../procurement/planning/planningService';
+import { createRequest, mergeRequests, splitRequest } from '../procurement/planning/planningService';
 import { createMemoryPlanningRepositories } from '../procurement/planning/memoryPlanningRepositories';
 import { PlanningError } from '../procurement/planning/planningTypes';
 import type { PlanningRepositories } from '../procurement/planning/planningRepository';
