@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { AuditTrail, buildAuditTrail, auditFromResult, historyFromRecords } from '../agents/AuditTrail';
+import { AuditTrail, auditFromResult, historyFromRecords } from '../agents/AuditTrail';
 import { RecommendationEngine, buildRecommendationEngine }                  from '../agents/RecommendationEngine';
 import type { RecommendationCode, RecommendationResult }                    from '../agents/RecommendationEngine';
 import { DocumentListPanel }                                                from '../agents/DocumentListPanel';
