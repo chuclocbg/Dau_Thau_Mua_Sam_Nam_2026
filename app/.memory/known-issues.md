@@ -123,6 +123,35 @@ Issues tracked here are accepted and deferred. Each has a named fix phase.
 - Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
 - Workaround: None; the identity is not recoverable after the fact from this call path.
 
+**KI-012 — approvedBy/notes/performedBy silently dropped in planningService.ts (found during Runtime Iteration 3, 2026-07-28)**
+- File: `src/procurement/planning/planningService.ts:57-58,116`
+- Issue: Same pattern as KI-007/KI-011, third file in the same track. `approveRequest(id, repos,
+  approvedBy, notes?)` never writes `approvedBy` or `notes` into its `repos.requests.update(id,
+  { status: 'APPROVED' })` call (line 65). `splitRequest(id, parts, repos, performedBy)` never
+  writes `performedBy` anywhere — the created split requests reuse `original.requester` (line 131)
+  and the cancellation update (line 145) records no actor either. (By contrast, `mergeRequests()`'s
+  own `performedBy` parameter in this same file IS correctly used, at line 94 — confirming this is
+  an inconsistency within the file, not a deliberate design choice.)
+- Impact: Approval and split actions on procurement requests — both audit-relevant, state-changing
+  actions — leave no record of who approved or who split, and an approval's notes are discarded.
+- Fix: Once `ProcurementRequest`'s type/schema is confirmed to have fields for it, thread
+  `approvedBy`/`notes` into `approveRequest()`'s update call, and `performedBy` into
+  `splitRequest()`'s created-request/cancellation calls — following `mergeRequests()`'s own
+  existing pattern in this file as a working example.
+- Target phase: Not yet scheduled — flagged, not fixed, per explicit instruction to log only.
+- Workaround: None; the identity is not recoverable after the fact from these call paths.
+
+**Pattern note:** KI-007, KI-009, KI-010, KI-011, and KI-012 (6 instances across
+`acceptanceSession.ts`, `acceptanceIntegration.ts` [KI-008, a sibling drop, not actor-related],
+`PlannerAgent.ts`, `paymentTreasuryService.ts`, `workspaceSession.ts`, and `planningService.ts`)
+share one shape: an actor/creator/approver/rules parameter accepted by a function but never
+written into the record it produces or used to validate it. All were found incidentally while
+verifying TS6133 "unused declaration" diagnostics were safe to mechanically clear — none were
+found by a deliberate search. This suggests the same pattern likely recurs elsewhere in the
+codebase beyond what a `tsc` unused-declaration pass happens to surface (a parameter that IS
+read, just incorrectly, would not trigger TS6133 at all). Worth a dedicated, deliberate audit
+for this specific shape rather than continuing to discover instances one at a time.
+
 ---
 
 ## RESOLVED
