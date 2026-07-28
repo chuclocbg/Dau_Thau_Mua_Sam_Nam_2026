@@ -21,35 +21,35 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { RoutePanel } from '../components/RoutePanel';
-import type { RouteDisplayInfo } from '../components/RoutePanel';
+import type { RouteDisplayInfo, RoutePanelProps } from '../components/RoutePanel';
 
 // ─── RP1 · Component structure ────────────────────────────────────────────────
 
 describe('RP1 · Component structure', () => {
   it('RP1-01: renders the route-panel wrapper element', () => {
-    const html = renderToString(React.createElement(RoutePanel, {}));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, {}));
     expect(html).toContain('route-panel');
   });
 
   it('RP1-02: renders default title "API Routes" when no title prop', () => {
-    const html = renderToString(React.createElement(RoutePanel, {}));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, {}));
     expect(html).toContain('API Routes');
   });
 
   it('RP1-03: renders a custom title', () => {
-    const html = renderToString(React.createElement(RoutePanel, { title: 'Server Routes' }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { title: 'Server Routes' }));
     expect(html).toContain('Server Routes');
   });
 
   it('RP1-04: custom title overrides default', () => {
-    const html = renderToString(React.createElement(RoutePanel, { title: 'My API' }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { title: 'My API' }));
     expect(html).not.toContain('API Routes');
     expect(html).toContain('My API');
   });
 
   it('RP1-05: renders route list element when routes are provided', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('route-item');
   });
 });
@@ -59,19 +59,19 @@ describe('RP1 · Component structure', () => {
 describe('RP2 · GET routes', () => {
   it('RP2-01: renders GET method badge', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('>GET<');
   });
 
   it('RP2-02: renders GET with method-get CSS class', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('method-get');
   });
 
   it('RP2-03: renders GET route path', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/models' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/models');
   });
 
@@ -81,7 +81,7 @@ describe('RP2 · GET routes', () => {
       { method: 'GET', path: '/models' },
       { method: 'GET', path: '/providers' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/health');
     expect(html).toContain('/models');
     expect(html).toContain('/providers');
@@ -96,7 +96,7 @@ describe('RP2 · GET routes', () => {
       { method: 'GET', path: '/workflows', description: 'list workflows' },
       { method: 'GET', path: '/agents',    description: 'list agents' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/health');
     expect(html).toContain('/agents');
     expect((html.match(/method-get/g) ?? []).length).toBe(6);
@@ -108,19 +108,19 @@ describe('RP2 · GET routes', () => {
 describe('RP3 · POST routes', () => {
   it('RP3-01: renders POST method badge', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'POST', path: '/chat' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('>POST<');
   });
 
   it('RP3-02: renders POST with method-post CSS class', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'POST', path: '/chat' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('method-post');
   });
 
   it('RP3-03: renders POST route path', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'POST', path: '/sessions/create' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/sessions/create');
   });
 
@@ -129,7 +129,7 @@ describe('RP3 · POST routes', () => {
       { method: 'POST', path: '/chat' },
       { method: 'POST', path: '/workflows/start' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/chat');
     expect(html).toContain('/workflows/start');
     expect((html.match(/method-post/g) ?? []).length).toBe(2);
@@ -137,7 +137,7 @@ describe('RP3 · POST routes', () => {
 
   it('RP3-05: POST method CSS class is lowercase', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'POST', path: '/data' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('method-post');
     expect(html).not.toContain('method-POST');
   });
@@ -148,14 +148,14 @@ describe('RP3 · POST routes', () => {
 describe('RP4 · PUT and DELETE routes', () => {
   it('RP4-01: renders PUT method badge and method-put CSS class', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'PUT', path: '/routes/update' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('>PUT<');
     expect(html).toContain('method-put');
   });
 
   it('RP4-02: renders DELETE method badge and method-delete CSS class', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'DELETE', path: '/sessions/abc' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('>DELETE<');
     expect(html).toContain('method-delete');
   });
@@ -165,7 +165,7 @@ describe('RP4 · PUT and DELETE routes', () => {
       { method: 'PUT',    path: '/item/1' },
       { method: 'DELETE', path: '/item/1' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('method-put');
     expect(html).toContain('method-delete');
   });
@@ -177,7 +177,7 @@ describe('RP4 · PUT and DELETE routes', () => {
       { method: 'PUT',    path: '/item' },
       { method: 'DELETE', path: '/item' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('method-get');
     expect(html).toContain('method-post');
     expect(html).toContain('method-put');
@@ -196,7 +196,7 @@ describe('RP5 · Mixed method display', () => {
   ];
 
   it('RP5-01: all four methods render in a mixed list', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: MIXED }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: MIXED }));
     expect(html).toContain('>GET<');
     expect(html).toContain('>POST<');
     expect(html).toContain('>PUT<');
@@ -204,7 +204,7 @@ describe('RP5 · Mixed method display', () => {
   });
 
   it('RP5-02: all four method CSS classes present', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: MIXED }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: MIXED }));
     expect(html).toContain('method-get');
     expect(html).toContain('method-post');
     expect(html).toContain('method-put');
@@ -212,7 +212,7 @@ describe('RP5 · Mixed method display', () => {
   });
 
   it('RP5-03: all four paths present', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: MIXED }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: MIXED }));
     expect(html).toContain('/health');
     expect(html).toContain('/chat');
     expect(html).toContain('/config');
@@ -220,7 +220,7 @@ describe('RP5 · Mixed method display', () => {
   });
 
   it('RP5-04: all four descriptions present', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: MIXED }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: MIXED }));
     expect(html).toContain('liveness probe');
     expect(html).toContain('send message');
     expect(html).toContain('update config');
@@ -228,7 +228,7 @@ describe('RP5 · Mixed method display', () => {
   });
 
   it('RP5-05: route count matches number of rendered route-item elements', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: MIXED }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: MIXED }));
     const items = (html.match(/route-item/g) ?? []).length;
     expect(items).toBe(4);
   });
@@ -239,19 +239,19 @@ describe('RP5 · Mixed method display', () => {
 describe('RP6 · Path rendering', () => {
   it('RP6-01: renders absolute path with leading slash', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/health');
   });
 
   it('RP6-02: renders nested path', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/api/v1/models' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/api/v1/models');
   });
 
   it('RP6-03: renders root path "/"', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('route-path');
   });
 
@@ -260,7 +260,7 @@ describe('RP6 · Path rendering', () => {
       { method: 'GET',  path: '/a' },
       { method: 'POST', path: '/b' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     const pathCount = (html.match(/route-path/g) ?? []).length;
     expect(pathCount).toBe(2);
   });
@@ -270,7 +270,7 @@ describe('RP6 · Path rendering', () => {
       { method: 'GET',  path: '/resource' },
       { method: 'POST', path: '/resource' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     const pathOccurrences = (html.match(/\/resource/g) ?? []).length;
     expect(pathOccurrences).toBeGreaterThanOrEqual(2);
   });
@@ -281,20 +281,20 @@ describe('RP6 · Path rendering', () => {
 describe('RP7 · Description field', () => {
   it('RP7-01: renders description when supplied', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health', description: 'liveness probe' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('liveness probe');
     expect(html).toContain('route-description');
   });
 
   it('RP7-02: omits description span when description is absent', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/models' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).not.toContain('route-description');
   });
 
   it('RP7-03: omits description span when description is empty string', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/models', description: '' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).not.toContain('route-description');
   });
 
@@ -302,7 +302,7 @@ describe('RP7 · Description field', () => {
     const routes: RouteDisplayInfo[] = [
       { method: 'POST', path: '/chat', description: 'Chat with AI assistant' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('Chat with AI assistant');
   });
 
@@ -311,7 +311,7 @@ describe('RP7 · Description field', () => {
       { method: 'GET',  path: '/a', description: 'has description' },
       { method: 'GET',  path: '/b' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     const descCount = (html.match(/route-description/g) ?? []).length;
     expect(descCount).toBe(1);
   });
@@ -321,31 +321,31 @@ describe('RP7 · Description field', () => {
 
 describe('RP8 · Empty state', () => {
   it('RP8-01: renders empty-state paragraph with no routes', () => {
-    const html = renderToString(React.createElement(RoutePanel, {}));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, {}));
     expect(html).toContain('empty-state');
     expect(html).toContain('No routes registered');
   });
 
   it('RP8-02: renders empty-state with explicit empty array', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: [] }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: [] }));
     expect(html).toContain('No routes registered');
   });
 
   it('RP8-03: empty state does not contain route-item', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: [] }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: [] }));
     expect(html).not.toContain('route-item');
   });
 
   it('RP8-04: adding a route removes the empty-state', () => {
     const html = renderToString(
-      React.createElement(RoutePanel, { routes: [{ method: 'GET', path: '/x' }] }),
+      React.createElement<RoutePanelProps>(RoutePanel, { routes: [{ method: 'GET', path: '/x' }] }),
     );
     expect(html).not.toContain('No routes registered');
     expect(html).toContain('route-item');
   });
 
   it('RP8-05: empty state still renders title', () => {
-    const html = renderToString(React.createElement(RoutePanel, { title: 'My Routes', routes: [] }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { title: 'My Routes', routes: [] }));
     expect(html).toContain('My Routes');
     expect(html).toContain('No routes registered');
   });
@@ -360,7 +360,7 @@ describe('RP9 · Large scenarios', () => {
       method: methods[i % 4],
       path:   `/resource/${i}`,
     }));
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/resource/0');
     expect(html).toContain('/resource/49');
     const items = (html.match(/route-item/g) ?? []).length;
@@ -373,7 +373,7 @@ describe('RP9 · Large scenarios', () => {
       path:        `/route/${i}`,
       description: `Route number ${i}`,
     }));
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('/route/0');
     expect(html).toContain('/route/99');
     expect(html).toContain('Route number 99');
@@ -388,7 +388,7 @@ describe('RP9 · Large scenarios', () => {
       { method: 'GET', path: '/workflows', description: 'list workflows' },
       { method: 'GET', path: '/agents',    description: 'list agents' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes: builtIns }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: builtIns }));
     for (const r of builtIns) {
       expect(html).toContain(r.path!);
       expect(html).toContain(r.description!);
@@ -402,7 +402,7 @@ describe('RP9 · Large scenarios', () => {
       { method: 'PUT',    path: '/resource' },
       { method: 'DELETE', path: '/resource' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).toContain('method-get');
     expect(html).toContain('method-post');
     expect(html).toContain('method-put');
@@ -416,24 +416,24 @@ describe('RP9 · Large scenarios', () => {
 
 describe('RP10 · Null and undefined props', () => {
   it('RP10-01: null routes prop renders empty-state', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: null }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: null }));
     expect(html).toContain('No routes registered');
   });
 
   it('RP10-02: null title prop falls back to default title', () => {
-    const html = renderToString(React.createElement(RoutePanel, { title: null }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { title: null }));
     expect(html).toContain('API Routes');
   });
 
   it('RP10-03: both props null still renders valid HTML', () => {
-    const html = renderToString(React.createElement(RoutePanel, { routes: null, title: null }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: null, title: null }));
     expect(html).toContain('route-panel');
     expect(html).toContain('API Routes');
     expect(html).toContain('No routes registered');
   });
 
   it('RP10-04: calling with no props renders default state', () => {
-    const html = renderToString(React.createElement(RoutePanel, {}));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, {}));
     expect(html).toContain('API Routes');
     expect(html).toContain('No routes registered');
   });
@@ -443,14 +443,14 @@ describe('RP10 · Null and undefined props', () => {
 
 describe('RP11 · SSR renderToString', () => {
   it('RP11-01: renderToString returns a non-empty HTML string', () => {
-    const html = renderToString(React.createElement(RoutePanel, {}));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, {}));
     expect(typeof html).toBe('string');
     expect(html.length).toBeGreaterThan(0);
   });
 
   it('RP11-02: output contains no script tags', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health', description: 'probe' }];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).not.toContain('<script');
   });
 
@@ -458,7 +458,7 @@ describe('RP11 · SSR renderToString', () => {
     const routes: RouteDisplayInfo[] = [
       { method: 'GET', path: '/search?q=<script>alert(1)</script>' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).not.toContain('<script>alert');
     expect(html).toContain('&lt;script&gt;');
   });
@@ -467,15 +467,15 @@ describe('RP11 · SSR renderToString', () => {
     const routes: RouteDisplayInfo[] = [
       { method: 'POST', path: '/data', description: '<b>bold</b> & "quoted"' },
     ];
-    const html = renderToString(React.createElement(RoutePanel, { routes }));
+    const html = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html).not.toContain('<b>');
     expect(html).toContain('&lt;b&gt;');
   });
 
   it('RP11-05: renderToString output is deterministic for the same input', () => {
     const routes: RouteDisplayInfo[] = [{ method: 'GET', path: '/health', description: 'probe' }];
-    const html1 = renderToString(React.createElement(RoutePanel, { routes }));
-    const html2 = renderToString(React.createElement(RoutePanel, { routes }));
+    const html1 = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
+    const html2 = renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }));
     expect(html1).toBe(html2);
   });
 });
@@ -486,7 +486,7 @@ describe('RP12 · Never-throw', () => {
   it('RP12-01: never throws with null items inside the routes array', () => {
     const badRoutes = [null, undefined, null] as unknown as RouteDisplayInfo[];
     expect(() =>
-      renderToString(React.createElement(RoutePanel, { routes: badRoutes }))
+      renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: badRoutes }))
     ).not.toThrow();
   });
 
@@ -495,7 +495,7 @@ describe('RP12 · Never-throw', () => {
       42, '', false, {}, { method: null, path: null }, { method: 123, path: 456 },
     ] as unknown as RouteDisplayInfo[];
     expect(() =>
-      renderToString(React.createElement(RoutePanel, { routes: badRoutes }))
+      renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes: badRoutes }))
     ).not.toThrow();
   });
 
@@ -505,7 +505,7 @@ describe('RP12 · Never-throw', () => {
       { method: 'OPTIONS' as never, path: '/resource' },
     ];
     expect(() =>
-      renderToString(React.createElement(RoutePanel, { routes }))
+      renderToString(React.createElement<RoutePanelProps>(RoutePanel, { routes }))
     ).not.toThrow();
   });
 
@@ -520,7 +520,7 @@ describe('RP12 · Never-throw', () => {
     ];
     for (const props of cases) {
       expect(() =>
-        renderToString(React.createElement(RoutePanel, props))
+        renderToString(React.createElement<RoutePanelProps>(RoutePanel, props))
       ).not.toThrow();
     }
   });
