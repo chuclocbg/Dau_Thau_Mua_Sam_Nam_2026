@@ -1,6 +1,6 @@
-import { 
-  Document, Paragraph, TextRun, Table, TableRow, TableCell, 
-  AlignmentType, WidthType, BorderStyle, UnderlineType, Packer 
+import {
+  Document, Paragraph, TextRun, Table, TableRow, TableCell,
+  AlignmentType, WidthType, BorderStyle, Packer
 } from 'docx';
 import { ProcurementPackage, ProcurementItem } from './demoData';
 
