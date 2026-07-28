@@ -17,7 +17,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderToString }       from 'react-dom/server';
-import React                    from 'react';
 
 import {
   DocumentTable,
