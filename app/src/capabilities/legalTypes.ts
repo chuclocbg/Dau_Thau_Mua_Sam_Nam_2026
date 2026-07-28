@@ -30,7 +30,6 @@ import type { LegalCitation }     from '../knowledge/knowledgeTypes';
 import type {
   GovernanceDecision,
   DecisionVerdict,
-  ComplianceWarning,
   RiskAssessment,
   ReasoningStep,
   AuthorityLevel,
