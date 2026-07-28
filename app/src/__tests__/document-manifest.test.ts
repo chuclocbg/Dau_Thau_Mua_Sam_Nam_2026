@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DocumentManifest, buildManifest, manifestFromFormatted } from '../agents/DocumentManifest';
+import { DocumentManifest, manifestFromFormatted } from '../agents/DocumentManifest';
 import { ResultFormatter, buildFormatter }                        from '../agents/ResultFormatter';
 import { QueryExecutor }                                          from '../agents/QueryExecutor';
 import { QueryPlanner }                                           from '../agents/QueryPlanner';
