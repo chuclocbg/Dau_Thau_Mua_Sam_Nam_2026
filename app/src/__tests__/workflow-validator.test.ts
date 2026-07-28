@@ -24,7 +24,6 @@ import {
   validateCancel,
   validateDocuments,
   validateApprovalAuthority,
-  validateMethodMatchesThreshold,
   getBlockingErrors,
   getWarnings,
 } from '../procurement/workflow/workflowValidator';
