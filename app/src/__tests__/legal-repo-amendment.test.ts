@@ -25,7 +25,6 @@ import {
   MemoryEffectivePeriodRepository,
 } from '../legal/memoryRepositories';
 import { PrismaAmendmentRepository, PrismaCitationRepository } from '../legal/prismaRepositories';
-import { PrismaNotReadyError } from '../legal/legalRepositories';
 import type {
   IAmendmentRepository,
   ICitationRepository,
