@@ -25,7 +25,6 @@ import { describe, it, expect } from 'vitest';
 import {
   generateDocuments,
   type DocumentGeneratorInput,
-  type DocumentGeneratorOutput,
 } from '../ai/documentGenerator';
 
 // Backward-compatibility imports — must remain usable independently.
