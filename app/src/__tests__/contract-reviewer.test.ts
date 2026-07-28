@@ -27,7 +27,6 @@ import { describe, it, expect } from 'vitest';
 import {
   reviewContract,
   type ContractReviewerInput,
-  type ContractType,
 } from '../ai/contractReviewer';
 import { searchLegalIndex }   from '../ai/searchLegalIndex';
 import { extractCitations }   from '../ai/legalCitationEngine';
