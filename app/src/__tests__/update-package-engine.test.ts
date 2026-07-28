@@ -32,7 +32,6 @@ import { describe, it, expect } from 'vitest';
 import {
   buildUpdatePackage,
   computeImpactLevel,
-  getAffectedAreas,
 } from '../ai/updatePackageEngine';
 import type { SnapshotDiff } from '../ai/regulationDiffEngine';
 import type { RiskThreshold, ProcurementBand } from '../ai/regulationLoader';
