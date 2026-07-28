@@ -32,7 +32,6 @@ function stubClassifier(opts: Parameters<typeof synClassified>[0]) {
 }
 
 // Real-stack domain order for forward data (GOV_PORTAL→GENERAL first)
-const REAL_DOMAINS = ['GENERAL', 'HR', 'BIDDING', 'FINANCIAL'] as const;
 const REAL_URLS    = [
   'https://chinhphu.vn',
   'https://moha.gov.vn',
