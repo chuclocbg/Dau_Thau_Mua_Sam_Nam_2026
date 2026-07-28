@@ -17,8 +17,6 @@
  * No hooks. No browser globals. SSR-compatible. No edit controls.
  */
 
-import React from 'react';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface LegalSummaryPanelProps {
