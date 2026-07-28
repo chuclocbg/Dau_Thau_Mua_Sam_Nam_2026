@@ -5,7 +5,7 @@
 
 import type { ApprovalRepositories } from './approvalRepositories';
 import type { ApprovalSummary, CreateApprovalRequestParams } from './approvalTypes';
-import type { IMasterDataRepository, MasterDataRepositories } from '../masterdata/masterdataRepository';
+import type { IMasterDataRepository } from '../masterdata/masterdataRepository';
 import type { ApprovalAuthority } from '../masterdata/masterdataTypes';
 import type { ProcurementPackage } from '../procurement/package/packageTypes';
 import type { ProcurementPlan } from '../procurement/planning/planningTypes';
