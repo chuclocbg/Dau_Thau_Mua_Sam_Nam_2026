@@ -24,7 +24,7 @@ const auth: AuthContext = Object.freeze({
 })
 
 const legalBasis: readonly LegalBasis[] = [
-  { lawCode: 'LTA-2011', article: '10', description: 'Archive law' },
+  { document: 'LTA-2011', article: '10', summary: 'Archive law' },
 ]
 
 let service: RetentionService

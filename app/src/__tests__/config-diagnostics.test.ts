@@ -5,7 +5,7 @@ import type { AppConfig } from '../config/appConfig.ts'
 function fakeConfig(): AppConfig {
   return {
     port: 3000, host: '0.0.0.0', nodeEnv: 'production', logLevel: 'info', logFormat: 'json',
-    shutdownTimeoutMs: 10_000, streamTimeoutMs: 30_000,
+    shutdownTimeoutMs: 10_000, streamTimeoutMs: 30_000, credentialSigningSecret: undefined,
   }
 }
 
@@ -13,7 +13,7 @@ describe('buildConfigDiagnostics', () => {
   it('lists every AppConfig field with its value', () => {
     const report = buildConfigDiagnostics(fakeConfig(), 'production')
     const keys = report.fields.map(f => f.key)
-    expect(keys).toEqual(['port', 'host', 'nodeEnv', 'logLevel', 'logFormat', 'shutdownTimeoutMs', 'streamTimeoutMs'])
+    expect(keys).toEqual(['port', 'host', 'nodeEnv', 'logLevel', 'logFormat', 'shutdownTimeoutMs', 'streamTimeoutMs', 'credentialSigningSecret'])
     expect(report.profile).toBe('production')
   })
 

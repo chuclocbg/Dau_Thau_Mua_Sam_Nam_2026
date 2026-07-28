@@ -469,10 +469,10 @@ describe('AR6: streaming failures', () => {
 describe('AR7: metadata', () => {
   it('AR7-01: providerUsed matches the providerId in the provider response', async () => {
     const runtime = new AgentRuntime({
-      providerManager: makeMockManager({ chatResult: okResult({ providerId: 'my-claude' }) }),
+      providerManager: makeMockManager({ chatResult: okResult({ providerId: 'gemini' }) }),
     });
     const result = await runtime.run('Hello');
-    expect(result.providerUsed).toBe('my-claude');
+    expect(result.providerUsed).toBe('gemini');
   });
 
   it('AR7-02: usage.inputTokens matches the provider response', async () => {
