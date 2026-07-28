@@ -19,8 +19,6 @@
  * No state changes. No IndexedDB. SSR-compatible.
  */
 
-import React from 'react';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ChecklistPanelProps {
