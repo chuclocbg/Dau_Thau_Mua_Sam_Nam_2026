@@ -15,7 +15,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderToString }       from 'react-dom/server';
-import React                    from 'react';
 
 import ChecklistPanel, { type ChecklistPanelProps } from '../components/ChecklistPanel';
 import AgentOutputPanel                             from '../components/AgentOutputPanel';
