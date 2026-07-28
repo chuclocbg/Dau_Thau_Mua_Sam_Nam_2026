@@ -9,10 +9,10 @@ import { describe, it, expect } from 'vitest';
 import { renderToString }       from 'react-dom/server';
 import React                    from 'react';
 
-import AgentChatPanel, { type AgentChatPanelProps } from '../components/AgentChatPanel';
-import ChatMessage,    { type ChatMessageProps }     from '../components/ChatMessage';
-import ChatInput,      { type ChatInputProps }       from '../components/ChatInput';
-import AutonomousPanel, { type AutonomousPanelProps } from '../components/AutonomousPanel';
+import AgentChatPanel  from '../components/AgentChatPanel';
+import ChatMessage     from '../components/ChatMessage';
+import ChatInput       from '../components/ChatInput';
+import AutonomousPanel from '../components/AutonomousPanel';
 
 import type { ChatMessage as ChatMessageRecord }        from '../agents/ChatAgent';
 import type { AgentSession, UserQuestion }              from '../agents/AutonomousAgent';
