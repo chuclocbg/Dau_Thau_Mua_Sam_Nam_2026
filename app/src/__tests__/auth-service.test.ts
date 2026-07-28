@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import type { IPasswordHasher } from '../auth/types/providerTypes.ts'
 import { AuthError } from '../auth/types/authTypes.ts'
 import { buildMemoryAuthRepositories } from '../auth/infrastructure/memoryAuthRepositories.ts'
