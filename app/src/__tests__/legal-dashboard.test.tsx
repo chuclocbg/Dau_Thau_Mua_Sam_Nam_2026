@@ -15,7 +15,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { renderToString }       from 'react-dom/server';
-import React                    from 'react';
 
 import LegalDashboard, { type LegalDashboardProps } from '../components/LegalDashboard';
 import AgentOutputPanel    from '../components/AgentOutputPanel';
