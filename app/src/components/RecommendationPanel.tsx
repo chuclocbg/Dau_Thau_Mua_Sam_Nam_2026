@@ -20,8 +20,6 @@
  * SSR-compatible.
  */
 
-import React from 'react';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface RecommendationPanelProps {
