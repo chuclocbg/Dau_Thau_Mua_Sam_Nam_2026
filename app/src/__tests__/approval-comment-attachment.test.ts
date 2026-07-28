@@ -259,7 +259,7 @@ describe('comment + attachment combined', () => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-import type { AddAttachmentParams, ApprovalDocumentType } from '../approval/approvalTypes';
+import type { AddAttachmentParams } from '../approval/approvalTypes';
 function attachment(overrides: Partial<AddAttachmentParams> = {}): AddAttachmentParams {
   return { fileName: 'doc.pdf', fileType: 'application/pdf', fileSize: 1024, documentType: 'SUPPORTING_DOCUMENT', ...overrides };
 }
