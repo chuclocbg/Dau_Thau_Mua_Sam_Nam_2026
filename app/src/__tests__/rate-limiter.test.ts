@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   RateLimiter,
   type RateLimiterOptions,
-  type RateLimiterResult,
 } from '../providers/RateLimiter';
 
 // ─── RL1: Constructor / initial state ────────────────────────────────────────
