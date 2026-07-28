@@ -45,7 +45,6 @@ beforeEach(() => { hrq = new HumanReviewQueue(); });
 
 const same25   = () => hrq.buildQueue('2025-07-01', '2025-07-01');
 const forward  = () => hrq.buildQueue('2025-07-01', '2026-01-01');
-const backward = () => hrq.buildQueue('2026-01-01', '2025-07-01');
 
 // ─── Synthetic-data helpers ───────────────────────────────────────────────────
 
