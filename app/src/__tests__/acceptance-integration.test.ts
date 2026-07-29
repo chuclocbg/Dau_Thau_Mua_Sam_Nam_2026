@@ -9,7 +9,7 @@ import {
 } from '../acceptance/acceptanceService';
 import { formCommittee } from '../acceptance/acceptanceCommittee';
 import { createSession, startSession, closeSession } from '../acceptance/acceptanceSession';
-import { recordItem } from '../acceptance/acceptanceItem';
+import { recordItem, calculateAcceptanceRate } from '../acceptance/acceptanceItem';
 import { createMemoryAcceptanceRepositories } from '../acceptance/acceptanceFactory';
 import { generateAcceptanceCode, generateMinuteCode } from '../acceptance/acceptanceFactory';
 import type { AcceptanceRepositories } from '../acceptance/acceptanceRepositories';
@@ -163,6 +163,56 @@ describe('buildAcceptanceSummary — items', () => {
     await recordItem(sessionId, requestId, { itemCode: 'I1', description: 'D', contractedQuantity: 10, acceptedQuantity: 0, rejectedQuantity: 10 }, 'U', repos);
     const summary = await buildAcceptanceSummary(requestId, repos);
     expect(summary?.rejectedItemCount).toBe(1);
+  });
+});
+
+// ─── KI-008: acceptanceRate was computed but dropped from buildAcceptanceSummary() ─
+// (app/.memory/known-issues.md KI-008) — calculateAcceptanceRate() was already awaited
+// as part of the Promise.all but the resulting value was never included in the
+// returned AcceptanceSummary object. Fixed by adding the field to both the type
+// and the returned object; calculateAcceptanceRate()'s own formula is unchanged.
+
+describe('buildAcceptanceSummary — acceptanceRate (KI-008)', () => {
+  let repos: AcceptanceRepositories;
+  let requestId: string;
+  let sessionId: string;
+  beforeEach(async () => {
+    repos = createMemoryAcceptanceRepositories();
+    requestId = (await createAcceptanceRequest(rparams(), repos)).id;
+    await formCommittee(requestId, cparams(), 'DIR', repos);
+    const s = await createSession(requestId, { sessionType: 'FINAL', scheduledDate: '2026-08-01' }, 'U', repos);
+    await startSession(s.id, 'U', '2026-08-01', repos);
+    sessionId = s.id;
+  });
+
+  it('acceptanceRate is present on the returned summary', async () => {
+    await recordItem(sessionId, requestId, { itemCode: 'I1', description: 'D', contractedQuantity: 10, acceptedQuantity: 10, rejectedQuantity: 0 }, 'U', repos);
+    const summary = await buildAcceptanceSummary(requestId, repos);
+    expect(summary?.acceptanceRate).toBeDefined();
+  });
+
+  it('acceptanceRate is 100 when all accepted quantity matches contracted quantity', async () => {
+    await recordItem(sessionId, requestId, { itemCode: 'I1', description: 'D', contractedQuantity: 10, acceptedQuantity: 10, rejectedQuantity: 0 }, 'U', repos);
+    const summary = await buildAcceptanceSummary(requestId, repos);
+    expect(summary?.acceptanceRate).toBe(100);
+  });
+
+  it('acceptanceRate is 50 when half the contracted quantity is accepted', async () => {
+    await recordItem(sessionId, requestId, { itemCode: 'I1', description: 'D', contractedQuantity: 10, acceptedQuantity: 5, rejectedQuantity: 0 }, 'U', repos);
+    const summary = await buildAcceptanceSummary(requestId, repos);
+    expect(summary?.acceptanceRate).toBe(50);
+  });
+
+  it('acceptanceRate is 0 when no items are recorded', async () => {
+    const summary = await buildAcceptanceSummary(requestId, repos);
+    expect(summary?.acceptanceRate).toBe(0);
+  });
+
+  it('acceptanceRate matches calculateAcceptanceRate() called directly (no drift between the two)', async () => {
+    await recordItem(sessionId, requestId, { itemCode: 'I1', description: 'D', contractedQuantity: 10, acceptedQuantity: 7, rejectedQuantity: 0 }, 'U', repos);
+    const summary = await buildAcceptanceSummary(requestId, repos);
+    const direct = await calculateAcceptanceRate(requestId, repos);
+    expect(summary?.acceptanceRate).toBe(direct);
   });
 });
 

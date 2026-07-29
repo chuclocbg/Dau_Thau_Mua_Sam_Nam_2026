@@ -247,6 +247,7 @@ export interface AcceptanceSummary {
   memberCount: number;
   attachmentCount: number;
   legalBasisCount: number;
+  acceptanceRate: number;
 }
 
 // ─── Search ────────────────────────────────────────────────────────────────────

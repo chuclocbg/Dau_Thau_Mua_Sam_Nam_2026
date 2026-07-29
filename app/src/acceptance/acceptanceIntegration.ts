@@ -78,6 +78,7 @@ export async function buildAcceptanceSummary(
     memberCount:           members.length,
     attachmentCount,
     legalBasisCount:       request.legalBasis.length,
+    acceptanceRate,
   };
 }
 
