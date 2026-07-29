@@ -1,4 +1,4 @@
-import type { AuthCredentials, PasswordCredentials } from '../../types/authTypes.ts'
+import type { PasswordCredentials, TokenCredentials } from '../../types/authTypes.ts'
 import { AuthError } from '../../types/authTypes.ts'
 import type { IAuthenticationProvider, IPasswordHasher, AuthUser } from '../../types/providerTypes.ts'
 import type { IUserRepository } from '../authRepositories.ts'
@@ -16,7 +16,7 @@ export class LocalAuthProvider implements IAuthenticationProvider {
     return credentialType === 'password'
   }
 
-  async authenticate(credentials: AuthCredentials): Promise<AuthUser> {
+  async authenticate(credentials: PasswordCredentials | TokenCredentials): Promise<AuthUser> {
     if (credentials.credentialType !== 'password') {
       throw new AuthError('INVALID_CREDENTIALS', 'credentialType', 'LocalAuthProvider requires password credentials')
     }

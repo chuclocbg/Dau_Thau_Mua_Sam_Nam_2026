@@ -1,4 +1,4 @@
-import type { AuthCredentials, AuthContext, Session, User, PermissionScope, Permission } from './authTypes.ts'
+import type { AuthContext, Session, User, PermissionScope, Permission, PasswordCredentials, TokenCredentials } from './authTypes.ts'
 import type { IAccessToken, IRefreshToken, AccessTokenPayload, RefreshTokenPayload, TokenPair } from './tokenTypes.ts'
 
 // ── Provider type discriminator ───────────────────────────────────────────────
@@ -30,7 +30,7 @@ export interface AuthUser {
 export interface IAuthenticationProvider {
   readonly providerId: string
   readonly providerType: AuthProviderType
-  authenticate(credentials: AuthCredentials): Promise<AuthUser>
+  authenticate(credentials: PasswordCredentials | TokenCredentials): Promise<AuthUser>
   supports(credentialType: string): boolean
 }
 

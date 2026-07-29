@@ -1,4 +1,4 @@
-import type { AuthCredentials, AuthContext, AuthResult, User, Role, Permission, DelegationGrant, ApprovalHierarchy } from '../types/authTypes.ts'
+import type { AuthContext, AuthResult, User, Role, Permission, DelegationGrant, ApprovalHierarchy, PasswordCredentials, TokenCredentials } from '../types/authTypes.ts'
 import { AuthError } from '../types/authTypes.ts'
 import type { IAuthenticationProvider } from '../types/providerTypes.ts'
 import type { AuthRepositories } from '../infrastructure/authRepositories.ts'
@@ -14,7 +14,7 @@ const REFRESH_DURATION_MS = 7 * 24 * 60 * 60 * 1000  // 7 days
 // ── Authenticate ──────────────────────────────────────────────────────────────
 
 export async function authenticate(
-  credentials: AuthCredentials,
+  credentials: PasswordCredentials | TokenCredentials,
   provider: IAuthenticationProvider,
   repos: AuthRepositories,
 ): Promise<AuthResult> {
