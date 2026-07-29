@@ -2780,7 +2780,7 @@ export const documentTemplates: DocumentConfig[] = [
   // Document 28: Biên bản mở thầu/chào hàng
   {
     id: 28,
-    name: "Biên bản mở thầu (chào hàng cạnh tranh)",
+    name: "Biên bản mở thầu",
     getCategory: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'required' : 'not_applicable',
     getCategoryLabel: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'Bắt buộc' : 'Không áp dụng',
     getSigner: (pkg) => `Tổ chuyên gia`,
