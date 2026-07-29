@@ -1,7 +1,7 @@
 /**
  * MemoryLegalDocumentRepository tests — repository interface contract
  *
- * Groups (13 × 3 = 39):
+ * Groups (14 groups):
  *   LRD-01  save / findById — basic CRUD
  *   LRD-02  findBySymbol — lookup by document symbol
  *   LRD-03  findAll — returns all saved documents
@@ -15,6 +15,7 @@
  *   LRD-11  delete — idempotent (no error for missing id)
  *   LRD-12  PrismaLegalDocumentRepository (Phase M1, real impl) — throws without DATABASE_URL
  *   LRD-13  PrismaNotReadyError — error name and message shape (class still exists, unused by this repo)
+ *   LRD-14  type: 'INTERNAL_REGULATION' (PRIORITY2_DOMAIN_AUDIT.md B.2) — schema fix proof
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -312,5 +313,43 @@ describe('LRD-13 PrismaNotReadyError has correct name and message', () => {
   });
   it('is an instance of Error', () => {
     expect(new PrismaNotReadyError('x')).toBeInstanceOf(Error);
+  });
+});
+
+// ─── LRD-14: type: 'INTERNAL_REGULATION' (PRIORITY2_DOMAIN_AUDIT.md B.2) ──────
+// Before this fix, a LegalDocument with type: 'INTERNAL_REGULATION' (a real,
+// named legal-source category — CLAUDE.md legal-priority item #13, "Internal
+// regulations of Industrial Technical College") could not be passed to
+// PrismaLegalDocumentRepository.save() at all: the Prisma-generated DocType
+// enum had no matching member, so this exact object literal failed to
+// type-check (TS2322 at prismaRepositories.ts:64-65). The fix adds
+// INTERNAL_REGULATION to the DocType enum (prisma/schema.prisma) via an
+// additive migration and regenerates the client. This test compiling and
+// running at all is itself part of the proof — before the fix, this file
+// would not type-check with this fixture in it.
+
+const INTERNAL_REG: LegalDocument = {
+  id: 'quy-che-chi-tieu-2026', symbol: 'QC-2026/CĐKTCN', title: 'Quy chế chi tiêu nội bộ',
+  type: 'INTERNAL_REGULATION', issuer: 'Trường Cao đẳng Kỹ thuật Công nghiệp',
+  effectiveDate: '2026-01-01', status: 'ACTIVE', source: 'Nội bộ', priority: 4,
+  tags: ['nội bộ', 'chi tiêu'], summary: 'Quy chế chi tiêu nội bộ của Trường', confidence: 1.0,
+};
+
+describe('LRD-14 type: INTERNAL_REGULATION is a valid LegalDocument type', () => {
+  it('MemoryLegalDocumentRepository saves and retrieves it unchanged', async () => {
+    const repo: ILegalDocumentRepository = new MemoryLegalDocumentRepository();
+    await repo.save(INTERNAL_REG);
+    expect((await repo.findById(INTERNAL_REG.id))!.type).toBe('INTERNAL_REGULATION');
+  });
+
+  it('findByDomain finds it via its own tags', async () => {
+    const repo: ILegalDocumentRepository = new MemoryLegalDocumentRepository();
+    await repo.save(INTERNAL_REG);
+    expect(await repo.findByDomain('nội bộ')).toHaveLength(1);
+  });
+
+  it('PrismaLegalDocumentRepository.save() now accepts it (type-checks) and still throws the identical DATABASE_URL error as every other type -- proving the fix is additive only, not a runtime behavior change', async () => {
+    const repo: ILegalDocumentRepository = new PrismaLegalDocumentRepository();
+    await expect(repo.save(INTERNAL_REG)).rejects.toThrow(/DATABASE_URL/);
   });
 });
