@@ -188,7 +188,7 @@ export class WorkspaceSessionManager {
     const existing = this.approvals.get(approvalId);
     if (!existing) throw new Error(`Approval '${approvalId}' not found.`);
     const decidedAt = new Date().toISOString();
-    this.approvals.set(approvalId, { ...existing, status, decidedAt, reason });
+    this.approvals.set(approvalId, { ...existing, status, decidedAt, reason, resolvedBy: actor });
     this.workspaceUpdatedAt = decidedAt;
   }
 

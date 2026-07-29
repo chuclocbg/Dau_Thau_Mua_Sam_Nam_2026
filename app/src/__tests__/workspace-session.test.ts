@@ -316,6 +316,20 @@ describe('WS-11 resolveApproval status updated to APPROVED or REJECTED', () => {
     mgr.resolveApproval('appr-002', 'APPROVED', 'u-dir');
     expect(mgr.getWorkspace().approvals[0]?.decidedAt).toBeDefined();
   });
+  it('resolvedBy records the actor who resolved it (KI-011)', () => {
+    const mgr = makeManager();
+    mgr.requestApproval(APPROVAL);
+    mgr.resolveApproval('appr-002', 'APPROVED', 'u-dir');
+    expect(mgr.getWorkspace().approvals[0]?.resolvedBy).toBe('u-dir');
+  });
+  it('resolvedBy can differ from approver (a delegate resolving on the designated approver\'s behalf)', () => {
+    const mgr = makeManager();
+    mgr.requestApproval(APPROVAL);
+    mgr.resolveApproval('appr-002', 'APPROVED', 'u-delegate');
+    const approval = mgr.getWorkspace().approvals[0];
+    expect(approval?.approver).toBe('DIRECTOR');
+    expect(approval?.resolvedBy).toBe('u-delegate');
+  });
   it('resolveApproval on unknown id throws', () => {
     const mgr = makeManager();
     expect(() => mgr.resolveApproval('non-existent', 'APPROVED', 'u-dir')).toThrow();

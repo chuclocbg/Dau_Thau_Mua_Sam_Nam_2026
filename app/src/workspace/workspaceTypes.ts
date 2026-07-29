@@ -248,6 +248,7 @@ export interface WorkspaceApproval {
   readonly status:      ApprovalStatus;
   readonly decidedAt?:  string;
   readonly reason?:     string;
+  readonly resolvedBy?: string;
 }
 
 export function createWorkspaceApproval(params: {
@@ -260,6 +261,7 @@ export function createWorkspaceApproval(params: {
   readonly status?:     ApprovalStatus;
   readonly decidedAt?:  string;
   readonly reason?:     string;
+  readonly resolvedBy?: string;
 }): WorkspaceApproval {
   return {
     ...params,
