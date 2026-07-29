@@ -2593,8 +2593,8 @@ export const documentTemplates: DocumentConfig[] = [
   {
     id: 26,
     name: "Phiếu yêu cầu báo giá (RFQ)",
-    getCategory: (m) => m === 'DIRECT_50' ? 'not_applicable' : 'required',
-    getCategoryLabel: (m) => m === 'DIRECT_50' ? 'Không áp dụng' : 'Bắt buộc',
+    getCategory: (m) => m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'required' : 'not_applicable',
+    getCategoryLabel: (m) => m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'Bắt buộc' : 'Không áp dụng',
     getSigner: (pkg) => `${pkg.expertTeamLeader}`,
     getSignDate: (pkg) => pkg.dateDocIssue,
     getAuditRisk: (pkg) => "Không có bằng chứng đã gửi Phiếu yêu cầu báo giá cho nhà cung cấp — thiếu căn cứ chứng minh quy trình cạnh tranh đã được khởi động hợp lệ (NĐ 214/2025 Điều 80).",
