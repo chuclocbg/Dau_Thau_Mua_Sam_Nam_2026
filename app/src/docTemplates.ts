@@ -2703,8 +2703,8 @@ export const documentTemplates: DocumentConfig[] = [
   {
     id: 27,
     name: "Thông báo mời chào hàng",
-    getCategory: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'required' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'recommended' : 'not_applicable'),
-    getCategoryLabel: (m) => (m === 'COMPETITIVE_SHOPPING' || m === 'OPEN_BIDDING') ? 'Bắt buộc' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'Khuyến nghị' : 'Không áp dụng'),
+    getCategory: (m) => m === 'COMPETITIVE_SHOPPING' ? 'required' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'recommended' : 'not_applicable'),
+    getCategoryLabel: (m) => m === 'COMPETITIVE_SHOPPING' ? 'Bắt buộc' : (m === 'DIRECT_SELECTION_SIMPLIFIED' ? 'Khuyến nghị' : 'Không áp dụng'),
     getSigner: (pkg) => `${pkg.expertTeamLeader}`,
     getSignDate: (pkg) => pkg.dateDocIssue,
     getAuditRisk: (pkg) => "Không phát hành Thông báo mời chào hàng — thiếu bằng chứng khởi động quy trình cạnh tranh hợp lệ. Vi phạm Điều 28 Luật Đấu thầu số 22/2023/QH15.",
