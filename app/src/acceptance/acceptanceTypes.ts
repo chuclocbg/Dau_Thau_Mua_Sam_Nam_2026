@@ -110,6 +110,7 @@ export interface AcceptanceSession {
   status: SessionStatus;
   chairmanCode?: string;
   notes?: string;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }

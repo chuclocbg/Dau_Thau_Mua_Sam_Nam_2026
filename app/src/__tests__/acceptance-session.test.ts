@@ -26,6 +26,15 @@ describe('createSession — happy path', () => {
     const r = await repos.requests.findById(requestId);
     expect(r?.status).toBe('IN_PROGRESS');
   });
+  it('records createdBy (KI-007)', async () => {
+    const s = await createSession(requestId, sparams(), 'U', repos);
+    expect(s.createdBy).toBe('U');
+  });
+  it('createdBy is independent of the session chairman (chairmanCode)', async () => {
+    const s = await createSession(requestId, sparams({ chairmanCode: 'CHAIR-01' }), 'officer-nguyen', repos);
+    expect(s.createdBy).toBe('officer-nguyen');
+    expect(s.chairmanCode).toBe('CHAIR-01');
+  });
 });
 
 // ACR-SS-02

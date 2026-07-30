@@ -1214,6 +1214,7 @@ model AcceptanceSession {
   chairmanCode  String?
   status        AcceptanceSessionStatus @default(PENDING)
   notes         String?
+  createdBy     String?
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 

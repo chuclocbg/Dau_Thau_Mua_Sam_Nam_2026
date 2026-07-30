@@ -32,6 +32,7 @@ export async function createSession(
     status:        'PENDING',
     chairmanCode:  params.chairmanCode,
     notes:         params.notes,
+    createdBy,
   } as Omit<AcceptanceSession, 'id' | 'createdAt' | 'updatedAt'>);
 
   // Advance request status to IN_PROGRESS on first session
