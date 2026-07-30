@@ -203,7 +203,9 @@ export {
 
 export {
   ToolCallingAgent,
-  type ToolCall,
+  // ToolCall intentionally not re-exported here (GX-TOOLCALL) -- ToolCallingAgent.ts
+  // re-exports it from ToolRegistry.ts rather than declaring its own; already
+  // exported from the ToolRegistry block above.
   type ToolCallResult,
   type ToolCallOptions,
   type ToolCallingResult,

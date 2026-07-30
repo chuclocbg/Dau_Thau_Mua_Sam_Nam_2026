@@ -48,18 +48,14 @@
 
 import { ProviderManager, type ProviderManagerMessage } from './ProviderManager';
 import { ToolExecutor }      from './ToolExecutor';
-import { ToolRegistry }      from './ToolRegistry';
+import { ToolRegistry, type ToolCall } from './ToolRegistry';
 import { ConversationMemory } from './ConversationMemory';
 
 // ─── ToolCall ─────────────────────────────────────────────────────────────────
-
-/** Structured tool invocation extracted from LLM response text. */
-export interface ToolCall {
-  /** Registered tool name. */
-  name:      string;
-  /** Arguments parsed from the LLM response. */
-  arguments: Record<string, unknown>;
-}
+// Re-exported from ToolRegistry.ts (GX-TOOLCALL) -- both declarations were
+// confirmed structurally identical (name: string; arguments: Record<string, unknown>);
+// this file no longer independently re-declares the interface.
+export type { ToolCall };
 
 // ─── ToolCallResult ───────────────────────────────────────────────────────────
 
