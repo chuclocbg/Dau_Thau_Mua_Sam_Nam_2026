@@ -592,6 +592,7 @@ model ProcurementRequest {
   performedBy      String?
   approvedBy       String?
   approvalNotes    String?
+  history          Json?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

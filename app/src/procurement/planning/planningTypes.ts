@@ -1,3 +1,5 @@
+import type { PlanningRequestHistory } from './planningRequestHistory';
+
 export const REQUEST_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'MERGED', 'CANCELLED'] as const;
 export type RequestStatus = typeof REQUEST_STATUSES[number];
 
@@ -42,6 +44,7 @@ export interface ProcurementRequest {
   readonly legalBasis: string;
   readonly status: RequestStatus;
   readonly planId?: string;
+  readonly history?: PlanningRequestHistory;
   readonly createdAt: string;
   readonly updatedAt: string;
 }

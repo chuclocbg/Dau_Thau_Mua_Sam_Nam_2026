@@ -5,6 +5,7 @@ import type {
 } from './planningTypes';
 import { PlanningError } from './planningTypes';
 import type { PlanningRepositories } from './planningRepository';
+import { createHistory, addHistoryEntry } from './planningRequestHistory';
 import {
   assertUniqueRequestCode, validateRequiredRequestFields, validateEstimatedCost,
   validateRequestsApproved, validatePlanHasRequests, calculateFundingSummary,
@@ -62,7 +63,10 @@ export async function approveRequest(
   if (req.status !== 'PENDING') {
     throw new PlanningError('INVALID_STATUS', 'status', `Cannot approve request with status: ${req.status}`);
   }
-  return repos.requests.update(id, { status: 'APPROVED' });
+  const history = addHistoryEntry(req.history ?? createHistory(id), {
+    action: 'APPROVE', performedBy: approvedBy, notes,
+  });
+  return repos.requests.update(id, { status: 'APPROVED', history });
 }
 
 export async function mergeRequests(
@@ -139,10 +143,16 @@ export async function splitRequest(
       priority:         original.priority,
       legalBasis:       original.legalBasis,
       status:           'PENDING',
+      history:          addHistoryEntry(createHistory(part.requestCode), {
+        action: 'SPLIT', performedBy, notes: `Split from ${original.requestCode}`,
+      }),
     });
     created.push(req);
   }
-  await repos.requests.update(id, { status: 'CANCELLED' });
+  const cancelHistory = addHistoryEntry(original.history ?? createHistory(id), {
+    action: 'CANCEL', performedBy, notes: `Cancelled due to split into: ${parts.map(p => p.requestCode).join(', ')}`,
+  });
+  await repos.requests.update(id, { status: 'CANCELLED', history: cancelHistory });
   return created;
 }
 

@@ -193,6 +193,13 @@ describe('PLQ-08 approveRequest() transitions PENDING to APPROVED', () => {
     const approved = await approveRequest(req.id, repos, 'MANAGER');
     expect(approved.updatedAt).toBeDefined();
   });
+  it('records an APPROVE history entry with the approving actor (KI-012)', async () => {
+    const approved = await approveRequest(req.id, repos, 'MANAGER', 'looks good');
+    expect(approved.history?.entries).toHaveLength(1);
+    expect(approved.history?.entries[0]).toMatchObject({
+      action: 'APPROVE', performedBy: 'MANAGER', notes: 'looks good',
+    });
+  });
 });
 
 // ─── PLQ-09: approveRequest() NOT_FOUND ──────────────────────────────────────

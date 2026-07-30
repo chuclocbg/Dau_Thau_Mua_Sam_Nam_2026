@@ -265,6 +265,16 @@ describe('PLM-09 splitRequest() creates 2 new requests', () => {
     ], repos, 'U');
     expect(parts.every(r => r.status === 'PENDING')).toBe(true);
   });
+  it('each part records a SPLIT history entry with the performing actor (KI-012)', async () => {
+    const parts = await splitRequest(original.id, [
+      { requestCode: 'H1', needDescription: 'D', estimatedCost: 100 },
+      { requestCode: 'H2', needDescription: 'D', estimatedCost: 200 },
+    ], repos, 'officer-le');
+    for (const part of parts) {
+      expect(part.history?.entries).toHaveLength(1);
+      expect(part.history?.entries[0]).toMatchObject({ action: 'SPLIT', performedBy: 'officer-le' });
+    }
+  });
 });
 
 // ─── PLM-10: splitRequest() marks original CANCELLED ─────────────────────────
@@ -299,6 +309,15 @@ describe('PLM-10 splitRequest() marks original as CANCELLED', () => {
       { requestCode: 'S2', needDescription: 'D', estimatedCost: 50_000_000 },
     ], repos, 'U');
     expect(await repos.requests.findByStatus('CANCELLED')).toHaveLength(1);
+  });
+  it('original records a CANCEL history entry with the performing actor (KI-012)', async () => {
+    await splitRequest(original.id, [
+      { requestCode: 'C1', needDescription: 'D', estimatedCost: 50_000_000 },
+      { requestCode: 'C2', needDescription: 'D', estimatedCost: 50_000_000 },
+    ], repos, 'officer-le');
+    const cancelled = await repos.requests.findById(original.id);
+    expect(cancelled?.history?.entries).toHaveLength(1);
+    expect(cancelled?.history?.entries[0]).toMatchObject({ action: 'CANCEL', performedBy: 'officer-le' });
   });
 });
 
