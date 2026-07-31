@@ -58,7 +58,7 @@ export const THRESHOLD_OPEN_TENDER_GOODS: ThresholdKnowledgeItemRef = Object.fre
   summary: 'Ngưỡng giá trị bắt buộc áp dụng đấu thầu rộng rãi cho gói hàng hóa.',
   legalBasis: [{ documentSymbol: '22/2023/QH15', article: 'Điều 22' }], metadata: {}, confidence: 0.95, layer: 1,
   effectiveFrom: '2024-01-01',
-  threshold: { thresholdCode: 'OPEN_TENDER_GOODS_MIN', thresholdType: 'PROCUREMENT_METHOD_FLOOR', contextField: 'estimatedValue', operator: 'GT', value: '2000000000', unit: 'VND' },
+  threshold: { thresholdCode: 'OPEN_TENDER_GOODS_MIN', thresholdType: 'PROCUREMENT_METHOD_FLOOR', contextField: 'estimatedValue', operator: 'GT', value: '2000000000', unit: 'VND' } as const,
 })
 
 export const THRESHOLD_ADVANCE_MAX: ThresholdKnowledgeItemRef = Object.freeze({
@@ -66,7 +66,7 @@ export const THRESHOLD_ADVANCE_MAX: ThresholdKnowledgeItemRef = Object.freeze({
   summary: 'Tỷ lệ tạm ứng tối đa theo quy định chung.',
   legalBasis: [{ documentSymbol: '79/2025/TT-BTC', article: 'Điều 15', clause: 'khoản 1' }], metadata: {},
   confidence: 0.9, layer: 1, effectiveFrom: '2025-03-15',
-  threshold: { thresholdCode: 'ADVANCE_PAYMENT_MAX_STATE', thresholdType: 'ADVANCE_PAYMENT_MAX', contextField: 'advanceRatio', operator: 'LTE', value: '0.30', unit: 'PERCENT' },
+  threshold: { thresholdCode: 'ADVANCE_PAYMENT_MAX_STATE', thresholdType: 'ADVANCE_PAYMENT_MAX', contextField: 'advanceRatio', operator: 'LTE', value: '0.30', unit: 'PERCENT' } as const,
 })
 
 export const THRESHOLD_BID_SECURITY: ThresholdKnowledgeItemRef = Object.freeze({
@@ -74,7 +74,7 @@ export const THRESHOLD_BID_SECURITY: ThresholdKnowledgeItemRef = Object.freeze({
   summary: 'Ngưỡng giá trị bắt buộc bảo đảm dự thầu.',
   legalBasis: [{ documentSymbol: '22/2023/QH15', article: 'Điều 14' }], metadata: {}, confidence: 0.95, layer: 1,
   effectiveFrom: '2024-01-01',
-  threshold: { thresholdCode: 'BID_SECURITY_FLOOR', thresholdType: 'BID_SECURITY_FLOOR', contextField: 'estimatedValue', operator: 'GT', value: '500000000', unit: 'VND' },
+  threshold: { thresholdCode: 'BID_SECURITY_FLOOR', thresholdType: 'BID_SECURITY_FLOOR', contextField: 'estimatedValue', operator: 'GT', value: '500000000', unit: 'VND' } as const,
 })
 
 export const ALL_THRESHOLD_ITEMS: readonly ThresholdKnowledgeItemRef[] = Object.freeze([
@@ -95,7 +95,7 @@ export const RULE_OPEN_TENDER_GOODS: RuleKnowledgeItemRef = Object.freeze({
     ],
     outcome: { pass: 'Bắt buộc đấu thầu rộng rãi (gói hàng hóa > 2 tỷ VNĐ)', fail: 'Không bắt buộc đấu thầu rộng rãi' },
     isCritical: true,
-  },
+  } as const,
 })
 
 export const RULE_ADVANCE_MAX: RuleKnowledgeItemRef = Object.freeze({
@@ -114,7 +114,7 @@ export const RULE_ADVANCE_MAX: RuleKnowledgeItemRef = Object.freeze({
       fail: 'Tạm ứng vượt 30% giá trị hợp đồng — không phù hợp quy định',
     },
     isCritical: false,
-  },
+  } as const,
 })
 
 export const RULE_ADVANCE_GUARANTEE: RuleKnowledgeItemRef = Object.freeze({
@@ -133,7 +133,7 @@ export const RULE_ADVANCE_GUARANTEE: RuleKnowledgeItemRef = Object.freeze({
       exception: 'Không bắt buộc bảo lãnh tạm ứng do áp dụng trường hợp khẩn cấp',
     },
     isCritical: false, exceptionCodes: ['EMERGENCY_PROCUREMENT'],
-  },
+  } as const,
 })
 
 export const RULE_BID_SECURITY: RuleKnowledgeItemRef = Object.freeze({
@@ -149,7 +149,7 @@ export const RULE_BID_SECURITY: RuleKnowledgeItemRef = Object.freeze({
     ],
     outcome: { pass: 'Bảo đảm dự thầu bắt buộc', fail: 'Không bắt buộc bảo đảm dự thầu' },
     isCritical: false,
-  },
+  } as const,
 })
 
 export const ALL_RULE_ITEMS: readonly RuleKnowledgeItemRef[] = Object.freeze([
