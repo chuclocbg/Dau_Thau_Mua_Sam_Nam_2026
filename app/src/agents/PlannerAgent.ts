@@ -26,7 +26,6 @@ import { assignQuarter, getProcurementLeadTime, buildCalendar }        from './b
 // ─── Runtime imports — P5 functions ───────────────────────────────────────────
 
 import { generatePackageSuggestion }                                    from '../ai/packageGenerator';
-import { reviewPackage }                                                from '../ai/legalReviewer';
 import { runWorkflow }                                                  from '../ai/workflowOrchestrator';
 
 // ─── Re-export types (P6-01C) as unified public API ──────────────────────────
