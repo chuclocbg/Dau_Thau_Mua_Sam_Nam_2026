@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   testPaymentCondition, matchesPaymentRule, resolvePaymentRule,
-  resolveAllPaymentRules,
+  resolveAllPaymentRules, isRulePresentlyEffective,
 } from '../payment/paymentLegalRule';
 import type { PaymentLegalRule, PaymentRuleContext } from '../payment/paymentLegalRule';
 import {
@@ -68,6 +68,34 @@ describe('matchesPaymentRule — effective date', () => {
   it('fails when supersededBy is set', () => {
     const superseded = { ...rule, supersededBy: 'NEWER-RULE' };
     expect(matchesPaymentRule(superseded, stateCtx)).toBe(false);
+  });
+});
+
+// PAY-RE-04b (KI-010)
+describe('isRulePresentlyEffective — date/supersession only, no packageType/fundSource/authority needed', () => {
+  const rule = ADVANCE_RATE_RULES[0]!;
+  it('true when asOfDate is within [effectiveFrom, effectiveTo)', () => {
+    expect(isRulePresentlyEffective(rule, '2026-07-01')).toBe(true);
+  });
+  it('false when asOfDate < effectiveFrom', () => {
+    expect(isRulePresentlyEffective(rule, '2020-01-01')).toBe(false);
+  });
+  it('false when asOfDate >= effectiveTo (non-null)', () => {
+    const expired = { ...rule, effectiveTo: '2026-01-01' };
+    expect(isRulePresentlyEffective(expired, '2026-07-01')).toBe(false);
+  });
+  it('true when effectiveTo is null (still in force) and asOfDate is well past effectiveFrom', () => {
+    expect(rule.effectiveTo).toBeNull();
+    expect(isRulePresentlyEffective(rule, '2030-01-01')).toBe(true);
+  });
+  it('false when supersededBy is set, regardless of date', () => {
+    const superseded = { ...rule, supersededBy: 'NEWER-RULE' };
+    expect(isRulePresentlyEffective(superseded, '2026-07-01')).toBe(false);
+  });
+  it('does not require packageType/fundSource/authority -- unlike matchesPaymentRule', () => {
+    // rule.applicableFundingSources is ['STATE', 'ODA'] -- matchesPaymentRule would reject a
+    // context with a non-matching fundSource, but isRulePresentlyEffective only checks dates.
+    expect(isRulePresentlyEffective(rule, '2026-07-01')).toBe(true);
   });
 });
 

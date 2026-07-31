@@ -111,6 +111,19 @@ export function matchesPaymentRule(rule: PaymentLegalRule, ctx: PaymentRuleConte
   return rule.conditions.every(c => testPaymentCondition(c, ctxMap));
 }
 
+/**
+ * Date/supersession effectiveness only (KI-010) -- deliberately narrower than
+ * matchesPaymentRule(): does not require packageType/fundSource/authority context,
+ * for callers that only need to re-check an already-resolved rule is still valid,
+ * not re-resolve one from scratch.
+ */
+export function isRulePresentlyEffective(rule: PaymentLegalRule, asOfDate: string): boolean {
+  if (rule.supersededBy) return false;
+  if (asOfDate < rule.effectiveFrom) return false;
+  if (rule.effectiveTo !== null && asOfDate >= rule.effectiveTo) return false;
+  return true;
+}
+
 // ─── Rule resolver ────────────────────────────────────────────────────────────
 
 export function resolvePaymentRule(

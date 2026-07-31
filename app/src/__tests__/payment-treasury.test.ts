@@ -34,6 +34,16 @@ async function approvedPayment(req: any, hist: any) {
   return approvePaymentRequest(req, hist, r.id, 'approver1');
 }
 
+async function approvedPaymentWithRule(req: any, hist: any, resolvedRuleId: string) {
+  const r = await createPaymentRequest(req, hist, {
+    requestCode: 'PR-TREAS-RULE', paymentType: 'PROGRESS',
+    contractId: 'C-001', requestedBy: 'user1', department: 'D1',
+    amount: vnd(10_000_000),
+  }, resolvedRuleId);
+  await submitPaymentRequest(req, hist, r.id, 'user1');
+  return approvePaymentRequest(req, hist, r.id, 'approver1');
+}
+
 // PAY-T-01
 describe('checkTreasuryRequired', () => {
   it('returns true for STATE fund', () => {
@@ -95,6 +105,55 @@ describe('submitToTreasury — basic', () => {
     });
     const updated = await req.findById(approved.id);
     expect(updated?.status).toBe('SUBMITTED_TREASURY');
+  });
+});
+
+// PAY-T-03b (KI-010)
+describe('submitToTreasury — resolvedRuleId re-check (KI-010)', () => {
+  it('allows submission when resolvedRuleId is unset (backward compatible)', async () => {
+    const { req, hist, treas } = repos();
+    const approved = await approvedPayment(req, hist);
+    await expect(submitToTreasury(req, treas, hist, {
+      requestId: approved.id, submittedBy: 'accountant', submissionCode: 'K-001',
+    })).resolves.toBeDefined();
+  });
+  it('allows submission when resolvedRuleId points to a currently-effective rule', async () => {
+    const { req, hist, treas } = repos();
+    const approved = await approvedPaymentWithRule(req, hist, 'PR-PAY-ADV-001');
+    await expect(submitToTreasury(req, treas, hist, {
+      requestId: approved.id, submittedBy: 'accountant', submissionCode: 'K-001',
+    })).resolves.toBeDefined();
+  });
+  it('rejects submission when resolvedRuleId refers to a rule that no longer exists', async () => {
+    const { req, hist, treas } = repos();
+    const approved = await approvedPaymentWithRule(req, hist, 'PR-PAY-DOES-NOT-EXIST');
+    await expect(submitToTreasury(req, treas, hist, {
+      requestId: approved.id, submittedBy: 'accountant', submissionCode: 'K-001',
+    })).rejects.toThrow();
+  });
+  it('rejection uses the RULE_NOT_FOUND error code', async () => {
+    const { req, hist, treas } = repos();
+    const approved = await approvedPaymentWithRule(req, hist, 'PR-PAY-DOES-NOT-EXIST');
+    const err = await submitToTreasury(req, treas, hist, {
+      requestId: approved.id, submittedBy: 'accountant', submissionCode: 'K-001',
+    }).catch(e => e);
+    expect(err.code).toBe('RULE_NOT_FOUND');
+  });
+  it('rejected submission leaves the request status unchanged (not SUBMITTED_TREASURY)', async () => {
+    const { req, hist, treas } = repos();
+    const approved = await approvedPaymentWithRule(req, hist, 'PR-PAY-DOES-NOT-EXIST');
+    await submitToTreasury(req, treas, hist, {
+      requestId: approved.id, submittedBy: 'accountant', submissionCode: 'K-001',
+    }).catch(() => {});
+    const unchanged = await req.findById(approved.id);
+    expect(unchanged?.status).toBe('APPROVED');
+  });
+  it('does not evaluate options.rules -- passing it has no effect either way (out of this slice\'s scope)', async () => {
+    const { req, hist, treas } = repos();
+    const approved = await approvedPaymentWithRule(req, hist, 'PR-PAY-ADV-001');
+    await expect(submitToTreasury(req, treas, hist, {
+      requestId: approved.id, submittedBy: 'accountant', submissionCode: 'K-001',
+    }, { rules: [], packageType: 'irrelevant' })).resolves.toBeDefined();
   });
 });
 

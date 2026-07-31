@@ -10,7 +10,7 @@ import type { PaymentRequest, TreasurySubmission, CreateTreasurySubmissionParams
 import { PaymentError } from './paymentTypes';
 import type { IPaymentRequestRepository, ITreasurySubmissionRepository, IPaymentHistoryRepository } from './paymentRepository';
 import type { PaymentLegalRule, PaymentRuleContext } from './paymentLegalRule';
-import { resolvePaymentRule } from './paymentLegalRule';
+import { resolvePaymentRule, isRulePresentlyEffective } from './paymentLegalRule';
 import { PAYMENT_LEGAL_RULES } from './paymentRuleRegistry';
 import { buildTreasurySubmission, buildTreasurySubmissionCode } from './paymentFactory';
 import { recordPaymentAction } from './paymentHistoryService';
@@ -32,6 +32,20 @@ export async function submitToTreasury(
 
   if (req.status !== 'APPROVED')
     throw new PaymentError('INVALID_STATUS', 'status', `Only APPROVED requests can be submitted to treasury; current: ${req.status}`);
+
+  // KI-010: re-check the request's already-resolved governing rule (set earlier in the
+  // payment lifecycle) is still effective. Does not evaluate options.rules or resolve a
+  // rule from scratch -- narrower scope, see ADR-KI-010.md.
+  if (req.resolvedRuleId) {
+    const rule = PAYMENT_LEGAL_RULES.find(r => r.ruleId === req.resolvedRuleId);
+    const asOfDate = new Date().toISOString().slice(0, 10);
+    if (!rule || !isRulePresentlyEffective(rule, asOfDate)) {
+      throw new PaymentError(
+        'RULE_NOT_FOUND', 'resolvedRuleId',
+        `Governing rule ${req.resolvedRuleId} is no longer effective; treasury submission blocked`,
+      );
+    }
+  }
 
   const seqNum = (await treasuryRepo.count()) + 1;
   const submissionCode = params.submissionCode ||
