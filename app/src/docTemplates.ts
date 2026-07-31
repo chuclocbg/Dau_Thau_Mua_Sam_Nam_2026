@@ -1485,6 +1485,10 @@ export const documentTemplates: DocumentConfig[] = [
           HỒ SƠ YÊU CẦU / HỒ SƠ MỜI THẦU (BẢN TÓM TẮT PHÁT HÀNH)<br>
           <span style="font-size: 13px; font-weight: normal; font-style: italic;">(Ban hành kèm theo Quyết định số .../QĐ-CĐKTCN)</span>
         </div>
+        ${methodCode === 'OPEN_BIDDING' ? `
+        <div class="doc-notice" style="margin: 15px 0; padding: 10px; border: 2px solid #c00000; background: #fff3f3;">
+          <b>LƯU Ý:</b> Đây là bản dự thảo phục vụ công tác lập kế hoạch nội bộ, chưa phải là Hồ sơ mời thầu hoàn chỉnh để phát hành chính thức. Đối với gói thầu áp dụng đấu thầu rộng rãi, một Hồ sơ mời thầu đầy đủ, riêng biệt phải được soạn thảo trước khi phát hành chính thức.
+        </div>` : ''}
         <div class="doc-content">
           <p><b>Chương I. Chỉ dẫn nhà thầu:</b> Hướng dẫn chuẩn bị hồ sơ đề xuất, thời hạn nộp hồ sơ, yêu cầu về bảo đảm dự thầu (nếu có).</p>
           <p><b>Chương II. Bảng dữ liệu đấu thầu:</b> Quy định cụ thể địa chỉ nhận hồ sơ, thời điểm đóng thầu ngày <b>${formatDateVietnamese(pkg.dateBidClose)}</b>.</p>
@@ -1516,6 +1520,13 @@ export const documentTemplates: DocumentConfig[] = [
                 new TextRun({ text: `(Gói thầu: ${pkg.packageName})`, italics: true, size: 22, font: "Times New Roman" })
               ]
             }),
+            ...(methodCode === 'OPEN_BIDDING' ? [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 100, after: 200 },
+              children: [
+                new TextRun({ text: "LƯU Ý: Đây là bản dự thảo phục vụ công tác lập kế hoạch nội bộ, chưa phải là Hồ sơ mời thầu hoàn chỉnh để phát hành chính thức. Đối với gói thầu áp dụng đấu thầu rộng rãi, một Hồ sơ mời thầu đầy đủ, riêng biệt phải được soạn thảo trước khi phát hành chính thức.", bold: true, size: 22, font: "Times New Roman", color: "C00000" })
+              ]
+            })] : []),
             docxParagraph("Hồ sơ yêu cầu bao gồm các nội dung chính:", { bold: true }),
             docxParagraph("1. Phần chỉ dẫn nhà thầu: Yêu cầu về tư cách hợp lệ của nhà thầu, chuẩn bị hồ sơ đề xuất.", { indent: 500 }),
             docxParagraph(`2. Yêu cầu về kỹ thuật: Cấu hình và chất lượng thiết bị theo bảng danh mục chi tiết kèm theo.`, { indent: 500 }),
