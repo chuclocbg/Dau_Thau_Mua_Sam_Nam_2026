@@ -1654,7 +1654,9 @@ export const documentTemplates: DocumentConfig[] = [
         </div>
         <div class="doc-content">
           <p>Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp</p>
-          <p>Tổ chuyên gia đã tiến hành đánh giá hồ sơ đề xuất của nhà thầu: <b>"${winner.name}"</b>.</p>
+          <p>${methodCode === 'OPEN_BIDDING'
+            ? `Tổ chuyên gia đã tiến hành đánh giá dựa trên kết quả khảo sát giá thị trường (tối thiểu 3 báo giá) thực hiện trước khi lập giá gói thầu, không phải hồ sơ dự thầu chính thức theo quy trình đấu thầu rộng rãi. Nhà thầu có mức giá thấp nhất trong khảo sát: <b>"${winner.name}"</b>.`
+            : `Tổ chuyên gia đã tiến hành đánh giá hồ sơ đề xuất của nhà thầu: <b>"${winner.name}"</b>.`}</p>
           <p><b>1. Kết quả đánh giá về tư cách hợp lệ và năng lực pháp lý:</b> ĐẠT (Nhà thầu có đầy đủ giấy phép, hoạt động bình thường, không vi phạm pháp luật).</p>
           <p><b>2. Kết quả đánh giá về mặt kỹ thuật:</b> ĐẠT (Đáp ứng 100% các yêu cầu kỹ thuật tối thiểu quy định trong Hồ sơ yêu cầu).</p>
           <p><b>3. Kết quả đánh giá về tài chính/giá:</b> Thấp nhất và nằm trong giá gói thầu được duyệt.</p>
@@ -1688,7 +1690,12 @@ export const documentTemplates: DocumentConfig[] = [
               ]
             }),
             docxParagraph("Kính gửi: Hiệu trưởng Trường Cao đẳng Kỹ thuật Công nghiệp", { bold: true, align: AlignmentType.CENTER }),
-            docxParagraph(`Tổ chuyên gia báo cáo kết quả đánh giá hồ sơ đề xuất của nhà thầu: ${winner.name}`, { indent: 500 }),
+            docxParagraph(
+              methodCode === 'OPEN_BIDDING'
+                ? `Tổ chuyên gia báo cáo kết quả đánh giá dựa trên khảo sát giá thị trường (tối thiểu 3 báo giá) thực hiện trước khi lập giá gói thầu, không phải hồ sơ dự thầu chính thức theo quy trình đấu thầu rộng rãi. Nhà thầu có mức giá thấp nhất trong khảo sát: ${winner.name}`
+                : `Tổ chuyên gia báo cáo kết quả đánh giá hồ sơ đề xuất của nhà thầu: ${winner.name}`,
+              { indent: 500 },
+            ),
             docxParagraph("1. Đánh giá tư cách hợp lệ: Đạt.", { indent: 500 }),
             docxParagraph("2. Đánh giá kỹ thuật: Đạt. Thiết bị cung cấp đáp ứng đúng cấu hình kỹ thuật yêu cầu.", { indent: 500 }),
             docxParagraph(`3. Đề xuất: Lựa chọn nhà thầu ${winner.name} trúng thầu gói thầu.`, { indent: 500, bold: true }),
